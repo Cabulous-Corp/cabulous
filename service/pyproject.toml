@@ -1,0 +1,30 @@
+[project]
+name = "cabulous"
+version = "0.1.0"
+description = "Base Django + Django REST Framework com uv, Docker, Postgres e Redis."
+requires-python = ">=3.13"
+dependencies = [
+    "celery>=5.6.2",
+    "django>=6.0.3",
+    "django-jazzmin>=3.0.4",
+    "django-redis>=6.0.0",
+    "djangorestframework>=3.16.1",
+    "flower>=2.0.1",
+    "gunicorn>=25.1.0",
+    "psycopg[binary]>=3.3.3",
+    "pydantic-settings>=2.13.1",
+    "watchfiles>=1.1.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.6",
+]
+
+[tool.ruff]
+extend-exclude = [".uv-cache", ".uv-python", ".venv"]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

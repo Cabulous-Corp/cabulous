@@ -1,0 +1,60 @@
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic import BaseModel, Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+class DatabaseSettings(BaseModel):
+    engine: str = "django.db.backends.postgresql"
+    name: str = "cabulous"
+    user: str = "cabulous"
+    password: str = "cabulous"
+    host: str = "db"
+    port: int = 5432
+    host_port: int = 5433
+
+
+class RedisSettings(BaseModel):
+    url: str = "redis://redis:6379/1"
+    host_port: int = 6380
+
+
+class CelerySettings(BaseModel):
+    broker_url: str = "redis://redis:6379/0"
+    result_backend: str = "redis://redis:6379/0"
+    timezone: str = "America/Sao_Paulo"
+    task_always_eager: bool = False
+    beat_schedule_filename: str = "/tmp/celerybeat-schedule"
+
+
+class AppSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=BASE_DIR / ".env",
+        env_file_encoding="utf-8",
+        env_nested_delimiter="__",
+        extra="ignore",
+    )
+
+    secret_key: str = "django-insecure-change-me-in-production"
+    debug: bool = True
+    allowed_hosts: list[str] = Field(default_factory=lambda: ["localhost", "127.0.0.1", "0.0.0.0"])
+    time_zone: str = "America/Sao_Paulo"
+    web_port: int = 8000
+    database: DatabaseSettings = Field(default_factory=DatabaseSettings)
+    redis: RedisSettings = Field(default_factory=RedisSettings)
+    celery: CelerySettings = Field(default_factory=CelerySettings)
+
+    @field_validator("allowed_hosts", mode="before")
+    @classmethod
+    def split_allowed_hosts(cls, value: str | list[str]) -> list[str]:
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return value
+
+
+@lru_cache
+def get_settings() -> AppSettings:
+    return AppSettings()

@@ -1,0 +1,120 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    command: ["sh", "./docker/app/start.sh"]
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=5)\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${DATABASE__NAME:-cabulous}
+      POSTGRES_USER: ${DATABASE__USER:-cabulous}
+      POSTGRES_PASSWORD: ${DATABASE__PASSWORD:-cabulous}
+    ports:
+      - "${DATABASE__HOST_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE__USER:-cabulous} -d ${DATABASE__NAME:-cabulous}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS__HOST_PORT:-6380}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    command: ["uv", "run", "celery", "-A", "cabulous", "worker", "--loglevel=info"]
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  beat:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    command:
+      [
+        "uv",
+        "run",
+        "celery",
+        "-A",
+        "cabulous",
+        "beat",
+        "--loglevel=info",
+        "--schedule=/tmp/celerybeat-schedule",
+      ]
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  flower:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    command:
+      [
+        "uv",
+        "run",
+        "flower",
+        "--app=cabulous",
+        "--port=5555",
+      ]
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
