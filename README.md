@@ -24,7 +24,7 @@ Aplicacao backend em Django responsavel por:
 
 Documentacao especifica do backend:
 
-- [README do service](C:\Users\clebm\Projetos\cabulous\service\README.md)
+- [README do service](service/README.md)
 
 ### `app`
 
@@ -32,7 +32,7 @@ Aplicacao frontend do Cabulous Site, destinada a ser desenvolvida em Next.js.
 
 Documentacao especifica do frontend:
 
-- [README do app](C:\Users\clebm\Projetos\cabulous\app\README.md)
+- [README do app](app/README.md)
 
 ## VS Code
 
@@ -41,7 +41,7 @@ Este monorepo foi pensado para ser aberto na pasta raiz no VS Code, permitindo v
 - o backend em `service`
 - o frontend em `app`
 
-As configuracoes do workspace ficam em [`.vscode/settings.json`](C:\Users\clebm\Projetos\cabulous\.vscode\settings.json), com:
+As configuracoes do workspace ficam em [`.vscode/settings.json`](.vscode/settings.json), com:
 
 - interpretador Python apontando para o ambiente virtual do backend em `service/.venv`
 - Prettier como formatter padrao para arquivos TypeScript e JavaScript
