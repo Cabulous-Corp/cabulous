@@ -52,26 +52,48 @@ No modo de desenvolvimento:
 - o Flower tambem roda com reinicio automatico quando arquivos Python mudam
 - as migracoes sao aplicadas automaticamente na subida da aplicacao web
 
-## Requisitos
+## Setup
+
+### Requisitos
 
 - Docker
 - Docker Compose
-- `make`
-- `uv`
+- `make` instalado no sistema
 
-## Configuracao inicial
+### Subida do ambiente
 
-1. Crie o arquivo de ambiente a partir do exemplo:
+Comandos minimos para subir o backend em desenvolvimento:
+
+1. Copiar o arquivo de ambiente:
 
 ```bash
 cp .env.example .env
 ```
 
-2. Suba a stack de desenvolvimento:
+No Windows (PowerShell):
+
+```powershell
+Copy-Item .env.example .env
+```
+
+2. Subir a stack:
 
 ```bash
 make up-dev
 ```
+
+Aambiente de desenvolvimento de pé!
+
+### VS Code (recomendado)
+
+Para completar o setup de desenvolvimento no VS Code:
+
+1. Abrir o Command Palette com `F1` ou `Ctrl+Shift+P`
+2. Executar `Python: Select Interpreter`
+3. Selecionar o interpretador recomendado do projeto (`service/.venv`)
+4. Instalar as extensoes recomendadas do workspace (`.vscode/extensions.json`)
+
+Com isso, lint, formatacao e analise de codigo ficam configurados corretamente.
 
 ## Servicos disponiveis
 
@@ -99,7 +121,7 @@ Os servicos principais da stack sao:
 
 As configuracoes da aplicacao sao centralizadas com `pydantic-settings`.
 
-O arquivo [`.env.example`](C:\Users\clebm\Projetos\cabulous\service\.env.example) mostra os valores esperados para:
+O arquivo [`.env.example`](.env.example) mostra os valores esperados para:
 
 - aplicacao Django
 - banco de dados
@@ -119,7 +141,7 @@ uv sync
 
 ## Comandos do projeto
 
-Os comandos de operacao e desenvolvimento estao organizados no [Makefile](C:\Users\clebm\Projetos\cabulous\service\Makefile).
+Os comandos de operacao e desenvolvimento estao organizados no [Makefile](Makefile).
 
 Para ver a lista disponivel:
 
