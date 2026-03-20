@@ -1,5 +1,5 @@
 ---
-name: Feature Template
+name: Feature/Fix Template
 about: Describes a Task.
 title: ''
 labels: ''
