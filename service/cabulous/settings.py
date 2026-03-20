@@ -18,6 +18,9 @@ INSTALLED_APPS = [
     "core",
 ]
 
+if settings.minio.enabled:
+    INSTALLED_APPS.append("storages")
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -82,6 +85,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "/media/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -95,6 +99,34 @@ CACHES = {
         "KEY_PREFIX": "cabulous",
     }
 }
+
+if settings.minio.enabled:
+    AWS_ACCESS_KEY_ID = settings.minio.access_key
+    AWS_SECRET_ACCESS_KEY = settings.minio.secret_key
+    AWS_STORAGE_BUCKET_NAME = settings.minio.bucket_name
+    AWS_S3_REGION_NAME = settings.minio.region_name
+    AWS_S3_ENDPOINT_URL = settings.minio.endpoint_url
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+    AWS_S3_ADDRESSING_STYLE = "path"
+    AWS_DEFAULT_ACL = settings.minio.default_acl
+    AWS_QUERYSTRING_AUTH = settings.minio.querystring_auth
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_LOCATION = "uploads"
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "bucket_name": AWS_STORAGE_BUCKET_NAME,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    MEDIA_URL = (
+        f"{settings.minio.public_endpoint.rstrip('/')}/{settings.minio.bucket_name}/{AWS_LOCATION}/"
+    )
 
 JAZZMIN_SETTINGS = {
     "site_title": "Cabulous Admin",
