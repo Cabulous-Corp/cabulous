@@ -10,6 +10,7 @@ Este diretorio concentra a API, o painel administrativo e os servicos de backend
 - Django REST Framework
 - Celery
 - Flower
+- MinIO
 - Postgres 17
 - Redis
 - Docker Compose
@@ -26,6 +27,7 @@ Esta aplicacao backend existe para sustentar o ecossistema do Cabulous Site, ofe
 - processamento de tarefas assíncronas com Celery
 - agendamentos com Celery Beat
 - monitoramento do Celery com Flower
+- armazenamento de arquivos com bucket S3 self-hosted (MinIO)
 - persistencia de dados com Postgres
 - cache e broker com Redis
 
@@ -113,6 +115,8 @@ Ao subir o ambiente de desenvolvimento, os principais servicos ficam disponiveis
 - Django Admin: [http://localhost:8000/admin/](http://localhost:8000/admin/)
 - healthcheck da API: [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
 - Flower: [http://localhost:5555](http://localhost:5555)
+- MinIO API: [http://localhost:9000](http://localhost:9000)
+- MinIO Console: [http://localhost:9001](http://localhost:9001)
 - Postgres exposto localmente na porta `5433`
 - Redis exposto localmente na porta `6380`
 
@@ -124,6 +128,8 @@ Os servicos principais da stack sao:
 - `worker`: processamento de tarefas assíncronas
 - `beat`: agendador do Celery
 - `flower`: painel de monitoramento do Celery
+- `minio`: armazenamento de arquivos S3 self-hosted
+- `minio-init`: bootstrap do bucket inicial
 - `db`: banco Postgres
 - `redis`: cache e broker
 
