@@ -30,6 +30,18 @@ class CelerySettings(BaseModel):
     beat_schedule_filename: str = "/tmp/celerybeat-schedule"
 
 
+class MinioSettings(BaseModel):
+    enabled: bool = True
+    endpoint_url: str = "http://minio:9000"
+    public_endpoint: str = "http://localhost:9000"
+    access_key: str = "cabulous"
+    secret_key: str = "cabulous123"
+    bucket_name: str = "cabulous-media"
+    region_name: str = "us-east-1"
+    default_acl: str | None = None
+    querystring_auth: bool = True
+
+
 class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -46,6 +58,7 @@ class AppSettings(BaseSettings):
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     celery: CelerySettings = Field(default_factory=CelerySettings)
+    minio: MinioSettings = Field(default_factory=MinioSettings)
 
     @field_validator("allowed_hosts", mode="before")
     @classmethod
