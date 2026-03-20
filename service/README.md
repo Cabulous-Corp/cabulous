@@ -95,6 +95,16 @@ Para completar o setup de desenvolvimento no VS Code:
 
 Com isso, lint, formatacao e analise de codigo ficam configurados corretamente.
 
+### Workflow
+
+Este projeto utiliza o Git Flow como estratégia de workflow
+
+Inicie com:
+
+```bash
+git flow init
+```
+
 ## Servicos disponiveis
 
 Ao subir o ambiente de desenvolvimento, os principais servicos ficam disponiveis assim:
