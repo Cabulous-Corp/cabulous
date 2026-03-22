@@ -4,8 +4,13 @@ on:
   pull_request:
     types: [opened, ready_for_review, reopened, review_requested]
 
+permissions:
+  pull-requests: write
+  issues: write
+
 jobs:
   sync:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
 
     steps:
@@ -17,7 +22,6 @@ jobs:
             const repo = context.repo.repo;
             const pull_number = context.payload.pull_request.number;
 
-            // Busca reviewers atualmente solicitados na PR
             const { data } = await github.rest.pulls.listRequestedReviewers({
               owner,
               repo,
@@ -26,16 +30,19 @@ jobs:
 
             const reviewers = (data.users || []).map(user => user.login);
 
-            // Substitui os assignees da PR pelos reviewers atuais
-            await github.rest.issues.update({
-              owner,
-              repo,
-              issue_number: pull_number,
-              assignees: reviewers
-            });
+            try {
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: pull_number,
+                assignees: reviewers
+              });
 
-            core.info(
-              reviewers.length
-                ? `Assignees sincronizados com reviewers: ${reviewers.join(", ")}`
-                : "Nenhum reviewer solicitado. Assignees limpos."
-            );
+              core.info(
+                reviewers.length
+                  ? `Assignees sincronizados com reviewers: ${reviewers.join(", ")}`
+                  : "Nenhum reviewer solicitado. Assignees limpos."
+              );
+            } catch (error) {
+              core.warning(`Não foi possível sincronizar assignees: ${error.message}`);
+            }
