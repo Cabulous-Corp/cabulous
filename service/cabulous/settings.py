@@ -15,7 +15,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "core",
+    "monitoring",
 ]
 
 if settings.minio.enabled:
@@ -140,7 +140,7 @@ JAZZMIN_SETTINGS = {
     "navigation_expanded": True,
     "hide_apps": [],
     "hide_models": [],
-    "order_with_respect_to": ["auth", "core"],
+    "order_with_respect_to": ["auth", "monitoring"],
 }
 
 CELERY_BROKER_URL = settings.celery.broker_url
