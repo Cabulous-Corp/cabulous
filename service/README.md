@@ -61,6 +61,7 @@ No modo de desenvolvimento:
 - Docker
 - Docker Compose
 - `make` instalado no sistema
+- `uv` instalado no sistema
 
 ### Subida do ambiente
 
@@ -78,17 +79,42 @@ No Windows (PowerShell):
 Copy-Item .env.example .env
 ```
 
-2. Subir a stack:
+2. Criar o ambiente virtual Python e instalar as dependencias:
+
+```bash
+uv sync
+```
+
+3. Subir a stack:
 
 ```bash
 make up-dev
 ```
 
-Aambiente de desenvolvimento de pé!
+Ambiente de desenvolvimento de pé!
+
+Fluxo resumido:
+
+```bash
+cd service
+cp .env.example .env
+uv sync
+make up-dev
+```
 
 ### VS Code (recomendado)
 
-Para completar o setup de desenvolvimento no VS Code:
+Antes de selecionar o interpretador Python, é necessário criar o ambiente virtual do projeto utilizando o `uv`.
+
+Dentro do diretório `service`, execute:
+
+```bash
+uv sync
+```
+
+Esse comando irá criar o ambiente virtual `.venv` e instalar todas as dependências Python do projeto.
+
+Após isso, para completar o setup de desenvolvimento no VS Code:
 
 1. Abrir o Command Palette com `F1` ou `Ctrl+Shift+P`
 2. Executar `Python: Select Interpreter`
@@ -137,7 +163,7 @@ Os servicos principais da stack sao:
 
 As configuracoes da aplicacao sao centralizadas com `pydantic-settings`.
 
-O arquivo [`.env.example`](.env.example) mostra os valores esperados para:
+O arquivo `.env.example` mostra os valores esperados para:
 
 - aplicacao Django
 - banco de dados
@@ -147,17 +173,19 @@ O arquivo [`.env.example`](.env.example) mostra os valores esperados para:
 
 ## Dependencias Python
 
-As dependencias sao gerenciadas com `uv`.
+As dependencias Python sao gerenciadas com `uv`.
 
-Quando for necessario sincronizar o ambiente Python fora dos containers, use:
+Para criar o ambiente virtual `.venv` e instalar as dependencias do projeto, execute:
 
 ```bash
 uv sync
 ```
 
+Esse comando deve ser executado sempre que o ambiente Python ainda nao existir ou quando houver alteracoes nas dependencias do projeto.
+
 ## Comandos do projeto
 
-Os comandos de operacao e desenvolvimento estao organizados no [Makefile](Makefile).
+Os comandos de operacao e desenvolvimento estao organizados no Makefile.
 
 Para ver a lista disponivel:
 
