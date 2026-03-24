@@ -15,6 +15,8 @@ class PartyStatisticsAdmin(admin.ModelAdmin):
         "flirts_count",
         "kisses_count",
         "success_rate",
+        "arrival_time",
+        "leave_time",
     )
 
     list_filter = ("user", "party_name", "year", "semester")
