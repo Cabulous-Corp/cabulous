@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
 from django.db import models
@@ -51,10 +51,14 @@ class PartyStatistics(BaseModel):
 
     def save(self, *args, **kwargs):
         if self.flirts_count > 0:
-            rate = (self.kisses_count / self.flirts_count) * 100
-            self.success_rate = Decimal(str(round(rate, 2)))
+            rate = (Decimal(self.kisses_count) / Decimal(self.flirts_count)) * Decimal("100")
+            self.success_rate = rate.quantize(
+                Decimal("0.01"),
+                rounding=ROUND_HALF_UP,
+            )
         else:
             self.success_rate = Decimal("0.00")
+
         super().save(*args, **kwargs)
 
     def __str__(self):
