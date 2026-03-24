@@ -26,15 +26,26 @@ class PartyStatisticsAdmin(admin.ModelAdmin):
     readonly_fields = ("success_rate", "created_at", "updated_at")
 
     fieldsets = (
-        ("Identificação", {"fields": ("user", "party_name", "year", "semester")}),
-        ("Métricas de Consumo", {"fields": ("drinks_count", "shots_count")}),
-        ("Social & Performance", {"fields": ("flirts_count", "kisses_count", "success_rate")}),
-        ("Tempo de Festa", {"fields": ("arrival_time", "leave_time")}),
+        (
+            "Dados da Festa",
+            {
+                "fields": (
+                    "user",
+                    "party_name",
+                    "year",
+                    "semester",
+                    "drinks_count",
+                    "shots_count",
+                    "flirts_count",
+                    "kisses_count",
+                    "success_rate",
+                    "arrival_time",
+                    "leave_time",
+                )
+            },
+        ),
         (
             "Metadados (Sistema)",
-            {
-                "fields": ("created_at", "updated_at"),
-                "classes": ("collapse",),
-            },
+            {"fields": ("created_at", "updated_at")},
         ),
     )
