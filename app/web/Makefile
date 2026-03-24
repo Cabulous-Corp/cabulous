@@ -15,8 +15,11 @@ build: ## Build the NextJS app
 	@echo "Building app..."
 	@bun run build
 
-setup: ## Setup the project
+setup: ## Setup the project (copy .env, install deps)
+	@echo "Checking for .env file..."
+	@bun -e "const fs = require('fs'); if (!fs.existsSync('.env')) { fs.copyFileSync('.env.example', '.env'); console.log('Created .env from .env.example') } else { console.log('.env already exists, skipping copy.') }"
 	@make install --no-print-directory
+	@echo "Setup complete! Run 'make dev' to start."
 
 install: ## Install dependencies
 	@echo "Installing dependencies..."
