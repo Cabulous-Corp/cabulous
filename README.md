@@ -32,7 +32,7 @@ Aplicacao frontend do Cabulous Site, destinada a ser desenvolvida em Next.js.
 
 Documentacao especifica do frontend:
 
-- [README do app](app/README.md)
+- [README do app](app/web/README.md)
 
 ## VS Code
 
