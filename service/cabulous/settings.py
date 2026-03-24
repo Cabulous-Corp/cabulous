@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "common",
     "monitoring",
+    "communication",
 ]
 
 if settings.minio.enabled:
