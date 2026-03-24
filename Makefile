@@ -22,7 +22,7 @@ help:
 	@echo ""
 	@echo "Contextos disponiveis:"
 	@echo "  make service <target> - encaminha para o Makefile de service"
-	@echo "  make app <target>     - encaminha para o Makefile de app"
+	@echo "  make app <target>     - encaminha para o Makefile de app/web"
 	@echo ""
 	@echo "Exemplos:"
 	@echo "  make service up-dev"
@@ -36,4 +36,4 @@ service:
 	@$(MAKE) -C service $(SUBTARGETS)
 
 app:
-	@$(MAKE) -C app $(SUBTARGETS)
+	@$(MAKE) -C app/web $(SUBTARGETS)
