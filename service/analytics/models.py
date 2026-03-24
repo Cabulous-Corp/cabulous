@@ -44,6 +44,10 @@ class PartyStatistics(BaseModel):
                 fields=["user", "party_name", "year", "semester"], name="unique_party_stat_per_user"
             )
         ]
+        indexes = [
+            models.Index(fields=["user", "year", "semester"]),
+            models.Index(fields=["user", "party_name"]),
+        ]
 
     def save(self, *args, **kwargs):
         if self.flirts_count > 0:
