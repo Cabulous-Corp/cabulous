@@ -6,6 +6,11 @@ from django.db import models
 from common.models.abstracts import BaseModel
 
 
+class Semester(models.IntegerChoices):
+    FIRST = 1, "1º semestre"
+    SECOND = 2, "2º semestre"
+
+
 class PartyStatistics(BaseModel):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="party_statistics"
@@ -13,9 +18,7 @@ class PartyStatistics(BaseModel):
 
     party_name = models.CharField(max_length=255, verbose_name="Nome da Festa")
     year = models.PositiveIntegerField(verbose_name="Ano")
-    semester = models.PositiveSmallIntegerField(
-        choices=[(1, "1"), (2, "2")], verbose_name="Semestre"
-    )
+    semester = models.PositiveSmallIntegerField(choices=Semester.choices, verbose_name="Semestre")
 
     drinks_count = models.PositiveIntegerField(default=0, verbose_name="Copos Tomados")
     shots_count = models.PositiveIntegerField(default=0, verbose_name="Shots")
