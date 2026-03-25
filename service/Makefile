@@ -6,9 +6,11 @@ MANAGE_CMD := $(strip $(if $(MANAGE_ARGS),$(MANAGE_ARGS),$(cmd)))
 
 .PHONY: help
 .PHONY: up down build restart logs ps bash shell dbshell psql migrate makemigrations superuser test collectstatic manage
-.PHONY: worker-logs beat-logs flower-logs restart-worker restart-beat restart-flower
+.PHONY: web-logs db-logs redis-logs minio-logs minio-init-logs worker-logs beat-logs flower-logs
+.PHONY: restart-worker restart-beat restart-flower
 .PHONY: up-dev down-dev restart-dev logs-dev ps-dev bash-dev shell-dev dbshell-dev psql-dev migrate-dev makemigrations-dev superuser-dev test-dev manage-dev
-.PHONY: worker-logs-dev beat-logs-dev flower-logs-dev restart-worker-dev restart-beat-dev restart-flower-dev
+.PHONY: web-logs-dev db-logs-dev redis-logs-dev minio-logs-dev minio-init-logs-dev worker-logs-dev beat-logs-dev flower-logs-dev
+.PHONY: restart-worker-dev restart-beat-dev restart-flower-dev
 .PHONY: lint format
 
 ifeq (manage,$(firstword $(MAKECMDGOALS)))
@@ -45,6 +47,11 @@ help:
 	@echo "  make manage check       - roda comando arbitrario do manage.py"
 	@echo ""
 	@echo "# Producao Celery"
+	@echo "  make web-logs           - logs do web"
+	@echo "  make db-logs            - logs do db"
+	@echo "  make redis-logs         - logs do redis"
+	@echo "  make minio-logs         - logs do minio"
+	@echo "  make minio-init-logs    - logs do minio-init"
 	@echo "  make worker-logs        - logs do celery worker"
 	@echo "  make beat-logs          - logs do celery beat"
 	@echo "  make flower-logs        - logs do flower"
@@ -69,6 +76,11 @@ help:
 	@echo "  make manage-dev check   - roda comando arbitrario do manage.py na stack dev"
 	@echo ""
 	@echo "# Desenvolvimento Celery"
+	@echo "  make web-logs-dev       - logs do web na stack dev"
+	@echo "  make db-logs-dev        - logs do db na stack dev"
+	@echo "  make redis-logs-dev     - logs do redis na stack dev"
+	@echo "  make minio-logs-dev     - logs do minio na stack dev"
+	@echo "  make minio-init-logs-dev - logs do minio-init na stack dev"
 	@echo "  make worker-logs-dev    - logs do worker na stack dev"
 	@echo "  make beat-logs-dev      - logs do beat na stack dev"
 	@echo "  make flower-logs-dev    - logs do flower na stack dev"
@@ -94,6 +106,21 @@ restart: down up
 
 logs:
 	$(COMPOSE) logs -f web
+
+web-logs:
+	$(COMPOSE) logs -f web
+
+db-logs:
+	$(COMPOSE) logs -f db
+
+redis-logs:
+	$(COMPOSE) logs -f redis
+
+minio-logs:
+	$(COMPOSE) logs -f minio
+
+minio-init-logs:
+	$(COMPOSE) logs -f minio-init
 
 ps:
 	$(COMPOSE) ps
@@ -158,6 +185,21 @@ restart-dev: down-dev up-dev
 
 logs-dev:
 	$(DEV_COMPOSE) logs -f
+
+web-logs-dev:
+	$(DEV_COMPOSE) logs -f web
+
+db-logs-dev:
+	$(DEV_COMPOSE) logs -f db
+
+redis-logs-dev:
+	$(DEV_COMPOSE) logs -f redis
+
+minio-logs-dev:
+	$(DEV_COMPOSE) logs -f minio
+
+minio-init-logs-dev:
+	$(DEV_COMPOSE) logs -f minio-init
 
 ps-dev:
 	$(DEV_COMPOSE) ps
