@@ -81,6 +81,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = "users.User"
+
 LANGUAGE_CODE = "pt-br"
 TIME_ZONE = settings.time_zone
 
@@ -139,7 +141,7 @@ JAZZMIN_SETTINGS = {
     "site_logo_classes": "img-circle",
     "welcome_sign": "Bem-vindo ao admin do Cabulous",
     "copyright": "Cabulous",
-    "search_model": ["auth.User"],
+    "search_model": ["users.User"],
     "show_sidebar": True,
     "navigation_expanded": True,
     "hide_apps": [],
@@ -163,4 +165,3 @@ REST_FRAMEWORK = {
     ],
 }
 
-TESTE = "ADSSA"
