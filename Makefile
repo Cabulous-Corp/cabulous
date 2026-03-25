@@ -1,6 +1,8 @@
 SUBTARGETS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 ROOT_TARGETS := help service app
 FORWARD_TARGETS := $(filter-out $(ROOT_TARGETS),$(SUBTARGETS))
+SERVICE_TARGET := $(firstword $(SUBTARGETS))
+SERVICE_ARGS := $(wordlist 2,$(words $(SUBTARGETS)),$(SUBTARGETS))
 
 .PHONY: help repo-help service app
 
@@ -33,7 +35,9 @@ endif
 repo-help: help
 
 service:
-	@$(MAKE) -C service $(SUBTARGETS)
+	@$(if $(filter $(SERVICE_TARGET),manage manage-dev manage-prod),\
+		$(MAKE) -C service $(SERVICE_TARGET) MANAGE_CMD="$(SERVICE_ARGS)",\
+		$(MAKE) -C service $(SUBTARGETS))
 
 app:
 	@$(MAKE) -C app/web $(SUBTARGETS)
