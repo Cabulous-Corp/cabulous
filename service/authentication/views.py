@@ -11,6 +11,7 @@ from authentication.serializers import (
     LoginSerializer,
     LogoutSerializer,
     MeSerializer,
+    OnboardingFirstAccessSerializer,
     RefreshTokenSerializer,
 )
 
@@ -65,3 +66,23 @@ class MeView(APIView):
     def get(self, request, *_args, **_kwargs):
         serializer = MeSerializer(request.user, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class OnboardingFirstAccessView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *_args, **_kwargs):
+        user = request.user
+        if user.onboarding_completed_at is not None:
+            return Response(
+                {"detail": "Onboarding has already been completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = OnboardingFirstAccessSerializer(instance=user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(
+            MeSerializer(user, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
