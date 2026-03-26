@@ -57,9 +57,25 @@ class User(BaseModel, AbstractUser):
         blank=True,
         default="",
     )
-    is_first_login = models.BooleanField(
-        verbose_name="Primeiro login",
-        default=True,
+    onboarding_completed_at = models.DateTimeField(
+        verbose_name="Onboarding concluído em",
+        null=True,
+        blank=True,
+    )
+    password_defined_at = models.DateTimeField(
+        verbose_name="Senha definida em",
+        null=True,
+        blank=True,
+    )
+    invited_at = models.DateTimeField(
+        verbose_name="Convidado em",
+        null=True,
+        blank=True,
+    )
+    invitation_accepted_at = models.DateTimeField(
+        verbose_name="Convite aceito em",
+        null=True,
+        blank=True,
     )
 
     class Meta(BaseModel.Meta):
@@ -69,7 +85,6 @@ class User(BaseModel, AbstractUser):
         indexes = [
             models.Index(fields=["discord_username"], name="users_discord_idx"),
             models.Index(fields=["phone_number"], name="users_phone_idx"),
-            models.Index(fields=["is_first_login"], name="users_first_login_idx"),
         ]
 
     @property
@@ -78,3 +93,45 @@ class User(BaseModel, AbstractUser):
 
     def __str__(self) -> str:
         return self.username
+
+
+class UserMagicLinkToken(BaseModel):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="magic_link_tokens",
+        verbose_name="Usuário",
+    )
+    token = models.CharField(
+        verbose_name="Token",
+        max_length=128,
+        unique=True,
+    )
+    expires_at = models.DateTimeField(
+        verbose_name="Expira em",
+    )
+    used_at = models.DateTimeField(
+        verbose_name="Usado em",
+        null=True,
+        blank=True,
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_magic_link_tokens",
+        verbose_name="Criado por",
+    )
+
+    class Meta(BaseModel.Meta):
+        verbose_name = "Token de link mágico"
+        verbose_name_plural = "Tokens de link mágico"
+        indexes = [
+            models.Index(fields=["token"], name="users_magic_token_idx"),
+            models.Index(fields=["expires_at"], name="users_magic_expires_idx"),
+            models.Index(fields=["used_at"], name="users_magic_used_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user.username} - {self.token[:10]}..."
