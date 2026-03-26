@@ -1,7 +1,13 @@
+import secrets
+import string
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
-from users.models import User
+from cabulous.config import get_settings
+from users.models import User, UserMagicLinkToken
 
 SELF_EDITABLE_FIELDS = {
     "username",
@@ -15,8 +21,14 @@ SELF_EDITABLE_FIELDS = {
     "banner",
 }
 
+app_settings = get_settings()
+
 
 class UserSerializer(serializers.ModelSerializer):
+    temporary_password = serializers.SerializerMethodField()
+    magic_link = serializers.SerializerMethodField()
+    magic_link_expires_at = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
@@ -43,6 +55,9 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
             "created_at",
             "updated_at",
+            "temporary_password",
+            "magic_link",
+            "magic_link_expires_at",
         )
         read_only_fields = (
             "id",
@@ -50,6 +65,9 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
             "created_at",
             "updated_at",
+            "temporary_password",
+            "magic_link",
+            "magic_link_expires_at",
         )
 
     def validate(self, attrs: dict) -> dict:
@@ -75,3 +93,60 @@ class UserSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
+
+    def create(self, validated_data: dict) -> User:
+        request = self.context.get("request")
+        groups = validated_data.pop("groups", [])
+        user_permissions = validated_data.pop("user_permissions", [])
+
+        temporary_password = self._generate_temporary_password()
+        user = User(**validated_data)
+        user.set_password(temporary_password)
+        user.invited_at = timezone.now()
+        user.save()
+        if groups:
+            user.groups.set(groups)
+        if user_permissions:
+            user.user_permissions.set(user_permissions)
+
+        magic_token = secrets.token_urlsafe(48)
+        expires_at = timezone.now() + timedelta(hours=72)
+
+        created_by = None
+        if request is not None and request.user.is_authenticated:
+            created_by = request.user
+
+        UserMagicLinkToken.objects.create(
+            user=user,
+            token=magic_token,
+            expires_at=expires_at,
+            created_by=created_by,
+        )
+
+        frontend_url = app_settings.app_frontend_url.rstrip("/")
+        user._temporary_password = temporary_password  # type: ignore[attr-defined]
+        user._magic_link = f"{frontend_url}/magic-login/{magic_token}"  # type: ignore[attr-defined]
+        user._magic_link_expires_at = expires_at  # type: ignore[attr-defined]
+
+        return user
+
+    def get_temporary_password(self, obj: User) -> str | None:
+        return getattr(obj, "_temporary_password", None)
+
+    def get_magic_link(self, obj: User) -> str | None:
+        return getattr(obj, "_magic_link", None)
+
+    def get_magic_link_expires_at(self, obj: User):
+        return getattr(obj, "_magic_link_expires_at", None)
+
+    def to_representation(self, instance: User) -> dict:
+        data = super().to_representation(instance)
+        for key in ("temporary_password", "magic_link", "magic_link_expires_at"):
+            if data.get(key) is None:
+                data.pop(key, None)
+        return data
+
+    @staticmethod
+    def _generate_temporary_password(length: int = 16) -> str:
+        alphabet = string.ascii_letters + string.digits + "!@#$%^&*()-_=+"
+        return "".join(secrets.choice(alphabet) for _ in range(length))

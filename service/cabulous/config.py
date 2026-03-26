@@ -66,6 +66,7 @@ class AppSettings(BaseSettings):
     allowed_hosts: list[str] = Field(default_factory=lambda: ["localhost", "127.0.0.1", "0.0.0.0"])
     time_zone: str = "America/Sao_Paulo"
     web_port: int = 8000
+    app_frontend_url: str = "http://localhost:3000"
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     celery: CelerySettings = Field(default_factory=CelerySettings)

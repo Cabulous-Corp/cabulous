@@ -93,3 +93,45 @@ class User(BaseModel, AbstractUser):
 
     def __str__(self) -> str:
         return self.username
+
+
+class UserMagicLinkToken(BaseModel):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="magic_link_tokens",
+        verbose_name="Usuário",
+    )
+    token = models.CharField(
+        verbose_name="Token",
+        max_length=128,
+        unique=True,
+    )
+    expires_at = models.DateTimeField(
+        verbose_name="Expira em",
+    )
+    used_at = models.DateTimeField(
+        verbose_name="Usado em",
+        null=True,
+        blank=True,
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_magic_link_tokens",
+        verbose_name="Criado por",
+    )
+
+    class Meta(BaseModel.Meta):
+        verbose_name = "Token de link mágico"
+        verbose_name_plural = "Tokens de link mágico"
+        indexes = [
+            models.Index(fields=["token"], name="users_magic_token_idx"),
+            models.Index(fields=["expires_at"], name="users_magic_expires_idx"),
+            models.Index(fields=["used_at"], name="users_magic_used_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user.username} - {self.token[:10]}..."
