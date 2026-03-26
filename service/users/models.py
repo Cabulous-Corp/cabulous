@@ -62,9 +62,15 @@ class User(BaseModel, AbstractUser):
         default=True,
     )
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         verbose_name = "Usuário"
         verbose_name_plural = "Usuários"
+
+        indexes = [
+            models.Index(fields=["discord_username"], name="users_discord_idx"),
+            models.Index(fields=["phone_number"], name="users_phone_idx"),
+            models.Index(fields=["is_first_login"], name="users_first_login_idx"),
+        ]
 
     @property
     def full_name(self) -> str:
