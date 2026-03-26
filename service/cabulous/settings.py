@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from celery.schedules import crontab
+
 from cabulous.config import BASE_DIR, get_settings
 
 settings = get_settings()
@@ -161,6 +163,15 @@ CELERY_BEAT_SCHEDULE_FILENAME = settings.celery.beat_schedule_filename
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+CELERY_BEAT_SCHEDULE = {
+    "authentication_flush_expired_tokens_daily": {
+        "task": "authentication.tasks.flush_expired_tokens",
+        "schedule": crontab(
+            minute=settings.jwt.flush_expired_tokens_minute,
+            hour=settings.jwt.flush_expired_tokens_hour,
+        ),
+    }
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
