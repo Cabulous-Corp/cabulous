@@ -150,6 +150,7 @@ JAZZMIN_SETTINGS = {
     "search_model": ["users.User"],
     "show_sidebar": True,
     "navigation_expanded": True,
+    "changeform_format": "horizontal_tabs",
     "hide_apps": [],
     "hide_models": [],
     "order_with_respect_to": ["auth", "monitoring"],
