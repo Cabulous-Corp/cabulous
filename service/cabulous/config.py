@@ -42,6 +42,17 @@ class MinioSettings(BaseModel):
     querystring_auth: bool = True
 
 
+class JwtSettings(BaseModel):
+    access_token_lifetime_minutes: int = 15
+    refresh_token_lifetime_days: int = 7
+    rotate_refresh_tokens: bool = True
+    blacklist_after_rotation: bool = True
+    update_last_login: bool = False
+    auth_header_types: list[str] = Field(default_factory=lambda: ["Bearer"])
+    flush_expired_tokens_hour: int = 3
+    flush_expired_tokens_minute: int = 0
+
+
 class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -59,6 +70,7 @@ class AppSettings(BaseSettings):
     redis: RedisSettings = Field(default_factory=RedisSettings)
     celery: CelerySettings = Field(default_factory=CelerySettings)
     minio: MinioSettings = Field(default_factory=MinioSettings)
+    jwt: JwtSettings = Field(default_factory=JwtSettings)
 
     @field_validator("allowed_hosts", mode="before")
     @classmethod

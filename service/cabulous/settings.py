@@ -1,3 +1,7 @@
+from datetime import timedelta
+
+from celery.schedules import crontab
+
 from cabulous.config import BASE_DIR, get_settings
 
 settings = get_settings()
@@ -15,6 +19,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
+    "authentication",
     "users",
     "common",
     "monitoring",
@@ -157,10 +163,32 @@ CELERY_BEAT_SCHEDULE_FILENAME = settings.celery.beat_schedule_filename
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+CELERY_BEAT_SCHEDULE = {
+    "authentication_flush_expired_tokens_daily": {
+        "task": "authentication.tasks.flush_expired_tokens",
+        "schedule": crontab(
+            minute=settings.jwt.flush_expired_tokens_minute,
+            hour=settings.jwt.flush_expired_tokens_hour,
+        ),
+    }
+}
 
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=settings.jwt.access_token_lifetime_minutes),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=settings.jwt.refresh_token_lifetime_days),
+    "ROTATE_REFRESH_TOKENS": settings.jwt.rotate_refresh_tokens,
+    "BLACKLIST_AFTER_ROTATION": settings.jwt.blacklist_after_rotation,
+    "UPDATE_LAST_LOGIN": settings.jwt.update_last_login,
+    "AUTH_HEADER_TYPES": tuple(settings.jwt.auth_header_types),
 }
