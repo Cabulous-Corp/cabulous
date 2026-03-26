@@ -57,9 +57,25 @@ class User(BaseModel, AbstractUser):
         blank=True,
         default="",
     )
-    is_first_login = models.BooleanField(
-        verbose_name="Primeiro login",
-        default=True,
+    onboarding_completed_at = models.DateTimeField(
+        verbose_name="Onboarding concluído em",
+        null=True,
+        blank=True,
+    )
+    password_defined_at = models.DateTimeField(
+        verbose_name="Senha definida em",
+        null=True,
+        blank=True,
+    )
+    invited_at = models.DateTimeField(
+        verbose_name="Convidado em",
+        null=True,
+        blank=True,
+    )
+    invitation_accepted_at = models.DateTimeField(
+        verbose_name="Convite aceito em",
+        null=True,
+        blank=True,
     )
 
     class Meta(BaseModel.Meta):
@@ -69,7 +85,6 @@ class User(BaseModel, AbstractUser):
         indexes = [
             models.Index(fields=["discord_username"], name="users_discord_idx"),
             models.Index(fields=["phone_number"], name="users_phone_idx"),
-            models.Index(fields=["is_first_login"], name="users_first_login_idx"),
         ]
 
     @property

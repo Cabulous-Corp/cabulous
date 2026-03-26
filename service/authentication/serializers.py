@@ -57,7 +57,10 @@ class MeSerializer(serializers.ModelSerializer):
             "full_name",
             "avatar",
             "banner",
-            "is_first_login",
+            "onboarding_completed_at",
+            "password_defined_at",
+            "invited_at",
+            "invitation_accepted_at",
             "is_staff",
             "is_active",
         )
