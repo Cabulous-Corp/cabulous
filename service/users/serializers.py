@@ -2,12 +2,14 @@ import secrets
 import string
 from datetime import timedelta
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
 from cabulous.config import get_settings
 from users.models import User, UserMagicLinkToken
+from users.validators import clean_discord_username, clean_phone_number, clean_username
 
 SELF_EDITABLE_FIELDS = {
     "username",
@@ -69,6 +71,9 @@ class UserSerializer(serializers.ModelSerializer):
             "magic_link",
             "magic_link_expires_at",
         )
+        extra_kwargs = {
+            "username": {"validators": []},
+        }
 
     def validate(self, attrs: dict) -> dict:
         request = self.context.get("request")
@@ -93,6 +98,25 @@ class UserSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
+
+    def validate_username(self, value: str) -> str:
+        instance_pk = self.instance.pk if self.instance is not None else None
+        try:
+            return clean_username(value, queryset=User.objects.all(), exclude_pk=instance_pk)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages)
+
+    def validate_discord_username(self, value: str) -> str:
+        try:
+            return clean_discord_username(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages)
+
+    def validate_phone_number(self, value: str) -> str:
+        try:
+            return clean_phone_number(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages)
 
     def create(self, validated_data: dict) -> User:
         request = self.context.get("request")
