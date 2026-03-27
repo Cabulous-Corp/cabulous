@@ -1,13 +1,14 @@
 from typing import TYPE_CHECKING, Any, cast
 
 from django.contrib.auth import authenticate, get_user_model
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from users.validators import (
     clean_discord_username,
     clean_phone_number,
