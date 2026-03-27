@@ -1,1 +1,0 @@
-"Novo usuário: Marco entrou no sistema"
