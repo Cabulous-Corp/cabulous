@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "monitoring",
     "analytics",
     "communication",
+    "events",
 ]
 
 if settings.minio.enabled:
