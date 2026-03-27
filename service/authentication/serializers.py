@@ -1,12 +1,14 @@
 from typing import TYPE_CHECKING, Any, cast
 
 from django.contrib.auth import authenticate, get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from users.validators import clean_username, normalize_username
 
 User = get_user_model()
 
@@ -22,7 +24,7 @@ class LoginSerializer(serializers.Serializer):
         identifier = attrs["identifier"]
         password = attrs["password"]
 
-        user = authenticate(username=identifier, password=password)
+        user = authenticate(username=normalize_username(identifier), password=password)
         if user is None:
             user_from_email = User.objects.filter(email__iexact=identifier).first()
             if user_from_email is not None:
@@ -92,6 +94,9 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
             "avatar",
             "bio",
         )
+        extra_kwargs = {
+            "username": {"validators": []},
+        }
 
     def validate_new_password(self, value: str) -> str:
         user = self.instance
@@ -102,6 +107,13 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
         if "new_password" not in attrs:
             raise serializers.ValidationError({"new_password": "This field is required."})
         return attrs
+
+    def validate_username(self, value: str) -> str:
+        instance_pk = self.instance.pk if self.instance is not None else None
+        try:
+            return clean_username(value, queryset=User.objects.all(), exclude_pk=instance_pk)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages)
 
     def update(self, instance: "UserType", validated_data: dict[str, Any]) -> "UserType":
         password = validated_data.pop("new_password", None)

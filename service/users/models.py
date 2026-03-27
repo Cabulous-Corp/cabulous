@@ -3,8 +3,10 @@ from pathlib import Path
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models.functions import Lower
 
 from common.models.abstracts import BaseModel
+from users.validators import normalize_username, validate_username_format
 
 
 def user_media_base_path(instance: models.Model) -> str:
@@ -23,6 +25,12 @@ def user_banner_upload_to(instance: models.Model, filename: str) -> str:
 
 
 class User(BaseModel, AbstractUser):
+    username = models.CharField(
+        verbose_name="Nome de usuário",
+        max_length=150,
+        unique=True,
+        validators=[validate_username_format],
+    )
     email = models.EmailField(
         verbose_name="E-mail",
         unique=True,
@@ -86,6 +94,9 @@ class User(BaseModel, AbstractUser):
             models.Index(fields=["discord_username"], name="users_discord_idx"),
             models.Index(fields=["phone_number"], name="users_phone_idx"),
         ]
+        constraints = [
+            models.UniqueConstraint(Lower("username"), name="users_username_ci_unique"),
+        ]
 
     @property
     def full_name(self) -> str:
@@ -93,6 +104,10 @@ class User(BaseModel, AbstractUser):
 
     def __str__(self) -> str:
         return self.username
+
+    def save(self, *args, **kwargs):
+        self.username = normalize_username(self.username)
+        return super().save(*args, **kwargs)
 
 
 class UserMagicLinkToken(BaseModel):
