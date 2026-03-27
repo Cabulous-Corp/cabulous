@@ -6,7 +6,14 @@ from django.db import models
 from django.db.models.functions import Lower
 
 from common.models.abstracts import BaseModel
-from users.validators import normalize_username, validate_username_format
+from users.validators import (
+    normalize_discord_username,
+    normalize_phone_number,
+    normalize_username,
+    validate_discord_username_format,
+    validate_phone_number_format,
+    validate_username_format,
+)
 
 
 def user_media_base_path(instance: models.Model) -> str:
@@ -41,12 +48,14 @@ class User(BaseModel, AbstractUser):
         max_length=100,
         blank=True,
         default="",
+        validators=[validate_discord_username_format],
     )
     phone_number = models.CharField(
         verbose_name="Número de telefone",
         max_length=20,
         blank=True,
         default="",
+        validators=[validate_phone_number_format],
     )
     avatar = models.ImageField(
         verbose_name="Avatar",
@@ -89,7 +98,6 @@ class User(BaseModel, AbstractUser):
     class Meta(BaseModel.Meta):
         verbose_name = "Usuário"
         verbose_name_plural = "Usuários"
-
         indexes = [
             models.Index(fields=["discord_username"], name="users_discord_idx"),
             models.Index(fields=["phone_number"], name="users_phone_idx"),
@@ -107,6 +115,8 @@ class User(BaseModel, AbstractUser):
 
     def save(self, *args, **kwargs):
         self.username = normalize_username(self.username)
+        self.discord_username = normalize_discord_username(self.discord_username)
+        self.phone_number = normalize_phone_number(self.phone_number)
         return super().save(*args, **kwargs)
 
 

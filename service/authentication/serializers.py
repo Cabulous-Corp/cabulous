@@ -8,7 +8,12 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
-from users.validators import clean_username, normalize_username
+from users.validators import (
+    clean_discord_username,
+    clean_phone_number,
+    clean_username,
+    normalize_username,
+)
 
 User = get_user_model()
 
@@ -112,6 +117,18 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
         instance_pk = self.instance.pk if self.instance is not None else None
         try:
             return clean_username(value, queryset=User.objects.all(), exclude_pk=instance_pk)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages)
+
+    def validate_discord_username(self, value: str) -> str:
+        try:
+            return clean_discord_username(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages)
+
+    def validate_phone_number(self, value: str) -> str:
+        try:
+            return clean_phone_number(value)
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.messages)
 
