@@ -1,94 +1,123 @@
+from typing import Any
+
 import requests
+from pydantic import HttpUrl
+
+from communication.models.discord import (
+    DiscordEmbed,
+    DiscordEmbedAuthor,
+    DiscordEmbedField,
+    DiscordEmbedFooter,
+    DiscordEmbedImage,
+    DiscordEmbedThumbnail,
+    DiscordWebhookPayload,
+)
 
 
 class DiscordService:
     @staticmethod
-    def _send(payload: dict, webhook_url: str = ""):
+    def _send(payload: dict[str, Any], webhook_url: str = "") -> None:
         try:
             response = requests.post(webhook_url, json=payload, timeout=5)
-            if not (200 <= response.status_code < 300):
-                raise Exception("Erro ao enviar mensagem")
+            response.raise_for_status()
         except requests.RequestException as e:
-            raise Exception(f"Request failed: {e}")
+            raise Exception(f"Request failed: {e}") from e
 
     @staticmethod
-    def send_message(webhook_url: str, content: str):
+    def send_message(webhook_url: str, content: str) -> None:
         payload = {"content": content}
         DiscordService._send(payload, webhook_url)
 
     @staticmethod
     def send_embed(
         webhook_url: str,
-        title: str = "",
-        description: str = "",
+        title: str | None = None,
+        description: str | None = None,
         color: int | None = None,
-        url: str = "",
-        timestamp: str = "",
-        footer: dict | None = None,
-        image: dict | None = None,
-        thumbnail: dict | None = None,
-        author: dict | None = None,
-        fields: list[dict] | None = None,
-        content: str = "",
-    ):
-        """Envia uma mensagem em formato embed para um webhook do Discord.
-
-        A função recebe os elementos principais de um embed como parâmetros
-        opcionais, monta o payload no formato esperado pela API do Discord
-        e envia a requisição.
-
-        Args:
-            webhook_url: URL do webhook do Discord.
-            title: Título do embed.
-            description: Descrição principal do embed.
-            color: Cor do embed em decimal (ex.: 5814783).
-            url: URL associada ao título do embed.
-            timestamp: Data/hora em ISO 8601 (ex.: 2026-03-26T00:00:00Z).
-            footer: Rodapé no formato {"text": "...", "icon_url": "..."}.
-            image: Imagem principal no formato {"url": "..."}.
-            thumbnail: Thumbnail no formato {"url": "..."}.
-            author: Autor no formato
-                {"name": "...", "url": "...", "icon_url": "..."}.
-            fields: Lista de campos no formato
-                [{"name": "...", "value": "...", "inline": False}].
-            content: Conteúdo textual opcional da mensagem junto do embed.
-
-        Example:
-            DiscordService.send_embed(
-                webhook_url="https://discord.com/api/webhooks/...",
-                title="Boas-vindas",
-                description="Chegou membro novo!",
-                color=5814783,
-                fields=[
-                    {"name": "Canal", "value": "#apresentacoes", "inline": True}
-                ],
-            )
+        url: HttpUrl | None = None,
+        timestamp: str | None = None,
+        footer: DiscordEmbedFooter | None = None,
+        image: DiscordEmbedImage | None = None,
+        thumbnail: DiscordEmbedThumbnail | None = None,
+        author: DiscordEmbedAuthor | None = None,
+        fields: list[DiscordEmbedField] | None = None,
+        content: str | None = None,
+    ) -> None:
         """
-        embed = {}
+        Service para envio de mensagens e embeds para webhooks do Discord.
 
-        if title:
-            embed["title"] = title
-        if description:
-            embed["description"] = description
-        if color is not None:
-            embed["color"] = color
-        if url:
-            embed["url"] = url
-        if timestamp:
-            embed["timestamp"] = timestamp
-        if footer:
-            embed["footer"] = footer
-        if image:
-            embed["image"] = image
-        if thumbnail:
-            embed["thumbnail"] = thumbnail
-        if author:
-            embed["author"] = author
-        if fields:
-            embed["fields"] = fields
+        Os schemas Pydantic utilizados (Embed, Fields, Footer, Author, Image, etc.)
+        estão definidos em:
+        communication/models/discord.py
 
-        payload: dict[str, object] = {"embeds": [embed]}
-        if content:
-            payload["content"] = content
+        Exemplo de uso:
 
-        DiscordService._send(payload, webhook_url)
+        from services.discord import DiscordService
+        from communication.models.discord import (
+            DiscordEmbedField,
+            DiscordEmbedFooter,
+            DiscordEmbedAuthor,
+            DiscordEmbedImage,
+            DiscordEmbedThumbnail,
+        )
+
+        DiscordService.send_embed(
+            webhook_url="https://discord.com/api/webhooks/...",
+            title="Novo evento",
+            description="Evento criado com sucesso",
+            color=5814783,
+            url="https://mcoder.com.br",
+            timestamp="2026-03-26T12:00:00Z",
+            content="Mensagem opcional fora do embed",
+            footer=DiscordEmbedFooter(
+                text="Sistema mCoder",
+                icon_url="https://example.com/icon.png",
+            ),
+            author=DiscordEmbedAuthor(
+                name="mCoder Bot",
+                url="https://mcoder.com.br",
+                icon_url="https://example.com/bot.png",
+            ),
+            image=DiscordEmbedImage(
+                url="https://example.com/image.png",
+            ),
+            thumbnail=DiscordEmbedThumbnail(
+                url="https://example.com/thumb.png",
+            ),
+            fields=[
+                DiscordEmbedField(
+                    name="Usuário",
+                    value="Marcos",
+                    inline=True,
+                ),
+                DiscordEmbedField(
+                    name="Plano",
+                    value="Pro",
+                    inline=True,
+                ),
+            ],
+        )
+        """
+
+        embed = DiscordEmbed(
+            title=title,
+            description=description,
+            color=color,
+            url=url,
+            timestamp=timestamp,
+            footer=footer,
+            image=image,
+            thumbnail=thumbnail,
+            author=author,
+            fields=fields,
+        )
+
+        payload = DiscordWebhookPayload(
+            content=content,
+            embeds=[embed],
+        )
+
+        DiscordService._send(
+            payload.model_dump(exclude_none=True),
+            webhook_url,
+        )
