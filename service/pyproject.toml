@@ -13,6 +13,7 @@ dependencies = [
     "djangorestframework>=3.16.1",
     "flower>=2.0.1",
     "gunicorn>=25.1.0",
+    "phonenumbers>=9.0.17",
     "pillow>=12.1.1",
     "psycopg[binary]>=3.3.3",
     "pydantic-settings>=2.13.1",
