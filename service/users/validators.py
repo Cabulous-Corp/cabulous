@@ -7,8 +7,8 @@ from django.db.models import QuerySet
 from phonenumbers import NumberParseException
 from phonenumbers.phonenumberutil import PhoneNumberFormat
 
-USERNAME_PATTERN = re.compile(r"^[a-z0-9_.-]+$")
-DISCORD_USERNAME_PATTERN = re.compile(r"^[a-z0-9._]+$")
+USERNAME_PATTERN = re.compile(r"^(?=.{3,30}$)[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$")
+DISCORD_USERNAME_PATTERN = re.compile(r"^(?=.{2,32}$)(?!(?:everyone|here)$)[a-z0-9._]+$")
 DEFAULT_PHONE_REGION = "BR"
 
 
