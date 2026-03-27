@@ -1,0 +1,62 @@
+{
+  "embeds": [
+    {
+      "title": "Boas-vindas ao servidor!",
+      "description": "Olá! Seja muito bem-vindo(a) ao **servidor**.\n\nLeia as regras e apresente-se.",
+      "color": 5814783,
+      "fields": [
+        {
+          "name": "Comece por aqui",
+          "value": "- Confira os canais fixados\n- Escolha seus cargos \n- Chame a staff se precisar de ajuda",
+          "inline": false
+        },
+        {
+          "name": "Membro número",
+          "value": "#1",
+          "inline": true
+        },
+        {
+          "name": "Data de entrada",
+          "value": "2",
+          "inline": true
+        }
+      ],
+      "footer": {
+        "text": "Aproveite a comunidade e divirta-se!"
+      },
+      "timestamp": "2026-03-26T00:00:00Z"
+    },
+
+    {
+      "title": "🚨 Novo ser humano detectado 🚨",
+      "description": "Entrou no servidor e ainda não mandou um 'oi'? Suspeito...\n\nBrincadeiras à parte: bem-vindo(a)! Cola com a galera e ativa o modo resenha.",
+      "color": 16763904,
+      "fields": [
+        {
+          "name": "Tutorial de sobrevivência",
+          "value": "- Leia as regras antes de meter o louco\n- Escolha seus cargos\n- Se perder, chama a staff",
+          "inline": false
+        },
+        {
+          "name": "Status atual",
+          "value": "Farmando XP social",
+          "inline": true
+        },
+        {
+          "name": "Membro número",
+          "value": "#1",
+          "inline": true
+        },
+        {
+          "name": "Data de entrada",
+          "value": "2",
+          "inline": true
+        }
+      ],
+      "footer": {
+        "text": "Seja bem-vindo(a) e sem caos (ou pouco caos)."
+      },
+      "timestamp": "2026-03-26T00:00:00Z"
+    }
+  ]
+}
