@@ -1,13 +1,13 @@
 import './globals.css'
 
 import type { Metadata } from 'next'
-import { Sora, Geist_Mono } from 'next/font/google'
+import { Poppins, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeToggleShortcut } from '@/components/theme-toggle-shortcut'
 
-const sora = Sora({
-  variable: '--font-sora',
+const poppins = Poppins({
+  variable: '--font-poppins',
   subsets: ['latin'],
   display: 'swap',
   weight: ['100', '200', '300', '400', '500', '600', '700', '800'],
@@ -30,7 +30,7 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${sora.variable} ${geistMono.variable} antialiased font-sans`}>
+      <body className={`${poppins.variable} ${geistMono.variable} antialiased font-sans`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
           <Toaster />

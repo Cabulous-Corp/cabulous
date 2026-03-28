@@ -6,6 +6,7 @@ import { cn } from '@/utils/utils'
 interface InputProps extends React.ComponentProps<'input'> {
   error?: string
   startAdornment?: React.ReactNode
+  requirement?: string
 }
 
 function Input({ className, type, error, startAdornment, ...props }: InputProps) {
@@ -23,17 +24,20 @@ function Input({ className, type, error, startAdornment, ...props }: InputProps)
           type={type}
           data-slot="input"
           aria-invalid={isInvalid ? true : undefined}
+          minLength={type === 'password' ? 8 : undefined}
+          required={(type === 'password' || type === 'email' ? true : false)}
           className={cn(
             // Base styles
-            'h-12 w-full min-w-0 px-4 rounded-lg bg-input dark:bg-input/30',
-            'text-base transition-all outline-none border border-input hover:border-border/80',
+            "h-16 w-100 min-w-0 px-4 rounded-md bg-input",
+            'text-base transition-all outline-none border border-input hover:border-purple-500',
             // Typography & Selection
             'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
             // File input specific
             'file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium',
             // Interaction states
             'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
-            'focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none',
+            'focus-within:ring-2 focus-within:ring-accent  focus-within:border-accent',
+            'hover:ring-2 hover:ring-accent user-invalid:ring-2 user-invalid:ring-red-500',
             // Validation states
             'aria-invalid:border-destructive aria-invalid:ring-destructive dark:aria-invalid:ring-destructive',
             startAdornment && 'pl-10',
