@@ -197,3 +197,14 @@ SIMPLE_JWT = {
     "UPDATE_LAST_LOGIN": settings.jwt.update_last_login,
     "AUTH_HEADER_TYPES": tuple(settings.jwt.auth_header_types),
 }
+
+EMAIL_BACKEND = settings.email.backend
+EMAIL_HOST = settings.email.host
+EMAIL_PORT = settings.email.port
+EMAIL_USE_TLS = settings.email.use_tls
+EMAIL_USE_SSL = settings.email.use_ssl
+EMAIL_TIMEOUT = settings.email.timeout
+EMAIL_HOST_USER = settings.email.host_user
+EMAIL_HOST_PASSWORD = settings.email.host_password
+DEFAULT_FROM_EMAIL = settings.email.default_from_email
+SERVER_EMAIL = settings.email.server_email
