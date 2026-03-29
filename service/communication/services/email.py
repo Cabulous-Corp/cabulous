@@ -11,7 +11,7 @@ class EmailService:
     """
     Reusable email service for system-wide email delivery.
 
-    Main methods:
+    Methods:
     - send_simple_email(subject, recipients, body, ...)
     - send_html_template_email(subject, recipients, template_path, context=None, ...)
     """
