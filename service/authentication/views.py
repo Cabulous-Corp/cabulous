@@ -62,6 +62,7 @@ class LogoutView(APIView):
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
+    allow_pending_onboarding = True
 
     def get(self, request, *_args, **_kwargs):
         serializer = MeSerializer(request.user, context={"request": request})
@@ -70,6 +71,7 @@ class MeView(APIView):
 
 class OnboardingFirstAccessView(APIView):
     permission_classes = [IsAuthenticated]
+    allow_pending_onboarding = True
 
     def post(self, request, *_args, **_kwargs):
         user = request.user
