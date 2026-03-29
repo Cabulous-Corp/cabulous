@@ -56,12 +56,16 @@ class LogoutView(APIView):
     def post(self, request, *_args, **_kwargs):
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        try:
+            serializer.save()
+        except TokenError as exc:
+            raise InvalidToken(str(exc))
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
+    allow_pending_onboarding = True
 
     def get(self, request, *_args, **_kwargs):
         serializer = MeSerializer(request.user, context={"request": request})
@@ -70,6 +74,7 @@ class MeView(APIView):
 
 class OnboardingFirstAccessView(APIView):
     permission_classes = [IsAuthenticated]
+    allow_pending_onboarding = True
 
     def post(self, request, *_args, **_kwargs):
         user = request.user
