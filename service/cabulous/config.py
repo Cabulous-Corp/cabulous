@@ -53,6 +53,19 @@ class JwtSettings(BaseModel):
     flush_expired_tokens_minute: int = 0
 
 
+class EmailSettings(BaseModel):
+    backend: str = "django.core.mail.backends.smtp.EmailBackend"
+    host: str = "smtp.gmail.com"
+    port: int = 587
+    use_tls: bool = True
+    use_ssl: bool = False
+    timeout: int = 10
+    host_user: str = "cabulousgang@gmail.com"
+    host_password: str = ""
+    default_from_email: str = "Cabulous <cabulousgang@gmail.com>"
+    server_email: str = "cabulousgang@gmail.com"
+
+
 class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -72,6 +85,7 @@ class AppSettings(BaseSettings):
     celery: CelerySettings = Field(default_factory=CelerySettings)
     minio: MinioSettings = Field(default_factory=MinioSettings)
     jwt: JwtSettings = Field(default_factory=JwtSettings)
+    email: EmailSettings = Field(default_factory=EmailSettings)
 
     @field_validator("allowed_hosts", mode="before")
     @classmethod
