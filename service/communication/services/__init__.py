@@ -1,1 +1,3 @@
-# for easy imports of communication services
+from communication.services.email import EmailService
+
+__all__ = ["EmailService"]
