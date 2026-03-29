@@ -56,7 +56,10 @@ class LogoutView(APIView):
     def post(self, request, *_args, **_kwargs):
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        try:
+            serializer.save()
+        except TokenError as exc:
+            raise InvalidToken(str(exc))
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
