@@ -6,7 +6,9 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from pydantic import HttpUrl
 
-from communication.models.discord import (
+from communication.helpers import DiscordChannelHelper
+from communication.models import DiscordChannelPurpose
+from communication.models.discord_message import (
     DiscordEmbed,
     DiscordEmbedAuthor,
     DiscordEmbedField,
@@ -23,8 +25,11 @@ class DiscordService:
 
     Methods:
     - send_channel_message(webhook_url, content)
+    - send_channel_message_by_purpose(purpose, content)
     - send_channel_message_from_template(webhook_url, template_path, context=None)
+    - send_channel_message_from_template_by_purpose(purpose, template_path, context=None)
     - send_channel_embed(webhook_url, ...)
+    - send_channel_embed_by_purpose(purpose, ...)
     """
 
     MESSAGE_TEMPLATE_EXTENSIONS = ("txt", "md")
@@ -51,6 +56,14 @@ class DiscordService:
         DiscordService._send_webhook_payload(payload, webhook_url)
 
     @staticmethod
+    def send_channel_message_by_purpose(
+        purpose: DiscordChannelPurpose | str,
+        content: str,
+    ) -> None:
+        webhook_url = DiscordChannelHelper.get_webhook_url_by_purpose(purpose)
+        DiscordService.send_channel_message(webhook_url=webhook_url, content=content)
+
+    @staticmethod
     def send_channel_message_from_template(
         webhook_url: str,
         template_path: str,
@@ -71,6 +84,19 @@ class DiscordService:
         """
         content = DiscordService._render_channel_message_template(template_path, context)
         DiscordService.send_channel_message(webhook_url=webhook_url, content=content)
+
+    @staticmethod
+    def send_channel_message_from_template_by_purpose(
+        purpose: DiscordChannelPurpose | str,
+        template_path: str,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        webhook_url = DiscordChannelHelper.get_webhook_url_by_purpose(purpose)
+        DiscordService.send_channel_message_from_template(
+            webhook_url=webhook_url,
+            template_path=template_path,
+            context=context,
+        )
 
     @staticmethod
     def _render_channel_message_template(
@@ -127,12 +153,12 @@ class DiscordService:
 
         Os schemas Pydantic utilizados (Embed, Fields, Footer, Author, Image, etc.)
         estão definidos em:
-        communication/models/discord.py
+        communication/models/discord_message.py
 
         Exemplo de uso:
 
-        from services.discord import DiscordService
-        from communication.models.discord import (
+        from communication.services.discord_message import DiscordService
+        from communication.models.discord_message import (
             DiscordEmbedField,
             DiscordEmbedFooter,
             DiscordEmbedAuthor,
@@ -199,4 +225,36 @@ class DiscordService:
         DiscordService._send_webhook_payload(
             payload.model_dump(exclude_none=True),
             webhook_url,
+        )
+
+    @staticmethod
+    def send_channel_embed_by_purpose(
+        purpose: DiscordChannelPurpose | str,
+        *,
+        title: str | None = None,
+        description: str | None = None,
+        color: int | None = None,
+        url: HttpUrl | None = None,
+        timestamp: str | None = None,
+        footer: DiscordEmbedFooter | None = None,
+        image: DiscordEmbedImage | None = None,
+        thumbnail: DiscordEmbedThumbnail | None = None,
+        author: DiscordEmbedAuthor | None = None,
+        fields: list[DiscordEmbedField] | None = None,
+        content: str | None = None,
+    ) -> None:
+        webhook_url = DiscordChannelHelper.get_webhook_url_by_purpose(purpose)
+        DiscordService.send_channel_embed(
+            webhook_url=webhook_url,
+            title=title,
+            description=description,
+            color=color,
+            url=url,
+            timestamp=timestamp,
+            footer=footer,
+            image=image,
+            thumbnail=thumbnail,
+            author=author,
+            fields=fields,
+            content=content,
         )
