@@ -1,5 +1,6 @@
 PROD_COMPOSE = docker compose -f docker-compose.yaml
 DEV_COMPOSE = docker compose -f docker-compose.yaml -f docker-compose.dev.yaml
+CONTAINER_UV_RUN = uv run
 
 cmd ?=
 MANAGE_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
@@ -85,7 +86,7 @@ help:
 	@echo "  make lint                  - roda o ruff"
 	@echo "  make format                - aplica autofix + formatacao com ruff"
 	@echo "  make typecheck             - roda mypy (django-stubs)"
-	@echo "  make check                 - roda lint + format check + typecheck"
+	@echo "  make check                 - roda lint + format check + mypy"
 
 # Dev-first (targets principais)
 up:
@@ -124,32 +125,32 @@ bash:
 	$(DEV_COMPOSE) exec web sh
 
 shell:
-	$(DEV_COMPOSE) run --rm web uv run python manage.py shell
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py shell
 
 dbshell:
-	$(DEV_COMPOSE) run --rm web uv run python manage.py dbshell
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py dbshell
 
 psql:
 	$(DEV_COMPOSE) exec db sh -lc 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
 
 migrate:
-	$(DEV_COMPOSE) run --rm web uv run python manage.py migrate
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py migrate
 
 makemigrations:
-	$(DEV_COMPOSE) run --rm web uv run python manage.py makemigrations
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py makemigrations
 
 superuser:
-	$(DEV_COMPOSE) run --rm web uv run python manage.py createsuperuser
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py createsuperuser
 
 test:
-	$(DEV_COMPOSE) run --rm web uv run python manage.py test
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py test
 
 collectstatic:
-	$(DEV_COMPOSE) run --rm web uv run python manage.py collectstatic --noinput
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py collectstatic --noinput
 
 manage:
 	$(if $(strip $(filter $(ALL_TARGETS),$(MANAGE_ARGS))),@:, $(if $(strip $(MANAGE_CMD)),,@echo "Uso: make manage <comando> ou make manage cmd='<comando>'" && exit 1))
-	$(if $(strip $(filter $(ALL_TARGETS),$(MANAGE_ARGS))),@:, $(DEV_COMPOSE) run --rm web uv run python manage.py $(MANAGE_CMD))
+	$(if $(strip $(filter $(ALL_TARGETS),$(MANAGE_ARGS))),@:, $(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py $(MANAGE_CMD))
 
 worker-logs:
 	$(DEV_COMPOSE) logs -f worker
@@ -235,32 +236,32 @@ bash-prod:
 	$(PROD_COMPOSE) exec web sh
 
 shell-prod:
-	$(PROD_COMPOSE) run --rm web uv run python manage.py shell
+	$(PROD_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py shell
 
 dbshell-prod:
-	$(PROD_COMPOSE) run --rm web uv run python manage.py dbshell
+	$(PROD_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py dbshell
 
 psql-prod:
 	$(PROD_COMPOSE) exec db sh -lc 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
 
 migrate-prod:
-	$(PROD_COMPOSE) run --rm web uv run python manage.py migrate
+	$(PROD_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py migrate
 
 makemigrations-prod:
-	$(PROD_COMPOSE) run --rm web uv run python manage.py makemigrations
+	$(PROD_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py makemigrations
 
 superuser-prod:
-	$(PROD_COMPOSE) run --rm web uv run python manage.py createsuperuser
+	$(PROD_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py createsuperuser
 
 test-prod:
-	$(PROD_COMPOSE) run --rm web uv run python manage.py test
+	$(PROD_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py test
 
 collectstatic-prod:
-	$(PROD_COMPOSE) run --rm web uv run python manage.py collectstatic --noinput
+	$(PROD_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py collectstatic --noinput
 
 manage-prod:
 	$(if $(strip $(filter $(ALL_TARGETS),$(MANAGE_ARGS))),@:, $(if $(strip $(MANAGE_CMD)),,@echo "Uso: make manage-prod <comando> ou make manage-prod cmd='<comando>'" && exit 1))
-	$(if $(strip $(filter $(ALL_TARGETS),$(MANAGE_ARGS))),@:, $(PROD_COMPOSE) run --rm web uv run python manage.py $(MANAGE_CMD))
+	$(if $(strip $(filter $(ALL_TARGETS),$(MANAGE_ARGS))),@:, $(PROD_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python manage.py $(MANAGE_CMD))
 
 worker-logs-prod:
 	$(PROD_COMPOSE) logs -f worker
@@ -282,16 +283,16 @@ restart-flower-prod:
 
 # Qualidade
 lint:
-	uv run ruff check .
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m ruff check .
 
 format:
-	uv run ruff check . --fix
-	uv run ruff format .
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m ruff check . --fix
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m ruff format .
 
 typecheck:
-	uv run mypy .
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m mypy .
 
 check:
-	uv run ruff check .
-	uv run ruff format --check .
-	uv run mypy .
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m ruff check .
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m ruff format --check .
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m mypy .
