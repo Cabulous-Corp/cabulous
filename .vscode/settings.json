@@ -1,8 +1,15 @@
 {
   // Use the backend virtual environment as the default interpreter.
   "python.defaultInterpreterPath": "${workspaceFolder}/service/.venv/Scripts/python.exe",
-  // Keep BasedPyright language services enabled (semantic tokens, hovers, etc.).
-  "basedpyright.disableLanguageServices": false,
+  // Use mypy as the workspace type checker.
+  "python.analysis.typeCheckingMode": "off",
+  "mypy-type-checker.importStrategy": "fromEnvironment",
+  "mypy-type-checker.reportingScope": "workspace",
+  "mypy-type-checker.cwd": "${workspaceFolder}/service",
+  "mypy-type-checker.args": [
+    "--config-file",
+    "${workspaceFolder}/service/pyproject.toml"
+  ],
   // Ensure semantic token coloring and inlay hints are enabled in this workspace.
   "editor.semanticHighlighting.enabled": true,
   "editor.inlayHints.enabled": "on",
