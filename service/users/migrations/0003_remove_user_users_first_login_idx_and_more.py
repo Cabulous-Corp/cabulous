@@ -4,38 +4,39 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('users', '0002_user_users_discord_idx_user_users_phone_idx_and_more'),
+        ("users", "0002_user_users_discord_idx_user_users_phone_idx_and_more"),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='user',
-            name='users_first_login_idx',
+            model_name="user",
+            name="users_first_login_idx",
         ),
         migrations.AddField(
-            model_name='user',
-            name='invitation_accepted_at',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Convite aceito em'),
+            model_name="user",
+            name="invitation_accepted_at",
+            field=models.DateTimeField(blank=True, null=True, verbose_name="Convite aceito em"),
         ),
         migrations.AddField(
-            model_name='user',
-            name='invited_at',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Convidado em'),
+            model_name="user",
+            name="invited_at",
+            field=models.DateTimeField(blank=True, null=True, verbose_name="Convidado em"),
         ),
         migrations.AddField(
-            model_name='user',
-            name='onboarding_completed_at',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Onboarding concluído em'),
+            model_name="user",
+            name="onboarding_completed_at",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="Onboarding concluído em"
+            ),
         ),
         migrations.AddField(
-            model_name='user',
-            name='password_defined_at',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Senha definida em'),
+            model_name="user",
+            name="password_defined_at",
+            field=models.DateTimeField(blank=True, null=True, verbose_name="Senha definida em"),
         ),
         migrations.RemoveField(
-            model_name='user',
-            name='is_first_login',
+            model_name="user",
+            name="is_first_login",
         ),
     ]

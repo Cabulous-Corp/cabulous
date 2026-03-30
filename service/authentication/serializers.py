@@ -119,19 +119,19 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
         try:
             return clean_username(value, queryset=User.objects.all(), exclude_pk=instance_pk)
         except DjangoValidationError as exc:
-            raise serializers.ValidationError(exc.messages)
+            raise serializers.ValidationError(exc.messages) from exc
 
     def validate_discord_username(self, value: str) -> str:
         try:
             return clean_discord_username(value)
         except DjangoValidationError as exc:
-            raise serializers.ValidationError(exc.messages)
+            raise serializers.ValidationError(exc.messages) from exc
 
     def validate_phone_number(self, value: str) -> str:
         try:
             return clean_phone_number(value)
         except DjangoValidationError as exc:
-            raise serializers.ValidationError(exc.messages)
+            raise serializers.ValidationError(exc.messages) from exc
 
     def update(self, instance: "UserType", validated_data: dict[str, Any]) -> "UserType":
         password = validated_data.pop("new_password", None)

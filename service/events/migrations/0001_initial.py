@@ -6,33 +6,83 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Event',
+            name="Event",
             fields=[
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=255, verbose_name='Título')),
-                ('description', models.TextField(blank=True, verbose_name='Descrição')),
-                ('start_at', models.DateTimeField(verbose_name='Início do evento')),
-                ('end_at', models.DateTimeField(blank=True, null=True, verbose_name='Fim do evento')),
-                ('thumbnail', models.ImageField(blank=True, null=True, upload_to=events.models.event_thumbnail_upload_to, verbose_name='Thumbnail')),
-                ('type', models.CharField(choices=[('UNIVERSITY_PARTY', 'Festa universitária'), ('BIRTHDAY', 'Aniversário'), ('CLUB', 'Balada'), ('CASUAL_HANGOUT', 'Rolê casual'), ('BARBECUE', 'Churrasco'), ('AFTER_PARTY', 'After'), ('GRADUATION', 'Formatura'), ('SHOW', 'Show'), ('FESTIVAL', 'Festival'), ('DINNER', 'Jantar'), ('TRIP', 'Viagem'), ('CABULOUS', 'Cabulous'), ('CINEMA', 'Cinema')], max_length=30, verbose_name='Tipo')),
-                ('public', models.CharField(choices=[('ILUMINADOS', 'Iluminados'), ('VOYEURS', 'Voyeurs'), ('ELETRONICOS', 'Eletrônicos'), ('OTHERS', 'Outros')], max_length=30, verbose_name='Público')),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
+                ("title", models.CharField(max_length=255, verbose_name="Título")),
+                ("description", models.TextField(blank=True, verbose_name="Descrição")),
+                ("start_at", models.DateTimeField(verbose_name="Início do evento")),
+                (
+                    "end_at",
+                    models.DateTimeField(blank=True, null=True, verbose_name="Fim do evento"),
+                ),
+                (
+                    "thumbnail",
+                    models.ImageField(
+                        blank=True,
+                        null=True,
+                        upload_to=events.models.event_thumbnail_upload_to,
+                        verbose_name="Thumbnail",
+                    ),
+                ),
+                (
+                    "type",
+                    models.CharField(
+                        choices=[
+                            ("UNIVERSITY_PARTY", "Festa universitária"),
+                            ("BIRTHDAY", "Aniversário"),
+                            ("CLUB", "Balada"),
+                            ("CASUAL_HANGOUT", "Rolê casual"),
+                            ("BARBECUE", "Churrasco"),
+                            ("AFTER_PARTY", "After"),
+                            ("GRADUATION", "Formatura"),
+                            ("SHOW", "Show"),
+                            ("FESTIVAL", "Festival"),
+                            ("DINNER", "Jantar"),
+                            ("TRIP", "Viagem"),
+                            ("CABULOUS", "Cabulous"),
+                            ("CINEMA", "Cinema"),
+                        ],
+                        max_length=30,
+                        verbose_name="Tipo",
+                    ),
+                ),
+                (
+                    "public",
+                    models.CharField(
+                        choices=[
+                            ("ILUMINADOS", "Iluminados"),
+                            ("VOYEURS", "Voyeurs"),
+                            ("ELETRONICOS", "Eletrônicos"),
+                            ("OTHERS", "Outros"),
+                        ],
+                        max_length=30,
+                        verbose_name="Público",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Evento',
-                'verbose_name_plural': 'Eventos',
-                'ordering': ['-start_at'],
-                'abstract': False,
-                'indexes': [models.Index(fields=['type', 'start_at'], name='events_even_type_53534a_idx'), models.Index(fields=['public'], name='events_even_public_5bbabb_idx')],
+                "verbose_name": "Evento",
+                "verbose_name_plural": "Eventos",
+                "ordering": ["-start_at"],
+                "abstract": False,
+                "indexes": [
+                    models.Index(fields=["type", "start_at"], name="events_even_type_53534a_idx"),
+                    models.Index(fields=["public"], name="events_even_public_5bbabb_idx"),
+                ],
             },
         ),
     ]

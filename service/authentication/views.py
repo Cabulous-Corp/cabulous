@@ -46,7 +46,7 @@ class RefreshView(APIView):
         try:
             serializer.is_valid(raise_exception=True)
         except TokenError as exc:
-            raise InvalidToken(str(exc))
+            raise InvalidToken(str(exc)) from exc
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
@@ -59,7 +59,7 @@ class LogoutView(APIView):
         try:
             serializer.save()
         except TokenError as exc:
-            raise InvalidToken(str(exc))
+            raise InvalidToken(str(exc)) from exc
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
