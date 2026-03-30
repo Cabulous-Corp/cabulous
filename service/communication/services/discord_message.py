@@ -113,9 +113,7 @@ class DiscordService:
                     str(DiscordService.MESSAGE_TEMPLATE_BASE_DIR / template_path_obj)
                 ]
         else:
-            if str(template_path_obj).startswith(
-                f"{DiscordService.MESSAGE_TEMPLATE_BASE_DIR}/"
-            ):
+            if str(template_path_obj).startswith(f"{DiscordService.MESSAGE_TEMPLATE_BASE_DIR}/"):
                 base_template = template_path_obj
             else:
                 base_template = DiscordService.MESSAGE_TEMPLATE_BASE_DIR / template_path_obj

@@ -19,7 +19,7 @@ from authentication.serializers import (
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
-    def post(self, request, *_args, **_kwargs):
+    def post(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -41,25 +41,25 @@ class LoginView(APIView):
 class RefreshView(APIView):
     permission_classes = [AllowAny]
 
-    def post(self, request, *_args, **_kwargs):
+    def post(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
         serializer = RefreshTokenSerializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
         except TokenError as exc:
-            raise InvalidToken(str(exc))
+            raise InvalidToken(str(exc)) from exc
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
     permission_classes = [AllowAny]
 
-    def post(self, request, *_args, **_kwargs):
+    def post(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
             serializer.save()
         except TokenError as exc:
-            raise InvalidToken(str(exc))
+            raise InvalidToken(str(exc)) from exc
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -67,7 +67,7 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
     allow_pending_onboarding = True
 
-    def get(self, request, *_args, **_kwargs):
+    def get(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
         serializer = MeSerializer(request.user, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -76,7 +76,7 @@ class OnboardingFirstAccessView(APIView):
     permission_classes = [IsAuthenticated]
     allow_pending_onboarding = True
 
-    def post(self, request, *_args, **_kwargs):
+    def post(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
         user = request.user
         if user.onboarding_completed_at is not None:
             return Response(

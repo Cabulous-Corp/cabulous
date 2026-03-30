@@ -4,23 +4,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('auth', '0012_alter_user_first_name_max_length'),
-        ('users', '0001_initial'),
+        ("auth", "0012_alter_user_first_name_max_length"),
+        ("users", "0001_initial"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='user',
-            index=models.Index(fields=['discord_username'], name='users_discord_idx'),
+            model_name="user",
+            index=models.Index(fields=["discord_username"], name="users_discord_idx"),
         ),
         migrations.AddIndex(
-            model_name='user',
-            index=models.Index(fields=['phone_number'], name='users_phone_idx'),
+            model_name="user",
+            index=models.Index(fields=["phone_number"], name="users_phone_idx"),
         ),
         migrations.AddIndex(
-            model_name='user',
-            index=models.Index(fields=['is_first_login'], name='users_first_login_idx'),
+            model_name="user",
+            index=models.Index(fields=["is_first_login"], name="users_first_login_idx"),
         ),
     ]

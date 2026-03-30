@@ -11,7 +11,7 @@ from django.urls import reverse
     }
 )
 class HealthcheckTests(TestCase):
-    def test_healthcheck_endpoint_returns_ok(self):
+    def test_healthcheck_endpoint_returns_ok(self) -> None:
         response = self.client.get(reverse("healthcheck"))
 
         self.assertEqual(response.status_code, 200)

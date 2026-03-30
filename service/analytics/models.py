@@ -1,4 +1,5 @@
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 from django.conf import settings
 from django.db import models
@@ -49,7 +50,7 @@ class PartyStatistics(BaseModel):
             models.Index(fields=["user", "party_name"]),
         ]
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         if self.flirts_count > 0:
             rate = (Decimal(self.kisses_count) / Decimal(self.flirts_count)) * Decimal("100")
             self.success_rate = rate.quantize(
@@ -61,5 +62,5 @@ class PartyStatistics(BaseModel):
 
         super().save(*args, **kwargs)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.party_name} - {self.user.get_full_name() or self.user.username}"

@@ -104,19 +104,19 @@ class UserSerializer(serializers.ModelSerializer):
         try:
             return clean_username(value, queryset=User.objects.all(), exclude_pk=instance_pk)
         except DjangoValidationError as exc:
-            raise serializers.ValidationError(exc.messages)
+            raise serializers.ValidationError(exc.messages) from exc
 
     def validate_discord_username(self, value: str) -> str:
         try:
             return clean_discord_username(value)
         except DjangoValidationError as exc:
-            raise serializers.ValidationError(exc.messages)
+            raise serializers.ValidationError(exc.messages) from exc
 
     def validate_phone_number(self, value: str) -> str:
         try:
             return clean_phone_number(value)
         except DjangoValidationError as exc:
-            raise serializers.ValidationError(exc.messages)
+            raise serializers.ValidationError(exc.messages) from exc
 
     def create(self, validated_data: dict) -> User:
         request = self.context.get("request")
@@ -160,7 +160,7 @@ class UserSerializer(serializers.ModelSerializer):
     def get_magic_link(self, obj: User) -> str | None:
         return getattr(obj, "_magic_link", None)
 
-    def get_magic_link_expires_at(self, obj: User):
+    def get_magic_link_expires_at(self, obj: User) -> object | None:
         return getattr(obj, "_magic_link_expires_at", None)
 
     def to_representation(self, instance: User) -> dict:

@@ -15,12 +15,12 @@ class IsAuthenticatedWithOnboardingGuard(BasePermission):
     # without raising a custom exception.
     message = "Authentication credentials were not provided."
 
-    def has_permission(self, request, view):
-        user = request.user
-        if not user or not user.is_authenticated:
+    def has_permission(self, request: object, view: object) -> bool:
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
             return False
 
-        if user.is_superuser:
+        if getattr(user, "is_superuser", False):
             return True
 
         if getattr(user, "onboarding_completed_at", None) is not None:

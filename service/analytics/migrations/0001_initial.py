@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -17,28 +16,71 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='PartyStatistics',
+            name="PartyStatistics",
             fields=[
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('party_name', models.CharField(max_length=255, verbose_name='Nome da Festa')),
-                ('year', models.PositiveIntegerField(verbose_name='Ano')),
-                ('semester', models.PositiveSmallIntegerField(choices=[(1, '1'), (2, '2')], verbose_name='Semestre')),
-                ('drinks_count', models.PositiveIntegerField(default=0, verbose_name='Copos Tomados')),
-                ('shots_count', models.PositiveIntegerField(default=0, verbose_name='Shots')),
-                ('flirts_count', models.PositiveIntegerField(default=0, verbose_name='Flertes')),
-                ('kisses_count', models.PositiveIntegerField(default=0, verbose_name='Pessoas Beijadas')),
-                ('success_rate', models.DecimalField(decimal_places=2, default=Decimal('0.00'), editable=False, max_digits=5, verbose_name='Aproveitamento (%)')),
-                ('arrival_time', models.TimeField(blank=True, null=True, verbose_name='Horário de Chegada')),
-                ('leave_time', models.TimeField(blank=True, null=True, verbose_name='Horário de Saída')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='party_statistics', to=settings.AUTH_USER_MODEL)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
+                ("party_name", models.CharField(max_length=255, verbose_name="Nome da Festa")),
+                ("year", models.PositiveIntegerField(verbose_name="Ano")),
+                (
+                    "semester",
+                    models.PositiveSmallIntegerField(
+                        choices=[(1, "1"), (2, "2")], verbose_name="Semestre"
+                    ),
+                ),
+                (
+                    "drinks_count",
+                    models.PositiveIntegerField(default=0, verbose_name="Copos Tomados"),
+                ),
+                ("shots_count", models.PositiveIntegerField(default=0, verbose_name="Shots")),
+                ("flirts_count", models.PositiveIntegerField(default=0, verbose_name="Flertes")),
+                (
+                    "kisses_count",
+                    models.PositiveIntegerField(default=0, verbose_name="Pessoas Beijadas"),
+                ),
+                (
+                    "success_rate",
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=Decimal("0.00"),
+                        editable=False,
+                        max_digits=5,
+                        verbose_name="Aproveitamento (%)",
+                    ),
+                ),
+                (
+                    "arrival_time",
+                    models.TimeField(blank=True, null=True, verbose_name="Horário de Chegada"),
+                ),
+                (
+                    "leave_time",
+                    models.TimeField(blank=True, null=True, verbose_name="Horário de Saída"),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="party_statistics",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Estatística de Festa',
-                'verbose_name_plural': 'Estatísticas de Festas',
-                'abstract': False,
-                'constraints': [models.UniqueConstraint(fields=('user', 'party_name', 'year', 'semester'), name='unique_party_stat_per_user')],
+                "verbose_name": "Estatística de Festa",
+                "verbose_name_plural": "Estatísticas de Festas",
+                "abstract": False,
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("user", "party_name", "year", "semester"),
+                        name="unique_party_stat_per_user",
+                    )
+                ],
             },
         ),
     ]

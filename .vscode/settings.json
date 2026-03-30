@@ -1,8 +1,11 @@
 {
   // Use the backend virtual environment as the default interpreter.
   "python.defaultInterpreterPath": "${workspaceFolder}/service/.venv/Scripts/python.exe",
-  // Keep compatibility with integrations that still read pythonPath.
-  "python.pythonPath": "${workspaceFolder}/service/.venv/Scripts/python.exe",
+  // Keep BasedPyright language services enabled (semantic tokens, hovers, etc.).
+  "basedpyright.disableLanguageServices": false,
+  // Ensure semantic token coloring and inlay hints are enabled in this workspace.
+  "editor.semanticHighlighting.enabled": true,
+  "editor.inlayHints.enabled": "on",
   // This project uses unittest (not pytest) for test discovery in the editor.
   "python.testing.pytestEnabled": false,
   "python.testing.unittestEnabled": true,
@@ -13,8 +16,6 @@
     "-p",
     "test*.py"
   ],
-  // Disable legacy Python extension linting; Ruff handles lint/format/imports.
-  "python.linting.enabled": false,
   "ruff.enable": true,
   "ruff.lint.enable": true,
   "ruff.organizeImports": true,

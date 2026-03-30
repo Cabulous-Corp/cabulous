@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def healthcheck(_request):
+def healthcheck(_request: object) -> Response:
     database_ok = True
     redis_ok = True
 
