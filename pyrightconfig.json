@@ -1,0 +1,13 @@
+{
+  "include": ["service"],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    "**/.venv",
+    "**/.uv-cache"
+  ],
+  "venvPath": "service",
+  "venv": ".venv",
+  "typeCheckingMode": "standard"
+}

@@ -110,20 +110,22 @@ class DiscordService:
         template_path: str, context: dict[str, Any] | None = None
     ) -> str:
         normalized_template_name = template_path.strip().lstrip("/")
-        template_path = PurePosixPath(normalized_template_name)
+        template_path_obj = PurePosixPath(normalized_template_name)
 
-        if template_path.suffix in {".txt", ".md"}:
-            if str(template_path).startswith(f"{DiscordService.MESSAGE_TEMPLATE_BASE_DIR}/"):
-                template_candidates = [str(template_path)]
+        if template_path_obj.suffix in {".txt", ".md"}:
+            if str(template_path_obj).startswith(f"{DiscordService.MESSAGE_TEMPLATE_BASE_DIR}/"):
+                template_candidates = [str(template_path_obj)]
             else:
                 template_candidates = [
-                    str(DiscordService.MESSAGE_TEMPLATE_BASE_DIR / template_path)
+                    str(DiscordService.MESSAGE_TEMPLATE_BASE_DIR / template_path_obj)
                 ]
         else:
-            if str(template_path).startswith(f"{DiscordService.MESSAGE_TEMPLATE_BASE_DIR}/"):
-                base_template = template_path
+            if str(template_path_obj).startswith(
+                f"{DiscordService.MESSAGE_TEMPLATE_BASE_DIR}/"
+            ):
+                base_template = template_path_obj
             else:
-                base_template = DiscordService.MESSAGE_TEMPLATE_BASE_DIR / template_path
+                base_template = DiscordService.MESSAGE_TEMPLATE_BASE_DIR / template_path_obj
             template_candidates = [
                 f"{base_template}.{extension}"
                 for extension in DiscordService.MESSAGE_TEMPLATE_EXTENSIONS
@@ -133,7 +135,7 @@ class DiscordService:
             content = render_to_string(template_candidates, context or {})
         except TemplateDoesNotExist as exc:
             raise ValueError(
-                f"Discord message template '{template_path}' not found. "
+                f"Discord message template '{normalized_template_name}' not found. "
                 "Use a template name under 'discord/messages/' and provide the full filename "
                 "when you want an exact file (for example: 'test_message.md' or "
                 "'auth/onboarding/test_message.md')."

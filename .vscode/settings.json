@@ -1,6 +1,9 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}\\service\\.venv\\Scripts\\python.exe",
-  "python.analysis.typeCheckingMode": "standard",
+  // Use the backend virtual environment as the default interpreter.
+  "python.defaultInterpreterPath": "${workspaceFolder}/service/.venv/Scripts/python.exe",
+  // Keep compatibility with integrations that still read pythonPath.
+  "python.pythonPath": "${workspaceFolder}/service/.venv/Scripts/python.exe",
+  // This project uses unittest (not pytest) for test discovery in the editor.
   "python.testing.pytestEnabled": false,
   "python.testing.unittestEnabled": true,
   "python.testing.unittestArgs": [
@@ -10,14 +13,23 @@
     "-p",
     "test*.py"
   ],
+  // Disable legacy Python extension linting; Ruff handles lint/format/imports.
   "python.linting.enabled": false,
   "ruff.enable": true,
   "ruff.lint.enable": true,
   "ruff.organizeImports": true,
+  // Format on save; Ruff is the default formatter for Python files.
   "editor.formatOnSave": true,
   "[python]": {
-    "editor.defaultFormatter": "charliermarsh.ruff"
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true
   },
+  // Keep Ruff code actions explicit to avoid unexpected save-time changes.
+  "editor.codeActionsOnSave": {
+    "source.fixAll.ruff": "explicit",
+    "source.organizeImports.ruff": "explicit"
+  },
+  // Keep frontend and JSON formatting standardized with Prettier.
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
