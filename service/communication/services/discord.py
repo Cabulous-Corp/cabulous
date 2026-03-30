@@ -37,10 +37,13 @@ class DiscordService:
 
     @staticmethod
     def get_webhook_url_by_purpose(purpose: DiscordChannelPurpose | str) -> str:
-        webhook_url = DiscordChannel.get_active_webhook_url_by_purpose(str(purpose))
-        if webhook_url is None:
+        channel = DiscordChannel.objects.filter(
+            purpose=str(purpose),
+            is_active=True,
+        ).first()
+        if channel is None:
             raise ValueError(f"No active Discord channel configured for purpose '{purpose}'.")
-        return webhook_url
+        return channel.webhook_url
 
     @staticmethod
     def _send_webhook_payload(payload: dict[str, Any], webhook_url: str = "") -> None:

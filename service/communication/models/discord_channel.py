@@ -42,17 +42,5 @@ class DiscordChannel(BaseModel):
             ),
         ]
 
-    @classmethod
-    def get_active_webhook_url_by_purpose(cls, purpose: str) -> str | None:
-        channel = (
-            cls.objects.filter(purpose=purpose, is_active=True)
-            .order_by("-updated_at")
-            .values("webhook_url")
-            .first()
-        )
-        if channel is None:
-            return None
-        return channel["webhook_url"]
-
     def __str__(self) -> str:
         return f"{self.name} ({self.purpose})"
