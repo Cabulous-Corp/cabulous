@@ -8,7 +8,7 @@ from pydantic import HttpUrl
 
 from communication.helpers import DiscordChannelHelper
 from communication.models import DiscordChannelPurpose
-from communication.models.discord import (
+from communication.models.discord_message import (
     DiscordEmbed,
     DiscordEmbedAuthor,
     DiscordEmbedField,
@@ -155,12 +155,12 @@ class DiscordService:
 
         Os schemas Pydantic utilizados (Embed, Fields, Footer, Author, Image, etc.)
         estão definidos em:
-        communication/models/discord.py
+        communication/models/discord_message.py
 
         Exemplo de uso:
 
-        from services.discord import DiscordService
-        from communication.models.discord import (
+        from communication.services.discord_message import DiscordService
+        from communication.models.discord_message import (
             DiscordEmbedField,
             DiscordEmbedFooter,
             DiscordEmbedAuthor,
