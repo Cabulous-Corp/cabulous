@@ -23,6 +23,9 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "django-stubs>=6.0.1",
+    "mypy>=1.19.1",
+    "pre-commit>=4.3.0",
     "ruff>=0.15.6",
 ]
 
@@ -32,7 +35,22 @@ line-length = 100
 target-version = "py313"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
 
 [tool.ruff.lint.per-file-ignores]
-"**/migrations/*.py" = ["E", "F", "I"]
+"**/migrations/*.py" = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+
+[tool.mypy]
+python_version = "3.13"
+plugins = ["mypy_django_plugin.main"]
+mypy_path = "."
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[tool.django-stubs]
+django_settings_module = "cabulous.settings"
