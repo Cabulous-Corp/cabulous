@@ -1,5 +1,6 @@
 import uuid
 from pathlib import Path
+from typing import Any
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -113,11 +114,11 @@ class User(BaseModel, AbstractUser):
     def __str__(self) -> str:
         return self.username
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         self.username = normalize_username(self.username)
         self.discord_username = normalize_discord_username(self.discord_username)
         self.phone_number = normalize_phone_number(self.phone_number)
-        return super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class UserMagicLinkToken(BaseModel):

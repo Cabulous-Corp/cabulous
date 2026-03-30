@@ -23,10 +23,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "djangorestframework-stubs>=3.16.8",
     "django-stubs>=6.0.1",
     "mypy>=1.19.1",
     "pre-commit>=4.3.0",
     "ruff>=0.15.6",
+    "types-requests>=2.33.0.20260327",
 ]
 
 [tool.ruff]
@@ -51,6 +53,18 @@ no_implicit_optional = true
 check_untyped_defs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
+disable_error_code = ["var-annotated"]
+
+[[tool.mypy.overrides]]
+module = [
+    "celery",
+    "celery.*",
+    "requests",
+    "requests.*",
+    "rest_framework",
+    "rest_framework.*",
+]
+ignore_missing_imports = true
 
 [tool.django-stubs]
 django_settings_module = "cabulous.settings"

@@ -57,10 +57,10 @@ class Event(BaseModel):
             models.Index(fields=["public"]),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.title
 
-    def clean(self):
+    def clean(self) -> None:
         super().clean()
         if self.end_at and self.end_at < self.start_at:
             raise ValidationError(

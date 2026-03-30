@@ -49,7 +49,7 @@ class LoginSerializer(serializers.Serializer):
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
 
-    def save(self, **kwargs) -> dict:
+    def save(self, **kwargs: Any) -> dict[str, Any]:
         validated_data = cast(dict[str, Any], self.validated_data)
         refresh_token = validated_data["refresh"]
 

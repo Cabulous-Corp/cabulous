@@ -160,7 +160,7 @@ class UserSerializer(serializers.ModelSerializer):
     def get_magic_link(self, obj: User) -> str | None:
         return getattr(obj, "_magic_link", None)
 
-    def get_magic_link_expires_at(self, obj: User):
+    def get_magic_link_expires_at(self, obj: User) -> object | None:
         return getattr(obj, "_magic_link_expires_at", None)
 
     def to_representation(self, instance: User) -> dict:
