@@ -6,7 +6,8 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from pydantic import HttpUrl
 
-from communication.models import DiscordChannel, DiscordChannelPurpose
+from communication.helpers import DiscordChannelHelper
+from communication.models import DiscordChannelPurpose
 from communication.models.discord import (
     DiscordEmbed,
     DiscordEmbedAuthor,
@@ -23,7 +24,6 @@ class DiscordService:
     Service responsible for sending Discord webhook messages.
 
     Methods:
-    - get_webhook_url_by_purpose(purpose)
     - send_channel_message(webhook_url, content)
     - send_channel_message_by_purpose(purpose, content)
     - send_channel_message_from_template(webhook_url, template_path, context=None)
@@ -34,16 +34,6 @@ class DiscordService:
 
     MESSAGE_TEMPLATE_EXTENSIONS = ("txt", "md")
     MESSAGE_TEMPLATE_BASE_DIR = PurePosixPath("discord/messages")
-
-    @staticmethod
-    def get_webhook_url_by_purpose(purpose: DiscordChannelPurpose | str) -> str:
-        channel = DiscordChannel.objects.filter(
-            purpose=str(purpose),
-            is_active=True,
-        ).first()
-        if channel is None:
-            raise ValueError(f"No active Discord channel configured for purpose '{purpose}'.")
-        return channel.webhook_url
 
     @staticmethod
     def _send_webhook_payload(payload: dict[str, Any], webhook_url: str = "") -> None:
@@ -70,7 +60,7 @@ class DiscordService:
         purpose: DiscordChannelPurpose | str,
         content: str,
     ) -> None:
-        webhook_url = DiscordService.get_webhook_url_by_purpose(purpose)
+        webhook_url = DiscordChannelHelper.get_webhook_url_by_purpose(purpose)
         DiscordService.send_channel_message(webhook_url=webhook_url, content=content)
 
     @staticmethod
@@ -101,7 +91,7 @@ class DiscordService:
         template_path: str,
         context: dict[str, Any] | None = None,
     ) -> None:
-        webhook_url = DiscordService.get_webhook_url_by_purpose(purpose)
+        webhook_url = DiscordChannelHelper.get_webhook_url_by_purpose(purpose)
         DiscordService.send_channel_message_from_template(
             webhook_url=webhook_url,
             template_path=template_path,
@@ -255,7 +245,7 @@ class DiscordService:
         fields: list[DiscordEmbedField] | None = None,
         content: str | None = None,
     ) -> None:
-        webhook_url = DiscordService.get_webhook_url_by_purpose(purpose)
+        webhook_url = DiscordChannelHelper.get_webhook_url_by_purpose(purpose)
         DiscordService.send_channel_embed(
             webhook_url=webhook_url,
             title=title,
