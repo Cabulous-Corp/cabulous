@@ -13,7 +13,7 @@
           <tr>
             <td>
               <h1 style="margin:0 0 16px;font-size:24px;line-height:1.2;color:#2a1f6f;">Convite de acesso ao Cabulous</h1>
-              <p style="margin:0 0 12px;">Olá, {{ user.first_name|default:user.username }}.</p>
+              <p style="margin:0 0 12px;">Olá, {{ invite_display_name }}.</p>
               <p style="margin:0 0 12px;">
                 Você foi convidado para acessar o site da Cabulous.
               </p>
@@ -34,7 +34,7 @@
                 <a href="{{ login_url }}">{{ login_url }}</a>
               </p>
               <p style="margin:0 0 8px;font-size:13px;color:#5f5a7a;">
-                Link válido até {{ magic_link_expires_at|date:"d/m/Y H:i" }}.
+                Link válido até {{ magic_link_expires_at_display }}.
               </p>
               <p style="margin:0;font-size:13px;color:#5f5a7a;">
                 Se você não esperava este convite, ignore esta mensagem.
