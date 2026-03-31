@@ -56,6 +56,7 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
             "created_at",
             "updated_at",
+            "deleted_at",
         )
         read_only_fields = (
             "id",
@@ -63,6 +64,7 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
             "created_at",
             "updated_at",
+            "deleted_at",
         )
         extra_kwargs = {
             "username": {"validators": []},
