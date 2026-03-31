@@ -1,14 +1,25 @@
+import secrets
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any, cast
 
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from cabulous.config import get_settings
+from communication.tasks import (
+    send_discord_channel_message_by_purpose_task,
+    send_html_template_email_task,
+)
+from users.models import UserMagicLinkToken
 from users.validators import (
     clean_discord_username,
     clean_phone_number,
@@ -16,10 +27,13 @@ from users.validators import (
     normalize_username,
 )
 
-User = get_user_model()
-
 if TYPE_CHECKING:
     from users.models import User as UserType
+
+    User = UserType
+else:
+    User = get_user_model()
+app_settings = get_settings()
 
 
 class LoginSerializer(serializers.Serializer):
@@ -84,6 +98,116 @@ class RefreshTokenSerializer(TokenRefreshSerializer):
     pass
 
 
+class ForgotAccessSerializer(serializers.Serializer):
+    identifier = serializers.CharField(trim_whitespace=True)
+
+    def save(self, **kwargs: Any) -> dict[str, Any]:
+        validated_data = cast(dict[str, Any], self.validated_data)
+        identifier = validated_data["identifier"]
+
+        user = User.objects.filter(username=normalize_username(identifier)).first()
+        if user is None:
+            user = User.objects.filter(email__iexact=identifier).first()
+
+        if user is None or not user.is_active:
+            return {}
+
+        frontend_url = app_settings.app_frontend_url.rstrip("/")
+        display_name = user.first_name or user.username
+
+        if user.onboarding_completed_at is None:
+            magic_token = secrets.token_urlsafe(48)
+            expires_at = timezone.now() + timedelta(hours=72)
+            UserMagicLinkToken.objects.create(
+                user=user,
+                token=magic_token,
+                expires_at=expires_at,
+                created_by=None,
+            )
+            onboarding_link = f"{frontend_url}/magic-login/{magic_token}"
+            onboarding_context = {
+                "display_name": display_name,
+                "magic_link": onboarding_link,
+                "magic_link_expires_at_display": timezone.localtime(expires_at).strftime(
+                    "%d/%m/%Y %H:%M"
+                ),
+            }
+            if user.email:
+                send_html_template_email_task.delay(
+                    subject="Recuperacao de acesso - Cabulous",
+                    recipients=[user.email],
+                    template_path="email/authentication/recover_pending_onboarding.html",
+                    context=onboarding_context,
+                )
+            if user.discord_username:
+                send_discord_channel_message_by_purpose_task.delay(
+                    purpose="BOARD_UPDATES",
+                    content=(
+                        f"{user.discord_username}, voce possui onboarding pendente no Cabulous. "
+                        f"Use este link para concluir o primeiro acesso: {onboarding_link}"
+                    ),
+                )
+            return {}
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        reset_link = f"{frontend_url}/reset-password?uid={uid}&token={token}"
+        reset_context = {
+            "display_name": display_name,
+            "reset_link": reset_link,
+        }
+        if user.email:
+            send_html_template_email_task.delay(
+                subject="Redefinicao de senha - Cabulous",
+                recipients=[user.email],
+                template_path="email/authentication/password_reset_request.html",
+                context=reset_context,
+            )
+        if user.discord_username:
+            send_discord_channel_message_by_purpose_task.delay(
+                purpose="BOARD_UPDATES",
+                content=(
+                    f"{user.discord_username}, recebemos uma solicitacao de redefinicao de senha "
+                    f"para sua conta Cabulous. Use este link: {reset_link}"
+                ),
+            )
+        return {}
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        uid = attrs["uid"]
+        token = attrs["token"]
+        new_password = attrs["new_password"]
+
+        try:
+            user_id = force_str(urlsafe_base64_decode(uid))
+            user = User.objects.get(pk=user_id)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist) as exc:
+            raise serializers.ValidationError({"token": "Invalid reset token."}) from exc
+
+        if not default_token_generator.check_token(user, token):
+            raise serializers.ValidationError({"token": "Invalid or expired reset token."})
+
+        validate_password(new_password, user=user)
+        attrs["user"] = user
+        return attrs
+
+    def save(self, **kwargs: Any) -> dict[str, Any]:
+        validated_data = cast(dict[str, Any], self.validated_data)
+        user = validated_data["user"]
+        new_password = validated_data["new_password"]
+
+        user.set_password(new_password)
+        user.password_defined_at = timezone.now()
+        user.save()
+        return {}
+
+
 class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
     new_password = serializers.CharField(write_only=True, trim_whitespace=False)
 
@@ -100,7 +224,7 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
             "avatar",
             "bio",
         )
-        extra_kwargs = {
+        extra_kwargs: dict[str, dict[str, Any]] = {
             "username": {"validators": []},
         }
 
