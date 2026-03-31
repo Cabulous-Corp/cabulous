@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.db.models import QuerySet
+from django.http import HttpRequest
 
 from users.models import User, UserMagicLinkToken
 
@@ -19,6 +21,7 @@ class CustomUserAdmin(UserAdmin):
         "invitation_accepted_at",
         "password_defined_at",
         "onboarding_completed_at",
+        "deleted_at",
     )
     search_fields = (
         "username",
@@ -37,6 +40,7 @@ class CustomUserAdmin(UserAdmin):
         ("invitation_accepted_at", admin.EmptyFieldListFilter),
         ("password_defined_at", admin.EmptyFieldListFilter),
         ("onboarding_completed_at", admin.EmptyFieldListFilter),
+        ("deleted_at", admin.EmptyFieldListFilter),
     )
     ordering = ("username",)
     filter_horizontal = ("groups", "user_permissions")
@@ -99,6 +103,9 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[User]:
+        return User.all_objects.all()
 
 
 @admin.register(UserMagicLinkToken)

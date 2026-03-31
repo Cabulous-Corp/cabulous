@@ -19,6 +19,9 @@ class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticatedWithOnboardingGuard, UserModelPermissions]
 
+    def perform_destroy(self, instance: User) -> None:
+        instance.soft_delete()
+
     def perform_create(self, serializer: BaseSerializer[Any]) -> None:
         user_serializer = cast(UserSerializer, serializer)
         user = user_serializer.save()

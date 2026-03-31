@@ -2,11 +2,12 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
+from django.db.models import Q
 from django.db.models.functions import Lower
 
-from common.models.abstracts import BaseModel
+from common.models.abstracts import AbstractSoftDeleteModel, BaseModel, SoftDeleteQuerySet
 from users.validators import (
     normalize_discord_username,
     normalize_phone_number,
@@ -15,6 +16,20 @@ from users.validators import (
     validate_phone_number_format,
     validate_username_format,
 )
+
+
+class ActiveUserManager(UserManager):
+    use_in_migrations = True
+
+    def get_queryset(self) -> SoftDeleteQuerySet:
+        return SoftDeleteQuerySet(self.model, using=self._db).filter(deleted_at__isnull=True)
+
+
+class AllUserManager(UserManager):
+    use_in_migrations = True
+
+    def get_queryset(self) -> SoftDeleteQuerySet:
+        return SoftDeleteQuerySet(self.model, using=self._db)
 
 
 def user_media_base_path(instance: models.Model) -> str:
@@ -32,7 +47,7 @@ def user_banner_upload_to(instance: models.Model, filename: str) -> str:
     return f"{user_media_base_path(instance)}/banner{suffix}"
 
 
-class User(BaseModel, AbstractUser):
+class User(AbstractSoftDeleteModel, BaseModel, AbstractUser):
     username = models.CharField(
         verbose_name="Nome de usuário",
         max_length=150,
@@ -41,7 +56,6 @@ class User(BaseModel, AbstractUser):
     )
     email = models.EmailField(
         verbose_name="E-mail",
-        unique=True,
         blank=False,
     )
     discord_username = models.CharField(
@@ -96,6 +110,9 @@ class User(BaseModel, AbstractUser):
         blank=True,
     )
 
+    objects = ActiveUserManager()  # type: ignore[misc]
+    all_objects = AllUserManager()
+
     class Meta(BaseModel.Meta):
         verbose_name = "Usuário"
         verbose_name_plural = "Usuários"
@@ -105,6 +122,11 @@ class User(BaseModel, AbstractUser):
         ]
         constraints = [
             models.UniqueConstraint(Lower("username"), name="users_username_ci_unique"),
+            models.UniqueConstraint(
+                Lower("email"),
+                condition=Q(deleted_at__isnull=True),
+                name="users_email_ci_unique",
+            ),
         ]
 
     @property
@@ -119,6 +141,31 @@ class User(BaseModel, AbstractUser):
         self.discord_username = normalize_discord_username(self.discord_username)
         self.phone_number = normalize_phone_number(self.phone_number)
         super().save(*args, **kwargs)
+
+    def _deleted_username(self) -> str:
+        suffix = f"deleted-{uuid.uuid4().hex[:8]}"
+        max_base_length = 150 - len(suffix) - 1
+        base_username = self.username[:max_base_length]
+        return f"{base_username}-{suffix}"
+
+    def _deleted_email(self) -> str:
+        suffix = uuid.uuid4().hex[:8]
+        if "@" not in self.email:
+            return f"deleted-{suffix}-{self.email or 'unknown'}@cabulous.local"
+
+        local_part, domain = self.email.split("@", 1)
+        trimmed_local = local_part[: max(1, 64 - len(suffix) - len("deleted-") - 1)]
+        return f"{trimmed_local}+deleted-{suffix}@{domain}"
+
+    def soft_delete(self) -> None:
+        if self.deleted_at is not None:
+            return
+
+        self.username = self._deleted_username()
+        self.email = self._deleted_email()
+        self.is_active = False
+        self.save(update_fields=["username", "email", "is_active"])
+        super().soft_delete()
 
 
 class UserMagicLinkToken(BaseModel):
