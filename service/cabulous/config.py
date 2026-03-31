@@ -49,8 +49,6 @@ class JwtSettings(BaseModel):
     blacklist_after_rotation: bool = True
     update_last_login: bool = False
     auth_header_types: list[str] = Field(default_factory=lambda: ["Bearer"])
-    flush_expired_tokens_hour: int = 3
-    flush_expired_tokens_minute: int = 0
 
 
 class EmailSettings(BaseModel):
