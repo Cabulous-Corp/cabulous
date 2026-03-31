@@ -8,10 +8,12 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.serializers import (
+    ForgotAccessSerializer,
     LoginSerializer,
     LogoutSerializer,
     MeSerializer,
     OnboardingFirstAccessSerializer,
+    PasswordResetConfirmSerializer,
     RefreshTokenSerializer,
 )
 
@@ -70,6 +72,37 @@ class MeView(APIView):
     def get(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
         serializer = MeSerializer(request.user, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ForgotAccessView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
+        serializer = ForgotAccessSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {
+                "detail": (
+                    "If an account exists for the provided identifier, "
+                    "recovery instructions were sent."
+                )
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Password reset completed successfully."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class OnboardingFirstAccessView(APIView):
