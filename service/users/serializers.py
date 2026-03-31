@@ -1,6 +1,7 @@
 import secrets
 import string
 from datetime import timedelta
+from typing import Any
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
@@ -27,9 +28,7 @@ app_settings = get_settings()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    temporary_password = serializers.SerializerMethodField()
-    magic_link = serializers.SerializerMethodField()
-    magic_link_expires_at = serializers.SerializerMethodField()
+    _invite_access_payload: dict[str, Any] | None = None
 
     class Meta:
         model = User
@@ -57,9 +56,6 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
             "created_at",
             "updated_at",
-            "temporary_password",
-            "magic_link",
-            "magic_link_expires_at",
         )
         read_only_fields = (
             "id",
@@ -67,9 +63,6 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
             "created_at",
             "updated_at",
-            "temporary_password",
-            "magic_link",
-            "magic_link_expires_at",
         )
         extra_kwargs = {
             "username": {"validators": []},
@@ -102,7 +95,11 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(self, value: str) -> str:
         instance_pk = self.instance.pk if self.instance is not None else None
         try:
-            return clean_username(value, queryset=User.objects.all(), exclude_pk=instance_pk)
+            return clean_username(
+                value,
+                queryset=User.objects.all(),
+                exclude_pk=instance_pk,
+            )
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.messages) from exc
 
@@ -148,27 +145,20 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
         frontend_url = app_settings.app_frontend_url.rstrip("/")
-        user._temporary_password = temporary_password  # type: ignore[attr-defined]
-        user._magic_link = f"{frontend_url}/magic-login/{magic_token}"  # type: ignore[attr-defined]
-        user._magic_link_expires_at = expires_at  # type: ignore[attr-defined]
+        magic_link = f"{frontend_url}/magic-login/{magic_token}"
+        self._invite_access_payload = {
+            "temporary_password": temporary_password,
+            "magic_link": magic_link,
+            "magic_link_expires_at": expires_at,
+        }
 
         return user
 
-    def get_temporary_password(self, obj: User) -> str | None:
-        return getattr(obj, "_temporary_password", None)
-
-    def get_magic_link(self, obj: User) -> str | None:
-        return getattr(obj, "_magic_link", None)
-
-    def get_magic_link_expires_at(self, obj: User) -> object | None:
-        return getattr(obj, "_magic_link_expires_at", None)
-
-    def to_representation(self, instance: User) -> dict:
-        data = super().to_representation(instance)
-        for key in ("temporary_password", "magic_link", "magic_link_expires_at"):
-            if data.get(key) is None:
-                data.pop(key, None)
-        return data
+    def get_invite_access_payload(self) -> dict[str, Any] | None:
+        payload = getattr(self, "_invite_access_payload", None)
+        if payload is None:
+            return None
+        return dict(payload)
 
     @staticmethod
     def _generate_temporary_password(length: int = 16) -> str:
