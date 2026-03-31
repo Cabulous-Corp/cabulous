@@ -166,13 +166,14 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_BEAT_SCHEDULE = {
-    "authentication_flush_expired_tokens_daily": {
+    "authentication_flush_expired_tokens_monthly": {
         "task": "authentication.tasks.flush_expired_tokens",
-        "schedule": crontab(
-            minute=settings.jwt.flush_expired_tokens_minute,
-            hour=settings.jwt.flush_expired_tokens_hour,
-        ),
-    }
+        "schedule": crontab(minute=0, hour=3, day_of_month=1),
+    },
+    "users_cleanup_magic_links_monthly": {
+        "task": "users.tasks.cleanup_magic_links",
+        "schedule": crontab(minute=0, hour=4, day_of_month=1),
+    },
 }
 
 REST_FRAMEWORK = {
