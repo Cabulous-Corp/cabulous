@@ -3,6 +3,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from communication.helpers.discord_channel import DiscordChannelHelper
+from communication.models import DiscordChannelPurpose
 from communication.serializer import GithubWebhookSerializer
 from communication.webhookhelper import post_to_discord
 
@@ -26,14 +28,19 @@ class GithubWebhookView(APIView):
         serializer = GithubWebhookSerializer(data=data)
         serializer.is_valid(raise_exception=True)
 
-        # Process the payload and return normalized data
         normalized_data = serializer.save()
 
-        # Teste local para enviar a mensagem formatada para o Discord
-        discord_webhook = "https://discord.com/api/webhooks/1486907560463175733/-z6AX_gtRfymX9xwURAgNyh8YRcI5Yzl95tc7VuniW4_-CdfCr1qn59Po1r7OUIMpqjN"
-        post_to_discord(discord_webhook, dict(normalized_data))
+        try:
+            discord_webhook = DiscordChannelHelper.get_webhook_url_by_purpose(
+                DiscordChannelPurpose.BOARD_UPDATES
+            )
+        except ValueError as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
-        print(normalized_data)
+        post_to_discord(discord_webhook, dict(normalized_data))
 
         return Response(
             {"message": "Webhook received successfully", "data": normalized_data},
