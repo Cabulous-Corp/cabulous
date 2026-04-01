@@ -62,8 +62,16 @@ class User(AbstractSoftDeleteModel, BaseModel, AbstractUser):
         verbose_name="Usuário do Discord",
         max_length=100,
         blank=True,
-        default="",
+        unique=True,
+        default=None,
         validators=[validate_discord_username_format],
+    )
+    git_username = models.CharField(
+        verbose_name="Usuário do GitHub",
+        max_length=100,
+        blank=True,
+        unique=True,
+        default=None,
     )
     phone_number = models.CharField(
         verbose_name="Número de telefone",
@@ -117,7 +125,6 @@ class User(AbstractSoftDeleteModel, BaseModel, AbstractUser):
         verbose_name = "Usuário"
         verbose_name_plural = "Usuários"
         indexes = [
-            models.Index(fields=["discord_username"], name="users_discord_idx"),
             models.Index(fields=["phone_number"], name="users_phone_idx"),
         ]
         constraints = [
