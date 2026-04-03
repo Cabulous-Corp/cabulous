@@ -1,4 +1,4 @@
-default_install_hook_types: [pre-commit, pre-push]
+default_install_hook_types: [pre-commit]
 
 repos:
   - repo: local
@@ -7,12 +7,5 @@ repos:
         name: make lint (service)
         entry: make -C service lint
         language: system
-        pass_filenames: false
+        files: ^service/
         stages: [pre-commit]
-
-      - id: make-check
-        name: make check (service)
-        entry: make -C service check
-        language: system
-        pass_filenames: false
-        stages: [pre-push]

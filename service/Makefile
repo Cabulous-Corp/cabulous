@@ -93,7 +93,7 @@ help:
 setup:
 	uv run python -c "from pathlib import Path; import shutil; env=Path('.env'); ex=Path('.env.example'); exists=env.exists(); print('.env ja existe; mantendo arquivo atual' if exists else '.env criado a partir de .env.example'); shutil.copyfile(ex, env) if not exists else None"
 	uv sync --all-groups
-	uv run pre-commit install --config ../.pre-commit-config.yaml --hook-type pre-commit --hook-type pre-push
+	uv run pre-commit install --config ../.pre-commit-config.yaml --hook-type pre-commit
 
 up:
 	$(DEV_COMPOSE) up --build -d

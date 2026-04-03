@@ -78,7 +78,6 @@ Esse comando irá:
 - criar `.env` automaticamente (se ainda nao existir)
 - criar o ambiente virtual `.venv`
 - instalar todas as dependências Python do projeto
-- instalar os hooks de `pre-commit` e `pre-push`
 
 2. Subir a stack:
 
@@ -107,14 +106,13 @@ Após isso, para completar o setup de desenvolvimento no VS Code:
 
 Com isso, lint, formatacao e analise de codigo ficam padronizados no projeto.
 
-### Hooks Git (pre-commit e pre-push)
+### Hooks Git (pre-commit)
 
-Este repositorio usa `pre-commit` com dois estagios:
+Este repositorio usa `pre-commit` no commit:
 
-- `pre-commit`: roda `make lint`
-- `pre-push`: roda `make check`
+- `pre-commit`: roda `make lint` somente quando houver mudancas em `service/`
 
-Os hooks sao instalados automaticamente pelo `make setup`.
+O check completo (`make check`) roda no workflow de CI.
 
 ### Workflow
 
