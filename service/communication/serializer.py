@@ -44,7 +44,7 @@ class GithubIssueSerializer(serializers.Serializer):
             "numero": ret.get("number"),
             "titulo": ret.get("title"),
             "responsaveis": [u.get("login") for u in ret.get("assignees", [])],
-            "labels": [l.get("name") for l in ret.get("labels", [])],
+            "labels": [lab.get("name") for lab in ret.get("labels", [])],
             "tipo": ret.get("type", {}).get("name") if ret.get("type") else None,
             "parent": ret.get("parent_issue_url"),
             "autor": ret.get("user", {}).get("login"),
@@ -162,7 +162,10 @@ class GithubWebhookSerializer(serializers.Serializer):
             if "action" not in payload or "pull_request" not in payload:
                 raise serializers.ValidationError(
                     {
-                        "payload": "For pull_request event, payload must contain 'action' and 'pull_request'."
+                        "payload": (
+                            "For pull_request event, payload must contain "
+                            "'action' and 'pull_request'."
+                        )
                     }
                 )
 
@@ -196,7 +199,10 @@ class GithubWebhookSerializer(serializers.Serializer):
             if "action" not in payload or "projects_v2_item" not in payload:
                 raise serializers.ValidationError(
                     {
-                        "payload": "For projects_v2_item event, payload must contain 'action' and 'projects_v2_item'."
+                        "payload": (
+                            "For projects_v2_item event, payload must contain "
+                            "'action' and 'projects_v2_item'."
+                        )
                     }
                 )
 
