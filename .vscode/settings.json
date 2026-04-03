@@ -1,6 +1,13 @@
 {
   // Use the backend virtual environment as the default interpreter.
   "python.defaultInterpreterPath": "${workspaceFolder}/service/.venv/Scripts/python.exe",
+  // Keep Python language server enabled in this workspace.
+  "python.languageServer": "Default",
+  // BasedPyright must keep language services enabled for F12/go-to-definition to work.
+  "basedpyright.disableLanguageServices": false,
+  // Disable BasedPyright type diagnostics; mypy is the only type checker in this project.
+  "basedpyright.analysis.typeCheckingMode": "off",
+  "basedpyright.analysis.diagnosticMode": "openFilesOnly",
   // Use mypy as the workspace type checker.
   "python.analysis.typeCheckingMode": "off",
   "mypy-type-checker.importStrategy": "fromEnvironment",

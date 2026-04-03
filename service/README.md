@@ -120,10 +120,10 @@ Após isso, para completar o setup de desenvolvimento no VS Code:
 2. Executar `Python: Select Interpreter`
 3. Selecionar o interpretador recomendado do projeto (`service/.venv`)
 4. Instalar as extensoes recomendadas do workspace (`.vscode/extensions.json`)
-5. Instalar e habilitar a extensao `Mypy Type Checker` (`ms-python.mypy-type-checker`)
-6. Desabilitar type checkers concorrentes no workspace para evitar conflitos de diagnostico (`Pylance`, `Pyright`, `BasedPyright`, etc.)
+5. Instalar e habilitar a extensao `BasedPyright` (`detachhead.basedpyright`) para experiencia de IDE 
+6. Instalar e habilitar a extensao `Mypy Type Checker` (`ms-python.mypy-type-checker`) para analise de tipos do projeto
 
-Com isso, lint, formatacao e analise de codigo ficam configurados corretamente com um unico type checker (mypy).
+Com isso, lint, formatacao e analise de codigo ficam padronizados no projeto.
 
 ### Workflow
 
