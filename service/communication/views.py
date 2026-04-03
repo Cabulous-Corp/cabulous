@@ -3,10 +3,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from communication.helpers.discord_channel import DiscordChannelHelper
 from communication.models import DiscordChannelPurpose
 from communication.serializer import GithubWebhookSerializer
-from communication.webhookhelper import post_to_discord
+from communication.tasks import send_discord_channel_embed_by_purpose_task
+from communication.webhookhelper import build_discord_embed
 
 
 class GithubWebhookView(APIView):
@@ -30,17 +30,15 @@ class GithubWebhookView(APIView):
 
         normalized_data = serializer.save()
 
-        try:
-            discord_webhook = DiscordChannelHelper.get_webhook_url_by_purpose(
-                DiscordChannelPurpose.BOARD_UPDATES
-            )
-        except ValueError as exc:
-            return Response(
-                {"detail": str(exc)},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
+        embed = build_discord_embed(normalized_data)
 
-        post_to_discord(discord_webhook, dict(normalized_data))
+        if embed is not None:
+            send_discord_channel_embed_by_purpose_task.apply_async(
+                kwargs={
+                    "purpose": DiscordChannelPurpose.BOARD_UPDATES,
+                    "embeds": [embed.model_dump(mode="json", exclude_none=True)],
+                }
+            )
 
         return Response(
             {"message": "Webhook received successfully", "data": normalized_data},

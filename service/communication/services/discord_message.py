@@ -136,7 +136,7 @@ class DiscordService:
             embeds=embeds or [],
         )
         DiscordService._send_webhook_payload(
-            payload.model_dump(exclude_none=True),
+            payload.model_dump(mode="json", exclude_none=True),
             webhook_url,
         )
 

@@ -1,13 +1,19 @@
 import datetime
-import json
 import os
 from typing import Any
 
 import requests
 
+from communication.models.discord_message import DiscordEmbed, DiscordEmbedAuthor, DiscordEmbedField
+from communication.services import DiscordService
 
-def build_discord_payload(data: dict[str, Any]) -> dict[str, Any] | None:
-    """Monta o payload (dict) que será enviado ao Discord dependendo do evento."""
+
+def _is_http_url_candidate(value: str) -> bool:
+    return value.startswith("http://") or value.startswith("https://")
+
+
+def build_discord_embed(data: dict[str, Any]) -> DiscordEmbed | None:
+    """Monta um embed do Discord dependendo do evento."""
     evento = data.get("evento")
 
     if not evento or evento == "ignored":
@@ -21,13 +27,11 @@ def build_discord_payload(data: dict[str, Any]) -> dict[str, Any] | None:
     timestamp_iso = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     # Configuração do autor do embed (só adiciona o ícone se ele existir)
-    author_data = {"name": sender, "icon_url": sender_avatar} if sender_avatar else {"name": sender}
-
-    # Estrutura base do embed que será usada e estendida em todas as condições
-    embed = {
-        "author": author_data,
-        "timestamp": timestamp_iso,
-    }
+    author = (
+        DiscordEmbedAuthor(name=sender, icon_url=sender_avatar)
+        if sender_avatar and _is_http_url_candidate(sender_avatar)
+        else DiscordEmbedAuthor(name=sender)
+    )
 
     if evento.startswith("issue_"):
         issue_num = data.get("issue")
@@ -35,30 +39,47 @@ def build_discord_payload(data: dict[str, Any]) -> dict[str, Any] | None:
         url = data.get("url")
 
         if evento == "issue_created":
-            embed["title"] = f"🆕 Nova Issue: #{issue_num}"
-            embed["description"] = f"[{titulo}]({url})"
-            embed["color"] = 5763719  # Verde
+            return DiscordEmbed(
+                title=f"🆕 Nova Issue: #{issue_num}",
+                description=f"[{titulo}]({url})",
+                color=5763719,
+                author=author,
+                timestamp=timestamp_iso,
+            )
         elif evento == "issue_updated":
-            embed["title"] = f"✏️ Issue #{issue_num} Atualizada "
-            embed["description"] = f"[{titulo}]({url})"
-            embed["color"] = 16776960  # Amarelo
+            return DiscordEmbed(
+                title=f"✏️ Issue #{issue_num} Atualizada ",
+                description=f"[{titulo}]({url})",
+                color=16776960,
+                author=author,
+                timestamp=timestamp_iso,
+            )
         elif evento == "issue_closed":
-            embed["title"] = f"✅ Issue #{issue_num} Fechada"
-            embed["description"] = f"[{titulo}]({url})"
-            embed["color"] = 15548997  # Vermelho
+            return DiscordEmbed(
+                title=f"✅ Issue #{issue_num} Fechada",
+                description=f"[{titulo}]({url})",
+                color=15548997,
+                author=author,
+                timestamp=timestamp_iso,
+            )
         elif evento == "issue_assigned":
             responsavel = data.get("responsavel")
-            embed["title"] = f"👤 Issue #{issue_num} Atribuída a {responsavel}"
-            embed["description"] = f"Acesse a Issue: [{titulo}]({url})"
-            embed["color"] = 3447003  # Azul
+            return DiscordEmbed(
+                title=f"👤 Issue #{issue_num} Atribuída a {responsavel}",
+                description=f"Acesse a Issue: [{titulo}]({url})",
+                color=3447003,
+                author=author,
+                timestamp=timestamp_iso,
+            )
         elif evento == "issue_unassigned":
             responsavel = data.get("responsavel")
-            embed["title"] = f"➖ Issue #{issue_num} Desatribuída de {responsavel}"
-            embed["description"] = f"Acesse a Issue: [{titulo}]({url})"
-            embed["color"] = 9807270  # Cinza
-
-        if "title" in embed:
-            return {"embeds": [embed]}
+            return DiscordEmbed(
+                title=f"➖ Issue #{issue_num} Desatribuída de {responsavel}",
+                description=f"Acesse a Issue: [{titulo}]({url})",
+                color=9807270,
+                author=author,
+                timestamp=timestamp_iso,
+            )
 
     elif evento.startswith("pr_"):
         pr_data = data.get("data", {})
@@ -69,25 +90,38 @@ def build_discord_payload(data: dict[str, Any]) -> dict[str, Any] | None:
         url_str = f"[{titulo}]({url})" if url else titulo
 
         if evento == "pr_created":
-            embed["title"] = f"🔄 Novo Pull Request: #{pr_num}"
-            embed["description"] = url_str
-            embed["color"] = 5763719  # Verde
+            return DiscordEmbed(
+                title=f"🔄 Novo Pull Request: #{pr_num}",
+                description=url_str,
+                color=5763719,
+                author=author,
+                timestamp=timestamp_iso,
+            )
         elif evento == "pr_merged":
-            embed["title"] = f"🎉 Pull Request Merged: #{pr_num}"
-            embed["description"] = url_str
-            embed["color"] = 10181046  # Roxo
+            return DiscordEmbed(
+                title=f"🎉 Pull Request Merged: #{pr_num}",
+                description=url_str,
+                color=10181046,
+                author=author,
+                timestamp=timestamp_iso,
+            )
         elif evento == "pr_closed":
-            embed["title"] = f"❌ Pull Request Fechado: #{pr_num}"
-            embed["description"] = url_str
-            embed["color"] = 15548997  # Vermelho
+            return DiscordEmbed(
+                title=f"❌ Pull Request Fechado: #{pr_num}",
+                description=url_str,
+                color=15548997,
+                author=author,
+                timestamp=timestamp_iso,
+            )
         elif evento == "pr_assigned":
             responsavel = data.get("responsavel")
-            embed["title"] = f"👤 PR Atribuído: #{pr_num}"
-            embed["description"] = f"**{responsavel}** foi atribuído ao PR {url_str}"
-            embed["color"] = 3447003  # Azul
-
-        if "title" in embed:
-            return {"embeds": [embed]}
+            return DiscordEmbed(
+                title=f"👤 PR Atribuído: #{pr_num}",
+                description=f"**{responsavel}** foi atribuído ao PR {url_str}",
+                color=3447003,
+                author=author,
+                timestamp=timestamp_iso,
+            )
 
     elif evento == "project_item_edited":
         node_id = data.get("content_node_id")
@@ -142,43 +176,42 @@ def build_discord_payload(data: dict[str, Any]) -> dict[str, Any] | None:
         from_str = f"```ansi\n\u001b[0;{from_ansi}m{from_color_emoji} {from_status}\u001b[0m\n```"
         to_str = f"```ansi\n\u001b[0;{to_ansi}m{to_color_emoji} {to_status}\u001b[0m\n```"
 
-        embed["title"] = f"Issue: {titulo_real}"
-        embed["color"] = 5814783
+        return DiscordEmbed(
+            title=f"Issue: {titulo_real}",
+            description="🔄 Status Alterado",
+            color=5814783,
+            author=author,
+            timestamp=timestamp_iso,
+            fields=[
+                DiscordEmbedField(
+                    name="Transicao",
+                    value=f"{from_str}{seta_centralizada}\n{to_str}",
+                ),
+            ],
+        )
 
-        embed["description"] = "🔄 Status Alterado"
-
-        embed["fields"] = [
-            {
-                "name": "",
-                "value": f"{from_str}{seta_centralizada}\n{to_str}",
-            },
-        ]
-        return {"embeds": [embed]}
-
-    embed["title"] = "ℹ️ Novo Evento"
-    embed["description"] = f"`{evento}` disparado."
-    embed["color"] = 9807270  # Cinza
-    return {"embeds": [embed]}
+    return DiscordEmbed(
+        title="ℹ️ Novo Evento",
+        description=f"`{evento}` disparado.",
+        color=9807270,
+        author=author,
+        timestamp=timestamp_iso,
+    )
 
 
 def post_to_discord(webhook_url: str, validated_data: dict[str, Any]) -> bool:
-    payload = build_discord_payload(validated_data)
+    embed = build_discord_embed(validated_data)
 
-    if not payload:
+    if embed is None:
         return False
 
-    headers = {"Content-Type": "application/json"}
-
     try:
-        response = requests.post(webhook_url, data=json.dumps(payload), headers=headers, timeout=5)
-        if not response.ok:
-            print(
-                f"Alerta! Discord negou. Status: {response.status_code}, Resposta: {response.text}"
-            )
-
-        response.raise_for_status()
+        DiscordService.send_channel_embed(
+            webhook_url=webhook_url,
+            embeds=[embed],
+        )
         return True
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         print(f"Erro ao enviar para o Discord: {e}")
         return False
 
