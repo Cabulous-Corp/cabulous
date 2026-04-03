@@ -1,21 +1,20 @@
-import uuid
 from pathlib import Path
 from typing import Final
 
-import boto3  # type: ignore[import-untyped]
-from botocore.client import BaseClient  # type: ignore[import-untyped]
+import boto3
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
+from mypy_boto3_s3.client import S3Client
 
 from cabulous.config import get_settings
-from users.models import User
+from users.models import User, user_avatar_upload_to, user_banner_upload_to
 
 SIGNED_URL_EXPIRES_IN_SECONDS: Final[int] = 300
 AVATAR_ALLOWED_EXTENSIONS: Final[set[str]] = {".jpg", ".jpeg", ".png", ".webp"}
 UPLOAD_FILE_TYPES: Final[set[str]] = {"avatar", "banner"}
 
 
-def _build_s3_client(endpoint_url: str) -> BaseClient:
+def _build_s3_client(endpoint_url: str) -> S3Client:
     settings = get_settings()
     return boto3.client(
         "s3",
@@ -44,11 +43,11 @@ def _validate_image_file(filename: str, content_type: str) -> str:
 def build_user_upload_key(user: User, file_type: str, filename: str, content_type: str) -> str:
     normalized_file_type = _validate_upload_type(file_type)
     if normalized_file_type == "avatar":
-        suffix = _validate_image_file(filename, content_type)
-        return f"users/{user.id}/avatar/{uuid.uuid4().hex}{suffix}"
+        _validate_image_file(filename, content_type)
+        return user_avatar_upload_to(user, filename)
     if normalized_file_type == "banner":
-        suffix = _validate_image_file(filename, content_type)
-        return f"users/{user.id}/banner/{uuid.uuid4().hex}{suffix}"
+        _validate_image_file(filename, content_type)
+        return user_banner_upload_to(user, filename)
 
     raise ValidationError("Unsupported upload file type.")
 

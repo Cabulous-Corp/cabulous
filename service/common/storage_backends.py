@@ -1,8 +1,8 @@
 from typing import Any
 
-import boto3  # type: ignore[import-untyped]
-from botocore.client import BaseClient  # type: ignore[import-untyped]
+import boto3
 from django.utils.functional import cached_property
+from mypy_boto3_s3.client import S3Client
 from storages.backends.s3 import S3Storage  # type: ignore[import-untyped]
 from storages.utils import clean_name  # type: ignore[import-untyped]
 
@@ -16,7 +16,7 @@ class PublicEndpointMediaStorage(S3Storage):
     """
 
     @cached_property
-    def public_s3_client(self) -> BaseClient:
+    def public_s3_client(self) -> S3Client:
         settings = get_settings()
         return boto3.client(
             "s3",
@@ -46,9 +46,11 @@ class PublicEndpointMediaStorage(S3Storage):
         if parameters:
             params.update(parameters)
 
-        return self.public_s3_client.generate_presigned_url(
-            "get_object",
-            Params=params,
-            ExpiresIn=expire or self.querystring_expire,
-            HttpMethod=http_method,
-        )
+        presigned_url_kwargs: dict[str, Any] = {
+            "Params": params,
+            "ExpiresIn": expire or self.querystring_expire,
+        }
+        if http_method is not None:
+            presigned_url_kwargs["HttpMethod"] = http_method
+
+        return self.public_s3_client.generate_presigned_url("get_object", **presigned_url_kwargs)

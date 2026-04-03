@@ -144,7 +144,7 @@ class UserSerializer(serializers.ModelSerializer):
                 "Avatar upload is not supported during user creation."
             )
 
-        expected_prefix = f"users/{target_user.id}/avatar/"
+        expected_prefix = f"users/{target_user.id}/avatar"
         if not value.startswith(expected_prefix):
             raise serializers.ValidationError("Invalid avatar object key for this user.")
         if not default_storage.exists(value):
@@ -161,7 +161,7 @@ class UserSerializer(serializers.ModelSerializer):
                 "Banner upload is not supported during user creation."
             )
 
-        expected_prefix = f"users/{target_user.id}/banner/"
+        expected_prefix = f"users/{target_user.id}/banner"
         if not value.startswith(expected_prefix):
             raise serializers.ValidationError("Invalid banner object key for this user.")
         if not default_storage.exists(value):

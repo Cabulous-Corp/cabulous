@@ -29,6 +29,7 @@ dev = [
     "pre-commit>=4.3.0",
     "ruff>=0.15.6",
     "types-requests>=2.33.0.20260327",
+    "boto3-stubs[s3]>=1.42.82",
 ]
 
 [tool.ruff]
@@ -59,10 +60,6 @@ disable_error_code = ["var-annotated"]
 module = [
     "celery",
     "celery.*",
-    "requests",
-    "requests.*",
-    "rest_framework",
-    "rest_framework.*",
 ]
 ignore_missing_imports = true
 

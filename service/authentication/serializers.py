@@ -281,7 +281,7 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
         if instance is None:
             raise serializers.ValidationError("Invalid user for avatar upload.")
 
-        expected_prefix = f"users/{instance.id}/avatar/"
+        expected_prefix = f"users/{instance.id}/avatar"
         if not value.startswith(expected_prefix):
             raise serializers.ValidationError("Invalid avatar object key for this user.")
         if not default_storage.exists(value):
@@ -296,7 +296,7 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
         if instance is None:
             raise serializers.ValidationError("Invalid user for banner upload.")
 
-        expected_prefix = f"users/{instance.id}/banner/"
+        expected_prefix = f"users/{instance.id}/banner"
         if not value.startswith(expected_prefix):
             raise serializers.ValidationError("Invalid banner object key for this user.")
         if not default_storage.exists(value):
