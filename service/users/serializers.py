@@ -4,12 +4,14 @@ from datetime import timedelta
 from typing import Any
 
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.files.storage import default_storage
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
 from cabulous.config import get_settings
 from users.models import User, UserMagicLinkToken
+from users.services.upload_signing import UPLOAD_FILE_TYPES
 from users.validators import clean_discord_username, clean_phone_number, clean_username
 
 SELF_EDITABLE_FIELDS = {
@@ -20,8 +22,8 @@ SELF_EDITABLE_FIELDS = {
     "bio",
     "phone_number",
     "discord_username",
-    "avatar",
-    "banner",
+    "avatar_key",
+    "banner_key",
 }
 
 app_settings = get_settings()
@@ -29,6 +31,8 @@ app_settings = get_settings()
 
 class UserSerializer(serializers.ModelSerializer):
     _invite_access_payload: dict[str, Any] | None = None
+    avatar_key = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    banner_key = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
@@ -41,7 +45,9 @@ class UserSerializer(serializers.ModelSerializer):
             "discord_username",
             "phone_number",
             "avatar",
+            "avatar_key",
             "banner",
+            "banner_key",
             "bio",
             "onboarding_completed_at",
             "password_defined_at",
@@ -68,9 +74,20 @@ class UserSerializer(serializers.ModelSerializer):
         )
         extra_kwargs = {
             "username": {"validators": []},
+            "avatar": {"read_only": True},
+            "banner": {"read_only": True},
         }
 
     def validate(self, attrs: dict) -> dict:
+        if self.initial_data.get("avatar"):
+            raise serializers.ValidationError(
+                {"avatar": "Direct file upload is not allowed. Use avatar_key from signed upload."}
+            )
+        if self.initial_data.get("banner"):
+            raise serializers.ValidationError(
+                {"banner": "Direct file upload is not allowed in this endpoint."}
+            )
+
         request = self.context.get("request")
         view = self.context.get("view")
         action = getattr(view, "action", None)
@@ -117,10 +134,54 @@ class UserSerializer(serializers.ModelSerializer):
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.messages) from exc
 
+    def validate_avatar_key(self, value: str) -> str:
+        if not value:
+            return ""
+
+        target_user = self.instance
+        if target_user is None:
+            raise serializers.ValidationError(
+                "Avatar upload is not supported during user creation."
+            )
+
+        expected_prefix = f"users/{target_user.id}/avatar/"
+        if not value.startswith(expected_prefix):
+            raise serializers.ValidationError("Invalid avatar object key for this user.")
+        if not default_storage.exists(value):
+            raise serializers.ValidationError("Uploaded avatar object was not found.")
+        return value
+
+    def validate_banner_key(self, value: str) -> str:
+        if not value:
+            return ""
+
+        target_user = self.instance
+        if target_user is None:
+            raise serializers.ValidationError(
+                "Banner upload is not supported during user creation."
+            )
+
+        expected_prefix = f"users/{target_user.id}/banner/"
+        if not value.startswith(expected_prefix):
+            raise serializers.ValidationError("Invalid banner object key for this user.")
+        if not default_storage.exists(value):
+            raise serializers.ValidationError("Uploaded banner object was not found.")
+        return value
+
     def create(self, validated_data: dict) -> User:
         request = self.context.get("request")
         groups = validated_data.pop("groups", [])
         user_permissions = validated_data.pop("user_permissions", [])
+        avatar_key = validated_data.pop("avatar_key", "")
+        banner_key = validated_data.pop("banner_key", "")
+
+        if avatar_key or banner_key:
+            raise serializers.ValidationError(
+                {
+                    "avatar_key": "Media upload is not supported during user creation.",
+                    "banner_key": "Media upload is not supported during user creation.",
+                }
+            )
 
         temporary_password = self._generate_temporary_password()
         user = User(**validated_data)
@@ -156,6 +217,21 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
+    def update(self, instance: User, validated_data: dict[str, Any]) -> User:
+        avatar_key = validated_data.pop("avatar_key", "")
+        banner_key = validated_data.pop("banner_key", "")
+        user = super().update(instance, validated_data)
+        updated_fields: list[str] = []
+        if avatar_key:
+            user.avatar = avatar_key
+            updated_fields.append("avatar")
+        if banner_key:
+            user.banner = banner_key
+            updated_fields.append("banner")
+        if updated_fields:
+            user.save(update_fields=[*updated_fields, "updated_at"])
+        return user
+
     def get_invite_access_payload(self) -> dict[str, Any] | None:
         payload = getattr(self, "_invite_access_payload", None)
         if payload is None:
@@ -166,3 +242,10 @@ class UserSerializer(serializers.ModelSerializer):
     def _generate_temporary_password(length: int = 16) -> str:
         alphabet = string.ascii_letters + string.digits + "!@#$%^&*()-_=+"
         return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+class UserUploadSignedUrlRequestSerializer(serializers.Serializer):
+    file_type = serializers.ChoiceField(choices=sorted(UPLOAD_FILE_TYPES))
+    filename = serializers.CharField(max_length=255)
+    content_type = serializers.CharField(max_length=255)
+    target_user_id = serializers.UUIDField(required=False)
