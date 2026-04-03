@@ -8,4 +8,5 @@ repos:
         entry: make -C service lint
         language: system
         files: ^service/
+        pass_filenames: false
         stages: [pre-push]
