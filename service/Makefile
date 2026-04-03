@@ -34,7 +34,7 @@ help:
 	@echo "Uso: make <target>"
 	@echo ""
 	@echo "# Desenvolvimento (Padrao)"
-	@echo "  make setup                 - setup completo (.env, dependencias e hooks git)"
+	@echo "  make setup                 - setup completo (.env, dependencias e hook pre-push)"
 	@echo "  make up                    - sobe a stack dev com hot reload"
 	@echo "  make down                  - derruba a stack dev"
 	@echo "  make build                 - rebuilda as imagens da stack dev"
@@ -93,7 +93,7 @@ help:
 setup:
 	uv run python -c "from pathlib import Path; import shutil; env=Path('.env'); ex=Path('.env.example'); exists=env.exists(); print('.env ja existe; mantendo arquivo atual' if exists else '.env criado a partir de .env.example'); shutil.copyfile(ex, env) if not exists else None"
 	uv sync --all-groups
-	uv run pre-commit install --config ../.pre-commit-config.yaml --hook-type pre-commit
+	uv run pre-commit install --config ../.pre-commit-config.yaml --hook-type pre-push
 
 up:
 	$(DEV_COMPOSE) up --build -d
