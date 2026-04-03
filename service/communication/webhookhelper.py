@@ -126,7 +126,7 @@ def build_discord_embed(data: dict[str, Any]) -> DiscordEmbed | None:
     elif evento == "project_item_edited":
         node_id = data.get("content_node_id")
 
-        github_token = os.getenv("GITHUB__ACCESS_TOKEN") or os.getenv("GITHUB_TOKEN", "")
+        github_token = os.getenv("GITHUB__ACCESS_TOKEN") or os.getenv("GITHUB_TOKEN") or ""
         titulo_real = fetch_github_node_title(node_id, github_token)
         from_status = data.get("from")
         to_status = data.get("to")
@@ -216,7 +216,7 @@ def post_to_discord(webhook_url: str, validated_data: dict[str, Any]) -> bool:
         return False
 
 
-def fetch_github_node_title(node_id, github_token: str) -> str:
+def fetch_github_node_title(node_id: str | None, github_token: str) -> str:
     if not node_id:
         return "Sem Título"
 

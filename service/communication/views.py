@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework.permissions import AllowAny
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -12,7 +13,7 @@ from communication.webhookhelper import build_discord_embed
 class GithubWebhookView(APIView):
     permission_classes = [AllowAny]
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: Request, *args: object, **kwargs: object) -> Response:
         event = request.headers.get("X-GitHub-Event")
         if not event:
             return Response(
