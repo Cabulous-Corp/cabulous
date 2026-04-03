@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.files.storage import default_storage
 from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -210,6 +211,8 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
 class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
     new_password = serializers.CharField(write_only=True, trim_whitespace=False)
+    avatar_key = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    banner_key = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
@@ -222,10 +225,15 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
             "discord_username",
             "phone_number",
             "avatar",
+            "avatar_key",
+            "banner",
+            "banner_key",
             "bio",
         )
         extra_kwargs: dict[str, dict[str, Any]] = {
             "username": {"validators": []},
+            "avatar": {"read_only": True},
+            "banner": {"read_only": True},
         }
 
     def validate_new_password(self, value: str) -> str:
@@ -234,6 +242,14 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if self.initial_data.get("avatar"):
+            raise serializers.ValidationError(
+                {"avatar": "Direct file upload is not allowed. Use avatar_key from signed upload."}
+            )
+        if self.initial_data.get("banner"):
+            raise serializers.ValidationError(
+                {"banner": "Direct file upload is not allowed. Use banner_key from signed upload."}
+            )
         if "new_password" not in attrs:
             raise serializers.ValidationError({"new_password": "This field is required."})
         return attrs
@@ -257,8 +273,40 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.messages) from exc
 
+    def validate_avatar_key(self, value: str) -> str:
+        if not value:
+            return ""
+
+        instance = self.instance
+        if instance is None:
+            raise serializers.ValidationError("Invalid user for avatar upload.")
+
+        expected_prefix = f"users/{instance.id}/avatar"
+        if not value.startswith(expected_prefix):
+            raise serializers.ValidationError("Invalid avatar object key for this user.")
+        if not default_storage.exists(value):
+            raise serializers.ValidationError("Uploaded avatar object was not found.")
+        return value
+
+    def validate_banner_key(self, value: str) -> str:
+        if not value:
+            return ""
+
+        instance = self.instance
+        if instance is None:
+            raise serializers.ValidationError("Invalid user for banner upload.")
+
+        expected_prefix = f"users/{instance.id}/banner"
+        if not value.startswith(expected_prefix):
+            raise serializers.ValidationError("Invalid banner object key for this user.")
+        if not default_storage.exists(value):
+            raise serializers.ValidationError("Uploaded banner object was not found.")
+        return value
+
     def update(self, instance: "UserType", validated_data: dict[str, Any]) -> "UserType":
         password = validated_data.pop("new_password", None)
+        avatar_key = validated_data.pop("avatar_key", "")
+        banner_key = validated_data.pop("banner_key", "")
         if password is None:
             raise serializers.ValidationError({"new_password": "This field is required."})
 
@@ -272,6 +320,11 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
         instance.onboarding_completed_at = now
         if instance.invitation_accepted_at is None:
             instance.invitation_accepted_at = now
+
+        if avatar_key:
+            instance.avatar = avatar_key
+        if banner_key:
+            instance.banner = banner_key
 
         instance.save()
         return instance

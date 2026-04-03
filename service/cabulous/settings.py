@@ -124,11 +124,11 @@ if settings.minio.enabled:
     AWS_DEFAULT_ACL = settings.minio.default_acl
     AWS_QUERYSTRING_AUTH = settings.minio.querystring_auth
     AWS_S3_FILE_OVERWRITE = False
-    AWS_LOCATION = "uploads"
+    AWS_LOCATION = ""
 
     STORAGES = {
         "default": {
-            "BACKEND": "storages.backends.s3.S3Storage",
+            "BACKEND": "common.storage_backends.PublicEndpointMediaStorage",
             "OPTIONS": {
                 "bucket_name": AWS_STORAGE_BUCKET_NAME,
             },
@@ -137,9 +137,8 @@ if settings.minio.enabled:
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
-    MEDIA_URL = (
-        f"{settings.minio.public_endpoint.rstrip('/')}/{settings.minio.bucket_name}/{AWS_LOCATION}/"
-    )
+    media_base = f"{settings.minio.public_endpoint.rstrip('/')}/{settings.minio.bucket_name}"
+    MEDIA_URL = f"{media_base}/{AWS_LOCATION.strip('/')}/" if AWS_LOCATION else f"{media_base}/"
 
 JAZZMIN_SETTINGS = {
     "site_title": "Cabulous Admin",
