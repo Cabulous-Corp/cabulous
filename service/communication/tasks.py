@@ -1,79 +1,25 @@
 from typing import Any
 
 from celery import shared_task
-from pydantic import HttpUrl
 
 from communication.models import DiscordChannelPurpose
-from communication.models.discord_message import (
-    DiscordEmbedAuthor,
-    DiscordEmbedField,
-    DiscordEmbedFooter,
-    DiscordEmbedImage,
-    DiscordEmbedThumbnail,
-)
+from communication.models.discord_message import DiscordEmbed
 from communication.services import DiscordService, EmailService
 
 
-def _parse_http_url(url: HttpUrl | str | None) -> HttpUrl | None:
-    if url is None:
+def _parse_embeds(
+    embeds: list[DiscordEmbed | dict[str, Any]] | None,
+) -> list[DiscordEmbed] | None:
+    if embeds is None:
         return None
-    if isinstance(url, HttpUrl):
-        return url
-    return HttpUrl(url)
 
-
-def _parse_embed_footer(
-    footer: DiscordEmbedFooter | dict[str, Any] | None,
-) -> DiscordEmbedFooter | None:
-    if footer is None:
-        return None
-    if isinstance(footer, DiscordEmbedFooter):
-        return footer
-    return DiscordEmbedFooter.model_validate(footer)
-
-
-def _parse_embed_image(
-    image: DiscordEmbedImage | dict[str, Any] | None,
-) -> DiscordEmbedImage | None:
-    if image is None:
-        return None
-    if isinstance(image, DiscordEmbedImage):
-        return image
-    return DiscordEmbedImage.model_validate(image)
-
-
-def _parse_embed_thumbnail(
-    thumbnail: DiscordEmbedThumbnail | dict[str, Any] | None,
-) -> DiscordEmbedThumbnail | None:
-    if thumbnail is None:
-        return None
-    if isinstance(thumbnail, DiscordEmbedThumbnail):
-        return thumbnail
-    return DiscordEmbedThumbnail.model_validate(thumbnail)
-
-
-def _parse_embed_author(
-    author: DiscordEmbedAuthor | dict[str, Any] | None,
-) -> DiscordEmbedAuthor | None:
-    if author is None:
-        return None
-    if isinstance(author, DiscordEmbedAuthor):
-        return author
-    return DiscordEmbedAuthor.model_validate(author)
-
-
-def _parse_embed_fields(
-    fields: list[DiscordEmbedField | dict[str, Any]] | None,
-) -> list[DiscordEmbedField] | None:
-    if fields is None:
-        return None
-    parsed_fields: list[DiscordEmbedField] = []
-    for field in fields:
-        if isinstance(field, DiscordEmbedField):
-            parsed_fields.append(field)
+    parsed: list[DiscordEmbed] = []
+    for embed in embeds:
+        if isinstance(embed, DiscordEmbed):
+            parsed.append(embed)
         else:
-            parsed_fields.append(DiscordEmbedField.model_validate(field))
-    return parsed_fields
+            parsed.append(DiscordEmbed.model_validate(embed))
+    return parsed
 
 
 @shared_task(name="communication.send_simple_email")
@@ -177,31 +123,13 @@ def send_discord_channel_message_from_template_by_purpose_task(
 def send_discord_channel_embed_task(
     *,
     webhook_url: str,
-    title: str | None = None,
-    description: str | None = None,
-    color: int | None = None,
-    url: HttpUrl | str | None = None,
-    timestamp: str | None = None,
-    footer: DiscordEmbedFooter | dict[str, Any] | None = None,
-    image: DiscordEmbedImage | dict[str, Any] | None = None,
-    thumbnail: DiscordEmbedThumbnail | dict[str, Any] | None = None,
-    author: DiscordEmbedAuthor | dict[str, Any] | None = None,
-    fields: list[DiscordEmbedField | dict[str, Any]] | None = None,
     content: str | None = None,
+    embeds: list[DiscordEmbed | dict[str, Any]] | None = None,
 ) -> None:
     DiscordService.send_channel_embed(
         webhook_url=webhook_url,
-        title=title,
-        description=description,
-        color=color,
-        url=_parse_http_url(url),
-        timestamp=timestamp,
-        footer=_parse_embed_footer(footer),
-        image=_parse_embed_image(image),
-        thumbnail=_parse_embed_thumbnail(thumbnail),
-        author=_parse_embed_author(author),
-        fields=_parse_embed_fields(fields),
         content=content,
+        embeds=_parse_embeds(embeds),
     )
 
 
@@ -209,29 +137,11 @@ def send_discord_channel_embed_task(
 def send_discord_channel_embed_by_purpose_task(
     *,
     purpose: DiscordChannelPurpose | str,
-    title: str | None = None,
-    description: str | None = None,
-    color: int | None = None,
-    url: HttpUrl | str | None = None,
-    timestamp: str | None = None,
-    footer: DiscordEmbedFooter | dict[str, Any] | None = None,
-    image: DiscordEmbedImage | dict[str, Any] | None = None,
-    thumbnail: DiscordEmbedThumbnail | dict[str, Any] | None = None,
-    author: DiscordEmbedAuthor | dict[str, Any] | None = None,
-    fields: list[DiscordEmbedField | dict[str, Any]] | None = None,
     content: str | None = None,
+    embeds: list[DiscordEmbed | dict[str, Any]] | None = None,
 ) -> None:
     DiscordService.send_channel_embed_by_purpose(
         purpose=purpose,
-        title=title,
-        description=description,
-        color=color,
-        url=_parse_http_url(url),
-        timestamp=timestamp,
-        footer=_parse_embed_footer(footer),
-        image=_parse_embed_image(image),
-        thumbnail=_parse_embed_thumbnail(thumbnail),
-        author=_parse_embed_author(author),
-        fields=_parse_embed_fields(fields),
         content=content,
+        embeds=_parse_embeds(embeds),
     )

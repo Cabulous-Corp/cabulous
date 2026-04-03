@@ -4,19 +4,10 @@ from typing import Any
 import requests
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
-from pydantic import HttpUrl
 
 from communication.helpers import DiscordChannelHelper
 from communication.models import DiscordChannelPurpose
-from communication.models.discord_message import (
-    DiscordEmbed,
-    DiscordEmbedAuthor,
-    DiscordEmbedField,
-    DiscordEmbedFooter,
-    DiscordEmbedImage,
-    DiscordEmbedThumbnail,
-    DiscordWebhookPayload,
-)
+from communication.models.discord_message import DiscordEmbed, DiscordWebhookPayload
 
 
 class DiscordService:
@@ -28,8 +19,8 @@ class DiscordService:
     - send_channel_message_by_purpose(purpose, content)
     - send_channel_message_from_template(webhook_url, template_path, context=None)
     - send_channel_message_from_template_by_purpose(purpose, template_path, context=None)
-    - send_channel_embed(webhook_url, ...)
-    - send_channel_embed_by_purpose(purpose, ...)
+    - send_channel_embed(webhook_url, content=None, embeds=None)
+    - send_channel_embed_by_purpose(purpose, content=None, embeds=None)
     """
 
     MESSAGE_TEMPLATE_EXTENSIONS = ("txt", "md")
@@ -136,92 +127,14 @@ class DiscordService:
     @staticmethod
     def send_channel_embed(
         webhook_url: str,
-        title: str | None = None,
-        description: str | None = None,
-        color: int | None = None,
-        url: HttpUrl | None = None,
-        timestamp: str | None = None,
-        footer: DiscordEmbedFooter | None = None,
-        image: DiscordEmbedImage | None = None,
-        thumbnail: DiscordEmbedThumbnail | None = None,
-        author: DiscordEmbedAuthor | None = None,
-        fields: list[DiscordEmbedField] | None = None,
+        *,
         content: str | None = None,
+        embeds: list[DiscordEmbed] | None = None,
     ) -> None:
-        """
-        Service para envio de mensagens e embeds para webhooks do Discord.
-
-        Os schemas Pydantic utilizados (Embed, Fields, Footer, Author, Image, etc.)
-        estão definidos em:
-        communication/models/discord_message.py
-
-        Exemplo de uso:
-
-        from communication.services.discord_message import DiscordService
-        from communication.models.discord_message import (
-            DiscordEmbedField,
-            DiscordEmbedFooter,
-            DiscordEmbedAuthor,
-            DiscordEmbedImage,
-            DiscordEmbedThumbnail,
-        )
-
-        DiscordService.send_channel_embed(
-            webhook_url="https://discord.com/api/webhooks/...",
-            title="Novo evento",
-            description="Evento criado com sucesso",
-            color=5814783,
-            url="https://mcoder.com.br",
-            timestamp="2026-03-26T12:00:00Z",
-            content="Mensagem opcional fora do embed",
-            footer=DiscordEmbedFooter(
-                text="Sistema mCoder",
-                icon_url="https://example.com/icon.png",
-            ),
-            author=DiscordEmbedAuthor(
-                name="mCoder Bot",
-                url="https://mcoder.com.br",
-                icon_url="https://example.com/bot.png",
-            ),
-            image=DiscordEmbedImage(
-                url="https://example.com/image.png",
-            ),
-            thumbnail=DiscordEmbedThumbnail(
-                url="https://example.com/thumb.png",
-            ),
-            fields=[
-                DiscordEmbedField(
-                    name="Usuário",
-                    value="Marcos",
-                    inline=True,
-                ),
-                DiscordEmbedField(
-                    name="Plano",
-                    value="Pro",
-                    inline=True,
-                ),
-            ],
-        )
-        """
-
-        embed = DiscordEmbed(
-            title=title,
-            description=description,
-            color=color,
-            url=url,
-            timestamp=timestamp,
-            footer=footer,
-            image=image,
-            thumbnail=thumbnail,
-            author=author,
-            fields=fields,
-        )
-
         payload = DiscordWebhookPayload(
             content=content,
-            embeds=[embed],
+            embeds=embeds or [],
         )
-
         DiscordService._send_webhook_payload(
             payload.model_dump(exclude_none=True),
             webhook_url,
@@ -231,30 +144,12 @@ class DiscordService:
     def send_channel_embed_by_purpose(
         purpose: DiscordChannelPurpose | str,
         *,
-        title: str | None = None,
-        description: str | None = None,
-        color: int | None = None,
-        url: HttpUrl | None = None,
-        timestamp: str | None = None,
-        footer: DiscordEmbedFooter | None = None,
-        image: DiscordEmbedImage | None = None,
-        thumbnail: DiscordEmbedThumbnail | None = None,
-        author: DiscordEmbedAuthor | None = None,
-        fields: list[DiscordEmbedField] | None = None,
         content: str | None = None,
+        embeds: list[DiscordEmbed] | None = None,
     ) -> None:
         webhook_url = DiscordChannelHelper.get_webhook_url_by_purpose(purpose)
         DiscordService.send_channel_embed(
             webhook_url=webhook_url,
-            title=title,
-            description=description,
-            color=color,
-            url=url,
-            timestamp=timestamp,
-            footer=footer,
-            image=image,
-            thumbnail=thumbnail,
-            author=author,
-            fields=fields,
             content=content,
+            embeds=embeds,
         )
