@@ -1,14 +1,18 @@
-repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.6
-    hooks:
-      - id: ruff-check
-      - id: ruff-format
+default_install_hook_types: [pre-commit, pre-push]
 
+repos:
   - repo: local
     hooks:
-      - id: mypy
-        name: mypy (service)
-        entry: uv run --project service mypy .
+      - id: make-lint
+        name: make lint (service)
+        entry: make -C service lint
         language: system
         pass_filenames: false
+        stages: [pre-commit]
+
+      - id: make-check
+        name: make check (service)
+        entry: make -C service check
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
