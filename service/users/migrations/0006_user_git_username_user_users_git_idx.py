@@ -4,20 +4,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('auth', '0012_alter_user_first_name_max_length'),
-        ('users', '0005_alter_user_managers_user_deleted_at_and_more'),
+        ("auth", "0012_alter_user_first_name_max_length"),
+        ("users", "0005_alter_user_managers_user_deleted_at_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='git_username',
-            field=models.CharField(blank=True, default='', max_length=100, verbose_name='Usuário do GitHub'),
+            model_name="user",
+            name="git_username",
+            field=models.CharField(
+                blank=True, default="", max_length=100, verbose_name="Usuário do GitHub"
+            ),
         ),
         migrations.AddIndex(
-            model_name='user',
-            index=models.Index(fields=['git_username'], name='users_git_idx'),
+            model_name="user",
+            index=models.Index(fields=["git_username"], name="users_git_idx"),
         ),
     ]
