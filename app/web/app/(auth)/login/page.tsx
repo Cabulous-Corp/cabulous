@@ -1,84 +1,132 @@
 'use client'
 
 import { useState } from 'react'
-import { MdEmail } from 'react-icons/md'
+import Link from 'next/link'
+import { useForm } from 'react-hook-form'
 import { BiSolidLockAlt } from 'react-icons/bi'
+import { MdEmail } from 'react-icons/md'
+
 import { Button } from '@/components/ui/button'
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+
 import AnimatedTrianglesBackground from '../login/_components/AnimatedTrianglesBackground'
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  //const [error, setError] = useState('')
+type LoginFormValues = {
+  identifier: string
+  password: string
+}
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email || !password) {
-      console.log('Email e senha são obrigatórios') //setError("preencha todos os campos")
-      return
-    }
+export default function LoginPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+
+  const form = useForm<LoginFormValues>({
+    defaultValues: {
+      identifier: '',
+      password: '',
+    },
+    mode: 'onSubmit',
+  })
+
+  const handleLogin = async (values: LoginFormValues) => {
+    setSubmitError('')
+    setIsSubmitting(true)
+
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: values.identifier, password: values.password }),
       })
       const data = await res.json()
 
       if (!res.ok) {
-        //redirecionar para a dashboard
-        console.log('Erro:', data) //setError(data.message || 'deu ruim')
+        setSubmitError('Nao foi possivel entrar. Confira suas credenciais e tente novamente.')
+        console.log('Erro:', data)
         return
       }
 
       console.log('Login bem-sucedido:', data)
-      //para redirecionar router.push('/dashboard')
     } catch (error) {
-      console.error('Erro', error) //setError('deu ruim')
+      setSubmitError('Erro inesperado ao tentar entrar. Tente novamente em instantes.')
+      console.error('Erro', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden grid grid-rows-[300px_1fr] md:grid-cols-2 md:grid-rows-1 items-center justify-center">
+    <div className="relative grid min-h-screen w-full grid-rows-[300px_1fr] items-center justify-center overflow-hidden md:grid-cols-2 md:grid-rows-1">
       <AnimatedTrianglesBackground />
 
-      <section className="flex flex-col items-center gap-16 pt-16 pb-16 rounded-lg w-100% z-1">
-        <h3 className="text-2xl text-center">Faça seu Login no Cabulous</h3>
-        <form className="flex flex-col gap-8 items-center" onSubmit={handleLogin}>
-          <Input
-            placeholder="Email/User"
-            type="email"
-            id="email"
-            startAdornment={<MdEmail />}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+      <section className="z-1 flex w-100% flex-col items-center gap-16 rounded-lg pt-16 pb-16">
+        <h3 className="text-center text-2xl">Faca seu Login no Cabulous</h3>
 
-          <Input
-            placeholder="Password"
-            type="password"
-            id="password"
-            startAdornment={<BiSolidLockAlt />}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <Button type="submit" variant="link" className="text-white">
-            Esqueceu sua senha?
-          </Button>
+        <Form {...form}>
+          <form className="flex flex-col items-center gap-8" onSubmit={form.handleSubmit(handleLogin)}>
+            <FormField
+              control={form.control}
+              name="identifier"
+              rules={{ required: 'E-mail ou usuario e obrigatorio.' }}
+              render={({ field, fieldState }) => (
+                <FormItem className="w-full">
+                  <FormControl>
+                    <Input
+                      {...field}
+                      id="identifier"
+                      type="text"
+                      placeholder="Email/User"
+                      startAdornment={<MdEmail />}
+                      error={fieldState.error?.message}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-          <Button variant="default" size="xl" className="rounded-full w-45">
-            Sign in
-          </Button>
-        </form>
+            <FormField
+              control={form.control}
+              name="password"
+              rules={{
+                required: 'Senha e obrigatoria.',
+                minLength: { value: 8, message: 'A senha deve ter pelo menos 8 caracteres.' },
+              }}
+              render={({ field, fieldState }) => (
+                <FormItem className="w-full">
+                  <FormControl>
+                    <Input
+                      {...field}
+                      id="password"
+                      type="password"
+                      placeholder="Password"
+                      startAdornment={<BiSolidLockAlt />}
+                      error={fieldState.error?.message}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
+
+            <Button asChild variant="link" className="text-white">
+              <Link href="/forgot-password">Esqueceu sua senha?</Link>
+            </Button>
+
+            <Button type="submit" variant="default" size="xl" className="w-45 rounded-full" disabled={isSubmitting}>
+              {isSubmitting ? 'Entrando...' : 'Sign in'}
+            </Button>
+          </form>
+        </Form>
       </section>
 
-      <section className="basis-auto relative text-white order-first md:order-last z-1">
+      <section className="z-1 order-first basis-auto text-white md:order-last">
         <div className="z-10 text-center">
           <h1 className="text-4xl font-bold">Bem vindo de volta!</h1>
-          <p className="opacity-70 mt-2">Por favor, insira seus dados pessoais para continuar conectado.</p>
+          <p className="mt-2 opacity-70">Por favor, insira seus dados pessoais para continuar conectado.</p>
         </div>
       </section>
     </div>
