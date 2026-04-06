@@ -10,6 +10,14 @@ SECRET_KEY = settings.secret_key
 DEBUG = settings.debug
 ALLOWED_HOSTS = settings.allowed_hosts
 
+if DEBUG:
+    # Allow ephemeral/public ngrok tunnel hosts in development only.
+    dev_ngrok_hosts = [".ngrok-free.app", ".ngrok.app", ".ngrok.io"]
+    ALLOWED_HOSTS = [
+        *ALLOWED_HOSTS,
+        *[host for host in dev_ngrok_hosts if host not in ALLOWED_HOSTS],
+    ]
+
 INSTALLED_APPS = [
     "jazzmin",
     "django.contrib.admin",
