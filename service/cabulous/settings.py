@@ -1,3 +1,7 @@
+from datetime import timedelta
+
+from celery.schedules import crontab
+
 from cabulous.config import BASE_DIR, get_settings
 
 settings = get_settings()
@@ -15,8 +19,14 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
+    "authentication",
+    "users",
     "common",
     "monitoring",
+    "analytics",
+    "communication",
+    "events",
 ]
 
 if settings.minio.enabled:
@@ -78,6 +88,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = "users.User"
+
 LANGUAGE_CODE = "pt-br"
 TIME_ZONE = settings.time_zone
 
@@ -112,11 +124,11 @@ if settings.minio.enabled:
     AWS_DEFAULT_ACL = settings.minio.default_acl
     AWS_QUERYSTRING_AUTH = settings.minio.querystring_auth
     AWS_S3_FILE_OVERWRITE = False
-    AWS_LOCATION = "uploads"
+    AWS_LOCATION = ""
 
     STORAGES = {
         "default": {
-            "BACKEND": "storages.backends.s3.S3Storage",
+            "BACKEND": "common.storage_backends.PublicEndpointMediaStorage",
             "OPTIONS": {
                 "bucket_name": AWS_STORAGE_BUCKET_NAME,
             },
@@ -125,9 +137,8 @@ if settings.minio.enabled:
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
-    MEDIA_URL = (
-        f"{settings.minio.public_endpoint.rstrip('/')}/{settings.minio.bucket_name}/{AWS_LOCATION}/"
-    )
+    media_base = f"{settings.minio.public_endpoint.rstrip('/')}/{settings.minio.bucket_name}"
+    MEDIA_URL = f"{media_base}/{AWS_LOCATION.strip('/')}/" if AWS_LOCATION else f"{media_base}/"
 
 JAZZMIN_SETTINGS = {
     "site_title": "Cabulous Admin",
@@ -136,9 +147,10 @@ JAZZMIN_SETTINGS = {
     "site_logo_classes": "img-circle",
     "welcome_sign": "Bem-vindo ao admin do Cabulous",
     "copyright": "Cabulous",
-    "search_model": ["auth.User"],
+    "search_model": ["users.User"],
     "show_sidebar": True,
     "navigation_expanded": True,
+    "changeform_format": "horizontal_tabs",
     "hide_apps": [],
     "hide_models": [],
     "order_with_respect_to": ["auth", "monitoring"],
@@ -152,12 +164,47 @@ CELERY_BEAT_SCHEDULE_FILENAME = settings.celery.beat_schedule_filename
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+CELERY_BEAT_SCHEDULE = {
+    "authentication_flush_expired_tokens_monthly": {
+        "task": "authentication.tasks.flush_expired_tokens",
+        "schedule": crontab(minute=0, hour=3, day_of_month=1),
+    },
+    "users_cleanup_magic_links_monthly": {
+        "task": "users.tasks.cleanup_magic_links",
+        "schedule": crontab(minute=0, hour=4, day_of_month=1),
+    },
+}
 
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "authentication.permissions.IsAuthenticatedWithOnboardingGuard",
+    ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
 }
 
-TESTE = "ADSSA"
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=settings.jwt.access_token_lifetime_minutes),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=settings.jwt.refresh_token_lifetime_days),
+    "ROTATE_REFRESH_TOKENS": settings.jwt.rotate_refresh_tokens,
+    "BLACKLIST_AFTER_ROTATION": settings.jwt.blacklist_after_rotation,
+    "UPDATE_LAST_LOGIN": settings.jwt.update_last_login,
+    "AUTH_HEADER_TYPES": tuple(settings.jwt.auth_header_types),
+}
+
+EMAIL_BACKEND = settings.email.backend
+EMAIL_HOST = settings.email.host
+EMAIL_PORT = settings.email.port
+EMAIL_USE_TLS = settings.email.use_tls
+EMAIL_USE_SSL = settings.email.use_ssl
+EMAIL_TIMEOUT = settings.email.timeout
+EMAIL_HOST_USER = settings.email.host_user
+EMAIL_HOST_PASSWORD = settings.email.host_password
+DEFAULT_FROM_EMAIL = settings.email.default_from_email
+SERVER_EMAIL = settings.email.server_email

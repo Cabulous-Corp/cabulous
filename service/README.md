@@ -67,25 +67,20 @@ No modo de desenvolvimento:
 
 Comandos minimos para subir o backend em desenvolvimento:
 
-1. Copiar o arquivo de ambiente:
+1. Rodar o setup completo:
 
 ```bash
-cp .env.example .env
+make setup
 ```
 
-No Windows (PowerShell):
+Esse comando irá:
 
-```powershell
-Copy-Item .env.example .env
-```
+- criar `.env` automaticamente (se ainda nao existir)
+- criar o ambiente virtual `.venv`
+- instalar todas as dependências Python do projeto
+- instalar o hook de `pre-push`
 
-2. Criar o ambiente virtual Python e instalar as dependencias:
-
-```bash
-uv sync
-```
-
-3. Subir a stack:
+2. Subir a stack:
 
 ```bash
 make up-dev
@@ -93,35 +88,32 @@ make up-dev
 
 Ambiente de desenvolvimento de pé!
 
-Fluxo resumido:
-
-```bash
-cd service
-cp .env.example .env
-uv sync
-make up-dev
-```
-
 ### VS Code (recomendado)
 
 Antes de selecionar o interpretador Python, é necessário criar o ambiente virtual do projeto utilizando o `uv`.
 
-Dentro do diretório `service`, execute:
+Dentro do diretório `service`, execute caso não tenha executado:
 
 ```bash
-uv sync
+make setup
 ```
-
-Esse comando irá criar o ambiente virtual `.venv` e instalar todas as dependências Python do projeto.
 
 Após isso, para completar o setup de desenvolvimento no VS Code:
 
-1. Abrir o Command Palette com `F1` ou `Ctrl+Shift+P`
-2. Executar `Python: Select Interpreter`
-3. Selecionar o interpretador recomendado do projeto (`service/.venv`)
-4. Instalar as extensoes recomendadas do workspace (`.vscode/extensions.json`)
+- selecione o interpretador Python da venv do projeto (`service/.venv`)
+- instale as extensoes recomendadas do workspace (`.vscode/extensions.json`)
+- mantenha `BasedPyright` (`detachhead.basedpyright`) habilitado para experiencia de IDE
+- mantenha `Mypy Type Checker` (`ms-python.mypy-type-checker`) habilitado para analise de tipos do projeto
 
-Com isso, lint, formatacao e analise de codigo ficam configurados corretamente.
+Com isso, lint, formatacao e analise de codigo ficam padronizados no projeto.
+
+### Hooks Git (pre-push)
+
+Este repositorio usa `pre-push` no push:
+
+- `pre-push`: roda `make lint` somente quando houver mudancas em `service/`
+
+O check completo (`make check`) roda no workflow de CI.
 
 ### Workflow
 

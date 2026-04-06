@@ -8,18 +8,28 @@ dependencies = [
     "django>=6.0.3",
     "django-jazzmin>=3.0.4",
     "django-redis>=6.0.0",
+    "djangorestframework-simplejwt>=5.5.1",
     "django-storages[s3]>=1.14.6",
     "djangorestframework>=3.16.1",
     "flower>=2.0.1",
     "gunicorn>=25.1.0",
+    "phonenumbers>=9.0.17",
+    "pillow>=12.1.1",
     "psycopg[binary]>=3.3.3",
     "pydantic-settings>=2.13.1",
     "watchfiles>=1.1.1",
+    "requests>=2.33.0",
 ]
 
 [dependency-groups]
 dev = [
+    "djangorestframework-stubs>=3.16.8",
+    "django-stubs>=6.0.1",
+    "mypy>=1.19.1",
+    "pre-commit>=4.3.0",
     "ruff>=0.15.6",
+    "types-requests>=2.33.0.20260327",
+    "boto3-stubs[s3]>=1.42.82",
 ]
 
 [tool.ruff]
@@ -28,4 +38,30 @@ line-length = 100
 target-version = "py313"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/migrations/*.py" = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+
+[tool.mypy]
+python_version = "3.13"
+plugins = ["mypy_django_plugin.main"]
+mypy_path = "."
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disable_error_code = ["var-annotated"]
+
+[[tool.mypy.overrides]]
+module = [
+    "celery",
+    "celery.*",
+]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "cabulous.settings"
