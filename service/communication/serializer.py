@@ -10,13 +10,13 @@ SUPPORTED_EVENTS = ("issues", "pull_request", "projects_v2_item")
 
 def extract_issue_references(text: str | None) -> list[int]:
     """
-    Extrai referências tipo:
-    Fixes #48
-    Closes #12
+    Extract issue references such as:
+    - Fixes #48
+    - Closes #12
     """
     if not text:
         return []
-    return [int(n) for n in re.findall(r"#(\d+)", text)]
+    return [int(number) for number in re.findall(r"#(\d+)", text)]
 
 
 class GithubUserSerializer(serializers.Serializer):
@@ -38,17 +38,16 @@ class GithubIssueSerializer(serializers.Serializer):
     html_url = serializers.URLField(required=False, allow_null=True)
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
-        ret = super().to_internal_value(data)
-
+        parsed = super().to_internal_value(data)
         return {
-            "numero": ret.get("number"),
-            "titulo": ret.get("title"),
-            "responsaveis": [u.get("login") for u in ret.get("assignees", [])],
-            "labels": [lab.get("name") for lab in ret.get("labels", [])],
-            "tipo": ret.get("type", {}).get("name") if ret.get("type") else None,
-            "parent": ret.get("parent_issue_url"),
-            "autor": ret.get("user", {}).get("login"),
-            "url": ret.get("html_url"),
+            "number": parsed.get("number"),
+            "title": parsed.get("title"),
+            "assignees": [user.get("login") for user in parsed.get("assignees", [])],
+            "labels": [label.get("name") for label in parsed.get("labels", [])],
+            "issue_type": parsed.get("type", {}).get("name") if parsed.get("type") else None,
+            "parent_issue_url": parsed.get("parent_issue_url"),
+            "author": parsed.get("user", {}).get("login"),
+            "url": parsed.get("html_url"),
         }
 
 
@@ -63,27 +62,26 @@ class GithubPullRequestSerializer(serializers.Serializer):
     base = serializers.DictField()
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
-        ret = super().to_internal_value(data)
+        parsed = super().to_internal_value(data)
 
-        # Faz a conversão para o formato desejado (mesmo estilo do parser)
-        body_text = ret.get("body") or ""
-        title_text = ret.get("title") or ""
+        body_text = parsed.get("body") or ""
+        title_text = parsed.get("title") or ""
         full_text = f"{body_text} {title_text}"
 
         return {
-            "numero": ret.get("number"),
-            "titulo": ret.get("title"),
-            "autor": ret.get("user", {}).get("login"),
-            "responsaveis": [u.get("login") for u in ret.get("assignees", [])],
-            "merged": ret.get("merged", False),
-            "issues_relacionadas": extract_issue_references(full_text),
-            "branch": ret.get("head", {}).get("ref"),
-            "base": ret.get("base", {}).get("ref"),
+            "number": parsed.get("number"),
+            "title": parsed.get("title"),
+            "author": parsed.get("user", {}).get("login"),
+            "assignees": [user.get("login") for user in parsed.get("assignees", [])],
+            "merged": parsed.get("merged", False),
+            "related_issues": extract_issue_references(full_text),
+            "branch": parsed.get("head", {}).get("ref"),
+            "base": parsed.get("base", {}).get("ref"),
         }
 
 
 class GithubWebhookSerializer(serializers.Serializer):
-    """Validate and normalize incoming GitHub webhook data using specific event serializers."""
+    """Validate and normalize incoming GitHub webhook payloads."""
 
     event = serializers.ChoiceField(choices=SUPPORTED_EVENTS)
     payload = serializers.JSONField()
@@ -110,20 +108,19 @@ class GithubWebhookSerializer(serializers.Serializer):
             if action in ("assigned", "unassigned"):
                 assignee_login = payload.get("assignee", {}).get("login")
 
-                # Aproveitamos o serializer de Issue para reaproveitar extração de campos extras
                 issue_serializer = GithubIssueSerializer(data=issue_data)
                 issue_serializer.is_valid(raise_exception=True)
                 parsed_issue = cast(dict[str, Any], issue_serializer.validated_data)
 
                 attrs["normalized"] = {
-                    "evento": f"issue_{action}",
-                    "issue": parsed_issue.get("numero"),
-                    "responsavel": assignee_login,
-                    "titulo": parsed_issue.get("titulo"),
+                    "event_name": f"issue_{action}",
+                    "issue_number": parsed_issue.get("number"),
+                    "assignee": assignee_login,
+                    "title": parsed_issue.get("title"),
                     "url": parsed_issue.get("url"),
                     "labels": parsed_issue.get("labels", []),
-                    "tipo": parsed_issue.get("tipo"),
-                    "parent": parsed_issue.get("parent"),
+                    "issue_type": parsed_issue.get("issue_type"),
+                    "parent_issue_url": parsed_issue.get("parent_issue_url"),
                 }
             elif action == "closed":
                 issue_serializer = GithubIssueSerializer(data=issue_data)
@@ -131,13 +128,13 @@ class GithubWebhookSerializer(serializers.Serializer):
                 parsed_issue = cast(dict[str, Any], issue_serializer.validated_data)
 
                 attrs["normalized"] = {
-                    "evento": "issue_closed",
-                    "issue": parsed_issue.get("numero"),
-                    "titulo": parsed_issue.get("titulo"),
+                    "event_name": "issue_closed",
+                    "issue_number": parsed_issue.get("number"),
+                    "title": parsed_issue.get("title"),
                     "url": parsed_issue.get("url"),
                     "labels": parsed_issue.get("labels", []),
-                    "tipo": parsed_issue.get("tipo"),
-                    "parent": parsed_issue.get("parent"),
+                    "issue_type": parsed_issue.get("issue_type"),
+                    "parent_issue_url": parsed_issue.get("parent_issue_url"),
                 }
             elif action in ("opened", "edited"):
                 issue_serializer = GithubIssueSerializer(data=issue_data)
@@ -145,18 +142,17 @@ class GithubWebhookSerializer(serializers.Serializer):
                 parsed_issue = cast(dict[str, Any], issue_serializer.validated_data)
 
                 attrs["normalized"] = {
-                    "evento": f"issue_{'created' if action == 'opened' else 'updated'}",
-                    "issue": parsed_issue.get("numero"),
-                    "titulo": parsed_issue.get("titulo"),
+                    "event_name": f"issue_{'created' if action == 'opened' else 'updated'}",
+                    "issue_number": parsed_issue.get("number"),
+                    "title": parsed_issue.get("title"),
                     "url": parsed_issue.get("url"),
                     "labels": parsed_issue.get("labels", []),
-                    "tipo": parsed_issue.get("tipo"),
-                    "parent": parsed_issue.get("parent"),
-                    # Aqui incluímos os responsáveis já que criadas e atualizadas podem tê-los
-                    "responsaveis": parsed_issue.get("responsaveis", []),
+                    "issue_type": parsed_issue.get("issue_type"),
+                    "parent_issue_url": parsed_issue.get("parent_issue_url"),
+                    "assignees": parsed_issue.get("assignees", []),
                 }
             else:
-                attrs["normalized"] = {"evento": "ignored"}
+                attrs["normalized"] = {"event_name": "ignored"}
 
         elif event == "pull_request":
             if "action" not in payload or "pull_request" not in payload:
@@ -175,9 +171,9 @@ class GithubWebhookSerializer(serializers.Serializer):
             if action in ("assigned", "unassigned"):
                 assignee_login = payload.get("assignee", {}).get("login")
                 attrs["normalized"] = {
-                    "evento": f"pr_{action}",
-                    "pr": pr_data.get("number"),
-                    "responsavel": assignee_login,
+                    "event_name": f"pr_{action}",
+                    "pr_number": pr_data.get("number"),
+                    "assignee": assignee_login,
                 }
             elif action in ("opened", "edited", "closed"):
                 pr_serializer = GithubPullRequestSerializer(data=pr_data)
@@ -188,12 +184,12 @@ class GithubWebhookSerializer(serializers.Serializer):
 
                 if action == "closed":
                     event_name = "pr_merged" if parsed_pr.get("merged") else "pr_closed"
-                    attrs["normalized"] = {"evento": event_name, "data": parsed_pr}
+                    attrs["normalized"] = {"event_name": event_name, "pull_request": parsed_pr}
                 else:
                     event_name = "pr_created" if action == "opened" else "pr_updated"
-                    attrs["normalized"] = {"evento": event_name, "data": parsed_pr}
+                    attrs["normalized"] = {"event_name": event_name, "pull_request": parsed_pr}
             else:
-                attrs["normalized"] = {"evento": "ignored"}
+                attrs["normalized"] = {"event_name": "ignored"}
 
         elif event == "projects_v2_item":
             if "action" not in payload or "projects_v2_item" not in payload:
@@ -219,21 +215,21 @@ class GithubWebhookSerializer(serializers.Serializer):
                 to_color = changes_field.get("to", {}).get("color")
 
                 attrs["normalized"] = {
-                    "evento": "project_item_edited",
+                    "event_name": "project_item_edited",
                     "content_node_id": content_node_id,
-                    "from": from_status,
+                    "from_status": from_status,
                     "from_color": from_color,
-                    "to": to_status,
+                    "to_status": to_status,
                     "to_color": to_color,
                 }
             else:
-                attrs["normalized"] = {"evento": "ignored"}
+                attrs["normalized"] = {"event_name": "ignored"}
 
         normalized = attrs.get("normalized", {})
-        if normalized and normalized.get("evento") != "ignored":
+        if normalized and normalized.get("event_name") != "ignored":
             sender_info = payload.get("sender", {})
             normalized["sender"] = sender_info.get("login")
-            normalized["sender_avatar"] = sender_info.get("avatar_url")
+            normalized["sender_avatar_url"] = sender_info.get("avatar_url")
 
         return attrs
 

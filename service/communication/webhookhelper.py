@@ -13,126 +13,131 @@ def _is_http_url_candidate(value: str) -> bool:
 
 
 def build_discord_embed(data: dict[str, Any]) -> DiscordEmbed | None:
-    """Monta um embed do Discord dependendo do evento."""
-    evento = data.get("evento")
+    """Build a Discord embed based on normalized GitHub webhook data."""
+    event_name = data.get("event_name")
 
-    if not evento or evento == "ignored":
+    if not event_name or event_name == "ignored":
         return None
 
-    # Extraímos as informações de autor globais para usar em todos os embeds
-    sender = data.get("sender", "Usuário")
-    sender_avatar = data.get("sender_avatar", "")
+    sender = data.get("sender", "User")
+    sender_avatar_url = data.get("sender_avatar_url", "")
 
-    # Para a data no formato ISO ISO8601 com Z do Discord
     timestamp_iso = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
-    # Configuração do autor do embed (só adiciona o ícone se ele existir)
     author = (
-        DiscordEmbedAuthor(name=sender, icon_url=sender_avatar)
-        if sender_avatar and _is_http_url_candidate(sender_avatar)
+        DiscordEmbedAuthor(name=sender, icon_url=sender_avatar_url)
+        if sender_avatar_url and _is_http_url_candidate(sender_avatar_url)
         else DiscordEmbedAuthor(name=sender)
     )
 
-    if evento.startswith("issue_"):
-        issue_num = data.get("issue")
-        titulo = data.get("titulo")
+    if event_name.startswith("issue_"):
+        issue_number = data.get("issue_number")
+        title = data.get("title")
         url = data.get("url")
 
-        if evento == "issue_created":
+        if event_name == "issue_created":
             return DiscordEmbed(
-                title=f"🆕 Nova Issue: #{issue_num}",
-                description=f"[{titulo}]({url})",
+                title=f"🆕 New Issue: #{issue_number}",
+                description=f"[{title}]({url})",
                 color=5763719,
                 author=author,
                 timestamp=timestamp_iso,
             )
-        elif evento == "issue_updated":
+        if event_name == "issue_updated":
             return DiscordEmbed(
-                title=f"✏️ Issue #{issue_num} Atualizada ",
-                description=f"[{titulo}]({url})",
+                title=f"✏️ Issue #{issue_number} Updated",
+                description=f"[{title}]({url})",
                 color=16776960,
                 author=author,
                 timestamp=timestamp_iso,
             )
-        elif evento == "issue_closed":
+        if event_name == "issue_closed":
             return DiscordEmbed(
-                title=f"✅ Issue #{issue_num} Fechada",
-                description=f"[{titulo}]({url})",
+                title=f"✅ Issue #{issue_number} Closed",
+                description=f"[{title}]({url})",
                 color=15548997,
                 author=author,
                 timestamp=timestamp_iso,
             )
-        elif evento == "issue_assigned":
-            responsavel = data.get("responsavel")
+        if event_name == "issue_assigned":
+            assignee = data.get("assignee")
             return DiscordEmbed(
-                title=f"👤 Issue #{issue_num} Atribuída a {responsavel}",
-                description=f"Acesse a Issue: [{titulo}]({url})",
+                title=f"👤 Issue #{issue_number} Assigned to {assignee}",
+                description=f"Open issue: [{title}]({url})",
                 color=3447003,
                 author=author,
                 timestamp=timestamp_iso,
             )
-        elif evento == "issue_unassigned":
-            responsavel = data.get("responsavel")
+        if event_name == "issue_unassigned":
+            assignee = data.get("assignee")
             return DiscordEmbed(
-                title=f"➖ Issue #{issue_num} Desatribuída de {responsavel}",
-                description=f"Acesse a Issue: [{titulo}]({url})",
+                title=f"➖ Issue #{issue_number} Unassigned from {assignee}",
+                description=f"Open issue: [{title}]({url})",
                 color=9807270,
                 author=author,
                 timestamp=timestamp_iso,
             )
 
-    elif evento.startswith("pr_"):
-        pr_data = data.get("data", {})
-        pr_num = pr_data.get("numero") or data.get("pr")
-        titulo = pr_data.get("titulo", "")
-        # Adicionei a tentativa de buscar a URL do PR, caso seu dict suporte
-        url = pr_data.get("url", "")
-        url_str = f"[{titulo}]({url})" if url else titulo
+    if event_name.startswith("pr_"):
+        pull_request = data.get("pull_request", {})
+        pr_number = pull_request.get("number") or data.get("pr_number")
+        title = pull_request.get("title", "")
+        url = pull_request.get("url", "")
+        linked_title = f"[{title}]({url})" if url else title
 
-        if evento == "pr_created":
+        if event_name == "pr_created":
             return DiscordEmbed(
-                title=f"🔄 Novo Pull Request: #{pr_num}",
-                description=url_str,
+                title=f"🔄 New Pull Request: #{pr_number}",
+                description=linked_title,
                 color=5763719,
                 author=author,
                 timestamp=timestamp_iso,
             )
-        elif evento == "pr_merged":
+        if event_name == "pr_merged":
             return DiscordEmbed(
-                title=f"🎉 Pull Request Merged: #{pr_num}",
-                description=url_str,
+                title=f"🎉 Pull Request Merged: #{pr_number}",
+                description=linked_title,
                 color=10181046,
                 author=author,
                 timestamp=timestamp_iso,
             )
-        elif evento == "pr_closed":
+        if event_name == "pr_closed":
             return DiscordEmbed(
-                title=f"❌ Pull Request Fechado: #{pr_num}",
-                description=url_str,
+                title=f"❌ Pull Request Closed: #{pr_number}",
+                description=linked_title,
                 color=15548997,
                 author=author,
                 timestamp=timestamp_iso,
             )
-        elif evento == "pr_assigned":
-            responsavel = data.get("responsavel")
+        if event_name == "pr_assigned":
+            assignee = data.get("assignee")
             return DiscordEmbed(
-                title=f"👤 PR Atribuído: #{pr_num}",
-                description=f"**{responsavel}** foi atribuído ao PR {url_str}",
+                title=f"👤 Pull Request Assigned: #{pr_number}",
+                description=f"**{assignee}** was assigned to PR {linked_title}",
                 color=3447003,
                 author=author,
                 timestamp=timestamp_iso,
             )
+        if event_name == "pr_unassigned":
+            assignee = data.get("assignee")
+            return DiscordEmbed(
+                title=f"➖ Pull Request Unassigned: #{pr_number}",
+                description=f"**{assignee}** was unassigned from PR {linked_title}",
+                color=9807270,
+                author=author,
+                timestamp=timestamp_iso,
+            )
 
-    elif evento == "project_item_edited":
+    if event_name == "project_item_edited":
         node_id = data.get("content_node_id")
 
         github_token = os.getenv("GITHUB__ACCESS_TOKEN") or os.getenv("GITHUB_TOKEN") or ""
-        titulo_real = fetch_github_node_title(node_id, github_token)
-        from_status = data.get("from")
-        to_status = data.get("to")
+        issue_title = fetch_github_node_title(node_id, github_token)
+        from_status = data.get("from_status")
+        to_status = data.get("to_status")
         from_color = data.get("from_color", "")
         to_color = data.get("to_color", "")
-        seta_centralizada = "⠀⠀⠀⠀⠀⠀⠀⠀⠀↓"
+        centered_arrow = "         v"
 
         if from_status is None and to_status is None:
             return None
@@ -167,32 +172,32 @@ def build_discord_embed(data: dict[str, Any]) -> DiscordEmbed | None:
             "MINT": "32",
         }
 
-        from_color_emoji = color_emojis.get(from_color.upper(), "") if from_color else ""
-        to_color_emoji = color_emojis.get(to_color.upper(), "") if to_color else ""
+        from_color_tag = color_emojis.get(from_color.upper(), "") if from_color else ""
+        to_color_tag = color_emojis.get(to_color.upper(), "") if to_color else ""
 
         from_ansi = color_ansi.get(from_color.upper(), "0") if from_color else "0"
         to_ansi = color_ansi.get(to_color.upper(), "0") if to_color else "0"
 
-        from_str = f"```ansi\n\u001b[0;{from_ansi}m{from_color_emoji} {from_status}\u001b[0m\n```"
-        to_str = f"```ansi\n\u001b[0;{to_ansi}m{to_color_emoji} {to_status}\u001b[0m\n```"
+        from_text = f"```ansi\n\u001b[0;{from_ansi}m{from_color_tag} {from_status}\u001b[0m\n```"
+        to_text = f"```ansi\n\u001b[0;{to_ansi}m{to_color_tag} {to_status}\u001b[0m\n```"
 
         return DiscordEmbed(
-            title=f"Issue: {titulo_real}",
-            description="🔄 Status Alterado",
+            title=f"Issue: {issue_title}",
+            description="🔄 Status changed",
             color=5814783,
             author=author,
             timestamp=timestamp_iso,
             fields=[
                 DiscordEmbedField(
-                    name="Transicao",
-                    value=f"{from_str}{seta_centralizada}\n{to_str}",
+                    name="Transition",
+                    value=f"{from_text}{centered_arrow}\n{to_text}",
                 ),
             ],
         )
 
     return DiscordEmbed(
-        title="ℹ️ Novo Evento",
-        description=f"`{evento}` disparado.",
+        title="ℹ️ New Event",
+        description=f"`{event_name}` was triggered.",
         color=9807270,
         author=author,
         timestamp=timestamp_iso,
@@ -211,17 +216,17 @@ def post_to_discord(webhook_url: str, validated_data: dict[str, Any]) -> bool:
             embeds=[embed],
         )
         return True
-    except Exception as e:
-        print(f"Erro ao enviar para o Discord: {e}")
+    except Exception as exc:
+        print(f"Error sending message to Discord: {exc}")
         return False
 
 
 def fetch_github_node_title(node_id: str | None, github_token: str) -> str:
     if not node_id:
-        return "Sem Título"
+        return "Untitled"
 
     if not github_token:
-        print("GitHub token ausente para consulta GraphQL (GITHUB__ACCESS_TOKEN).")
+        print("Missing GitHub token for GraphQL lookup (GITHUB__ACCESS_TOKEN).")
         return f"Item {str(node_id)[:8]}"
 
     url = "https://api.github.com/graphql"
@@ -230,29 +235,32 @@ def fetch_github_node_title(node_id: str | None, github_token: str) -> str:
     query = """
     query($id: ID!) {
       node(id: $id) {
-                __typename
+        __typename
         ... on Issue { title }
         ... on PullRequest { title }
-                ... on DraftIssue { title }
-                ... on ProjectV2Item {
-                    content {
-                        __typename
-                        ... on Issue { title }
-                        ... on PullRequest { title }
-                        ... on DraftIssue { title }
-                    }
-                }
+        ... on DraftIssue { title }
+        ... on ProjectV2Item {
+          content {
+            __typename
+            ... on Issue { title }
+            ... on PullRequest { title }
+            ... on DraftIssue { title }
+          }
+        }
       }
     }
     """
 
     try:
         response = requests.post(
-            url, json={"query": query, "variables": {"id": node_id}}, headers=headers, timeout=5
+            url,
+            json={"query": query, "variables": {"id": node_id}},
+            headers=headers,
+            timeout=5,
         )
         if response.ok:
-            data = response.json()
-            node = data.get("data", {}).get("node")
+            response_data = response.json()
+            node = response_data.get("data", {}).get("node")
             if node:
                 direct_title = node.get("title")
                 if direct_title:
@@ -263,10 +271,10 @@ def fetch_github_node_title(node_id: str | None, github_token: str) -> str:
                 if content_title:
                     return content_title
 
-            errors = data.get("errors")
+            errors = response_data.get("errors")
             if errors:
-                print(f"Erro GraphQL GitHub: {errors}")
-    except Exception as e:
-        print(f"Erro ao buscar título no GitHub: {e}")
+                print(f"GitHub GraphQL error: {errors}")
+    except Exception as exc:
+        print(f"Error while fetching title from GitHub: {exc}")
 
     return f"Item {str(node_id)[:8]}"
