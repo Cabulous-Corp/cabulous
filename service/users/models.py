@@ -33,7 +33,7 @@ class AllUserManager(UserManager):
 
 
 def user_media_base_path(instance: models.Model) -> str:
-    user_uuid = getattr(instance, "uuid", None) or uuid.uuid4()
+    user_uuid = getattr(instance, "id", None) or uuid.uuid4()
     return f"users/{user_uuid}"
 
 
