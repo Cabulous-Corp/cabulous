@@ -5,9 +5,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from communication.models import DiscordChannelPurpose
-from communication.serializer import GithubWebhookSerializer
 from communication.tasks import send_discord_channel_embed_by_purpose_task
-from communication.webhookhelper import build_discord_embed
+from integrations.helpers import build_discord_embed
+from integrations.serializer import GithubWebhookSerializer
 
 
 class GithubWebhookView(APIView):
