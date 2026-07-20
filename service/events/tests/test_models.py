@@ -1,6 +1,6 @@
 from datetime import timedelta
+from unittest.mock import patch
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
@@ -15,6 +15,7 @@ from events.models import (
     EventPhoto,
     Highlight,
     HighlightPhoto,
+    event_thumbnail_upload_to,
 )
 from media.models import Photo
 from users.models import User
@@ -28,6 +29,14 @@ class EventModelTests(TestCase):
             password="secret",
             onboarding_completed_at=timezone.now(),
         )
+
+    @patch("events.models.uuid.uuid4")
+    def test_legacy_thumbnail_upload_path_is_backwards_compatible(self, uuid4) -> None:
+        uuid4.return_value.hex = "abc123"
+
+        path = event_thumbnail_upload_to(Event(title="Festa Cabulosa"), "PHOTO.JPG")
+
+        self.assertEqual(path, "events/thumbnails/festa-cabulosa-abc123.jpg")
 
     def test_event_rejects_end_before_start(self) -> None:
         start = timezone.now()
@@ -169,6 +178,76 @@ class EventModelTests(TestCase):
                 longitude="-43.172900",
             )
 
+    def test_event_location_is_optional(self) -> None:
+        now = timezone.now()
+        event = Event.objects.create(
+            title="Sem local",
+            start_at=now,
+            end_at=now + timedelta(hours=3),
+            type=EventType.CABULOUS,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
+        )
+
+        self.assertFalse(EventLocation.objects.filter(event=event).exists())
+
+    def test_event_location_requires_complete_address(self) -> None:
+        now = timezone.now()
+        event = Event.objects.create(
+            title="Local incompleto",
+            start_at=now,
+            end_at=now + timedelta(hours=3),
+            type=EventType.CABULOUS,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
+        )
+        location = EventLocation(
+            event=event,
+            name="Casa",
+            street="",
+            number="123",
+            neighborhood="Bairro",
+            city="Cidade",
+            state="SP",
+            postal_code="01001000",
+            latitude="23.550000",
+            longitude="-46.633300",
+        )
+
+        with self.assertRaises(ValidationError) as raised:
+            location.full_clean()
+
+        self.assertIn("street", raised.exception.message_dict)
+
+    def test_event_location_rejects_coordinates_outside_world_bounds(self) -> None:
+        now = timezone.now()
+        event = Event.objects.create(
+            title="Local inválido",
+            start_at=now,
+            end_at=now + timedelta(hours=3),
+            type=EventType.CABULOUS,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
+        )
+        location = EventLocation(
+            event=event,
+            name="Casa",
+            street="Rua A",
+            number="123",
+            neighborhood="Bairro",
+            city="Cidade",
+            state="SP",
+            postal_code="01001000",
+            latitude="90.000001",
+            longitude="-180.000001",
+        )
+
+        with self.assertRaises(ValidationError) as raised:
+            location.full_clean()
+
+        self.assertIn("latitude", raised.exception.message_dict)
+        self.assertIn("longitude", raised.exception.message_dict)
+
     def test_event_photo_is_unique_per_event_and_photo(self) -> None:
         now = timezone.now()
         event = Event.objects.create(
@@ -218,7 +297,12 @@ class EventModelTests(TestCase):
             content_type="image/jpeg",
             size_bytes=2048,
         )
-        EventPhoto.objects.create(event=event, photo=photo_one, linked_by=self.creator, is_thumbnail=True)
+        EventPhoto.objects.create(
+            event=event,
+            photo=photo_one,
+            linked_by=self.creator,
+            is_thumbnail=True,
+        )
 
         with self.assertRaises(IntegrityError), transaction.atomic():
             EventPhoto.objects.create(
@@ -248,9 +332,8 @@ class EventModelTests(TestCase):
             content_type="image/jpeg",
             size_bytes=1024,
         )
-        event_photo = EventPhoto.objects.create(event=event, photo=photo, linked_by=self.creator)
+        EventPhoto.objects.create(event=event, photo=photo, linked_by=self.creator)
         HighlightPhoto.objects.create(highlight=highlight, photo=photo)
-        HighlightPhoto.objects.create(highlight=highlight, photo=event_photo)
 
         with self.assertRaises(IntegrityError), transaction.atomic():
             HighlightPhoto.objects.create(highlight=highlight, photo=photo)

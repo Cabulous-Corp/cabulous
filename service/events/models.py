@@ -1,29 +1,27 @@
+import uuid
+from decimal import Decimal
+from pathlib import Path
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.text import slugify
 
 from common.models.abstracts import (
     AbstractSoftDeleteModel,
     BaseModel,
-    SoftDeleteQuerySet,
 )
 
 from .constants import AUDIENCE_COLOR_MAP, EVENT_STATUS_COLOR_MAP, EVENT_TYPE_COLOR_MAP
 from .enums import Audience, EventStatus, EventType
+from .managers import ActiveEventManager, AllEventManager
 
 
-class ActiveEventManager(models.Manager):
-    use_in_migrations = True
-
-    def get_queryset(self) -> SoftDeleteQuerySet:
-        return SoftDeleteQuerySet(self.model, using=self._db).filter(deleted_at__isnull=True)
-
-
-class AllEventManager(models.Manager):
-    use_in_migrations = True
-
-    def get_queryset(self) -> SoftDeleteQuerySet:
-        return SoftDeleteQuerySet(self.model, using=self._db)
+def event_thumbnail_upload_to(instance: models.Model, filename: str) -> str:
+    suffix = Path(filename).suffix.lower()
+    title = getattr(instance, "title", "event")
+    name = slugify(title) or "event"
+    return f"events/thumbnails/{name}-{uuid.uuid4().hex}{suffix}"
 
 
 class Event(AbstractSoftDeleteModel, BaseModel):
@@ -174,7 +172,12 @@ class EventLocation(BaseModel):
     name = models.CharField(max_length=255, verbose_name="Nome")
     street = models.CharField(max_length=255, verbose_name="Logradouro")
     number = models.CharField(max_length=50, verbose_name="Número")
-    complement = models.CharField(max_length=255, blank=True, default="", verbose_name="Complemento")
+    complement = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="Complemento",
+    )
     neighborhood = models.CharField(max_length=255, verbose_name="Bairro")
     city = models.CharField(max_length=255, verbose_name="Cidade")
     state = models.CharField(max_length=2, verbose_name="UF")
@@ -197,6 +200,16 @@ class EventLocation(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.city}/{self.state})"
+
+    def clean(self) -> None:
+        super().clean()
+        errors = {}
+        if self.latitude is not None and not Decimal("-90") <= self.latitude <= Decimal("90"):
+            errors["latitude"] = "A latitude deve estar entre -90 e 90."
+        if self.longitude is not None and not Decimal("-180") <= self.longitude <= Decimal("180"):
+            errors["longitude"] = "A longitude deve estar entre -180 e 180."
+        if errors:
+            raise ValidationError(errors)
 
 
 class EventPhoto(BaseModel):
