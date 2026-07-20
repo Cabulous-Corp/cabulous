@@ -171,6 +171,23 @@ class EventModelTests(TestCase):
         with self.assertRaises(IntegrityError), transaction.atomic():
             EventParticipant.objects.create(event=event, user=user)
 
+    def test_removing_creator_participation_preserves_event_creator(self) -> None:
+        now = timezone.now()
+        event = Event.objects.create(
+            title="Evento",
+            start_at=now,
+            end_at=now + timedelta(hours=3),
+            type=EventType.CABULOUS,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
+        )
+        participant = EventParticipant.objects.create(event=event, user=self.creator)
+
+        participant.delete()
+        event.refresh_from_db()
+
+        self.assertEqual(event.creator_id, self.creator.id)
+
     def test_event_location_is_one_to_one(self) -> None:
         now = timezone.now()
         event = Event.objects.create(
@@ -340,6 +357,38 @@ class EventModelTests(TestCase):
 
         with self.assertRaises(IntegrityError), transaction.atomic():
             EventPhoto.objects.create(event=event, photo=photo, linked_by=self.creator)
+
+    def test_photo_can_be_reused_across_events(self) -> None:
+        now = timezone.now()
+        first_event = Event.objects.create(
+            title="Primeiro evento",
+            start_at=now,
+            end_at=now + timedelta(hours=3),
+            type=EventType.CABULOUS,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
+        )
+        second_event = Event.objects.create(
+            title="Segundo evento",
+            start_at=now,
+            end_at=now + timedelta(hours=3),
+            type=EventType.CABULOUS,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
+        )
+        photo = Photo.objects.create(
+            object_key="media/photos/reused-photo.jpg",
+            uploader=self.creator,
+            taken_on=timezone.now().date(),
+            caption="Foto reutilizada",
+            content_type="image/jpeg",
+            size_bytes=1024,
+        )
+
+        EventPhoto.objects.create(event=first_event, photo=photo, linked_by=self.creator)
+        EventPhoto.objects.create(event=second_event, photo=photo, linked_by=self.creator)
+
+        self.assertEqual(EventPhoto.objects.filter(photo=photo).count(), 2)
 
     def test_only_one_thumbnail_per_event(self) -> None:
         now = timezone.now()
