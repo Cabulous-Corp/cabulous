@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Any
 
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
@@ -24,7 +25,7 @@ class EventMigrationTests(TransactionTestCase):
             ("events", event_target),
         ]
 
-    def _migrate(self, event_target: str):
+    def _migrate(self, event_target: str) -> Any:
         executor = MigrationExecutor(connection)
         targets = self._targets(event_target)
         executor.migrate(targets)
@@ -41,7 +42,7 @@ class EventMigrationTests(TransactionTestCase):
         executor.migrate(executor.loader.graph.leaf_nodes())
         super().tearDown()
 
-    def _create_legacy_event(self, **overrides):
+    def _create_legacy_event(self, **overrides: Any) -> Any:
         now = timezone.now()
         values = {
             "title": "Legacy event",

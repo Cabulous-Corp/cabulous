@@ -1,5 +1,6 @@
 from datetime import timedelta
-from unittest.mock import patch
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
@@ -30,7 +31,7 @@ class EventModelTests(TestCase):
             onboarding_completed_at=timezone.now(),
         )
 
-    def event_location(self, **overrides) -> EventLocation:
+    def event_location(self, **overrides: Any) -> EventLocation:
         now = timezone.now()
         event = Event.objects.create(
             title="Evento com local",
@@ -57,7 +58,7 @@ class EventModelTests(TestCase):
         return EventLocation(**values)
 
     @patch("events.models.uuid.uuid4")
-    def test_legacy_thumbnail_upload_path_is_backwards_compatible(self, uuid4) -> None:
+    def test_legacy_thumbnail_upload_path_is_backwards_compatible(self, uuid4: MagicMock) -> None:
         uuid4.return_value.hex = "abc123"
 
         path = event_thumbnail_upload_to(Event(title="Festa Cabulosa"), "PHOTO.JPG")
@@ -115,7 +116,10 @@ class EventModelTests(TestCase):
         inactive.soft_delete()
 
         self.assertEqual(Event.objects.count(), 1)
-        self.assertEqual(Event.objects.first().id, active.id)
+        first_event = Event.objects.first()
+        self.assertIsNotNone(first_event)
+        assert first_event is not None
+        self.assertEqual(first_event.id, active.id)
         self.assertEqual(Event.all_objects.count(), 2)
 
     def test_all_objects_manager_returns_soft_deleted(self) -> None:

@@ -3,6 +3,7 @@
 import django.db.models.deletion
 import events.managers
 import uuid
+from typing import Any
 from django.conf import settings
 from django.db import migrations, models
 from django.utils import timezone
@@ -11,7 +12,7 @@ from django.utils import timezone
 LEGACY_DEFAULT_AUDIENCE = "OTHERS"
 
 
-def migrate_legacy_audiences(apps, schema_editor):
+def migrate_legacy_audiences(apps: Any, schema_editor: Any) -> None:
     Event = apps.get_model("events", "Event")
     EventAudience = apps.get_model("events", "EventAudience")
     choices = dict(EventAudience._meta.get_field("audience").choices)
@@ -27,7 +28,7 @@ def migrate_legacy_audiences(apps, schema_editor):
         )
 
 
-def choose_legacy_creator(apps, schema_editor):
+def choose_legacy_creator(apps: Any, schema_editor: Any) -> Any:
     User = apps.get_model("users", "User")
     field_names = {field.name for field in User._meta.get_fields()}
     users = User.objects.all()
@@ -45,7 +46,7 @@ def choose_legacy_creator(apps, schema_editor):
     return creator
 
 
-def migrate_event_status(apps, schema_editor):
+def migrate_event_status(apps: Any, schema_editor: Any) -> None:
     Event = apps.get_model("events", "Event")
     now = timezone.now()
     events = (
@@ -69,7 +70,7 @@ def migrate_event_status(apps, schema_editor):
             event.save(update_fields=["status", "updated_at"])
 
 
-def forwards(apps, schema_editor):
+def forwards(apps: Any, schema_editor: Any) -> None:
     migrate_legacy_audiences(apps, schema_editor)
     Event = apps.get_model("events", "Event")
     events_without_creator = Event.all_objects.filter(creator__isnull=True)
@@ -80,7 +81,7 @@ def forwards(apps, schema_editor):
     migrate_event_status(apps, schema_editor)
 
 
-def backwards(apps, schema_editor):
+def backwards(apps: Any, schema_editor: Any) -> None:
     Event = apps.get_model("events", "Event")
     EventAudience = apps.get_model("events", "EventAudience")
     fallback_audience = EventAudience._meta.get_field("audience").choices[0][0]
@@ -94,7 +95,7 @@ def backwards(apps, schema_editor):
     for event_id, audience in audience_rows:
         audiences_by_event.setdefault(event_id, audience)
     for event in Event.all_objects.all().only("id"):
-        event.public = audiences_by_event.get(event.id, fallback_audience)  # type: ignore[attr-defined]
+        event.public = audiences_by_event.get(event.id, fallback_audience)
         event.save(update_fields=["public"])
 
 

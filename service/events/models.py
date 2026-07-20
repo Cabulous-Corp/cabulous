@@ -48,8 +48,8 @@ class Event(AbstractSoftDeleteModel, BaseModel):
         blank=True,
     )
 
-    objects = ActiveEventManager()  # type: ignore[misc]
-    all_objects = AllEventManager()  # type: ignore[misc]
+    objects = ActiveEventManager()
+    all_objects = AllEventManager()
 
     @property
     def type_color(self) -> str:
