@@ -22,3 +22,17 @@ class Public(models.TextChoices):
     VOYEURS = "VOYEURS", "Voyeurs"
     ELETRONICOS = "ELETRONICOS", "Eletrônicos"
     OTHERS = "OTHERS", "Outros"
+
+
+class Audience(models.TextChoices):
+    ILUMINADOS = "ILUMINADOS", "Iluminados"
+    VOYEURS = "VOYEURS", "Voyeurs"
+    ELETRONICOS = "ELETRONICOS", "Eletrônicos"
+    OTHERS = "OTHERS", "Outros"
+
+
+class EventStatus(models.TextChoices):
+    SCHEDULED = "SCHEDULED", "Agendado"
+    IN_PROGRESS = "IN_PROGRESS", "Em andamento"
+    COMPLETED = "COMPLETED", "Concluído"
+    CANCELLED = "CANCELLED", "Cancelado"

@@ -1,4 +1,4 @@
-from .enums import EventType, Public
+from .enums import Audience, EventStatus, EventType, Public
 
 EVENT_TYPE_COLOR_MAP = {
     EventType.UNIVERSITY_PARTY: "#FF5733",
@@ -21,4 +21,18 @@ PUBLIC_COLOR_MAP = {
     Public.VOYEURS: "#9B59B6",
     Public.ELETRONICOS: "#1ABC9C",
     Public.OTHERS: "#BDC3C7",
+}
+
+AUDIENCE_COLOR_MAP = {
+    Audience.ILUMINADOS: "#F1C40F",
+    Audience.VOYEURS: "#9B59B6",
+    Audience.ELETRONICOS: "#1ABC9C",
+    Audience.OTHERS: "#BDC3C7",
+}
+
+EVENT_STATUS_COLOR_MAP = {
+    EventStatus.SCHEDULED: "#3498DB",
+    EventStatus.IN_PROGRESS: "#F39C12",
+    EventStatus.COMPLETED: "#27AE60",
+    EventStatus.CANCELLED: "#E74C3C",
 }
