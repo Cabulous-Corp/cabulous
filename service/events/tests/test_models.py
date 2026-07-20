@@ -30,6 +30,32 @@ class EventModelTests(TestCase):
             onboarding_completed_at=timezone.now(),
         )
 
+    def event_location(self, **overrides) -> EventLocation:
+        now = timezone.now()
+        event = Event.objects.create(
+            title="Evento com local",
+            start_at=now,
+            end_at=now + timedelta(hours=3),
+            type=EventType.CABULOUS,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
+        )
+        values = {
+            "event": event,
+            "name": "Casa",
+            "street": "Rua A",
+            "number": "123",
+            "neighborhood": "Bairro",
+            "city": "Cidade",
+            "state": "SP",
+            "postal_code": "01001000",
+            "country": "BR",
+            "latitude": "23.550000",
+            "longitude": "-46.633300",
+        }
+        values.update(overrides)
+        return EventLocation(**values)
+
     @patch("events.models.uuid.uuid4")
     def test_legacy_thumbnail_upload_path_is_backwards_compatible(self, uuid4) -> None:
         uuid4.return_value.hex = "abc123"
@@ -247,6 +273,46 @@ class EventModelTests(TestCase):
 
         self.assertIn("latitude", raised.exception.message_dict)
         self.assertIn("longitude", raised.exception.message_dict)
+
+    def test_event_location_rejects_invalid_state(self) -> None:
+        for state in ("S", "S1", "SPP"):
+            with self.subTest(state=state):
+                with self.assertRaises(ValidationError) as raised:
+                    self.event_location(state=state).full_clean()
+
+                self.assertIn("state", raised.exception.message_dict)
+
+    def test_event_location_rejects_invalid_postal_code(self) -> None:
+        for postal_code in (
+            "0100100",
+            "010010000",
+            "0100A000",
+            "abc01001-000xyz",
+        ):
+            with self.subTest(postal_code=postal_code):
+                with self.assertRaises(ValidationError) as raised:
+                    self.event_location(postal_code=postal_code).full_clean()
+
+                self.assertIn("postal_code", raised.exception.message_dict)
+
+    def test_event_location_rejects_non_brazilian_country(self) -> None:
+        with self.assertRaises(ValidationError) as raised:
+            self.event_location(country="US").full_clean()
+
+        self.assertIn("country", raised.exception.message_dict)
+
+    def test_event_location_normalizes_valid_brazilian_address(self) -> None:
+        location = self.event_location(
+            state="sp",
+            postal_code="01001-000",
+            country="br",
+        )
+
+        location.full_clean()
+
+        self.assertEqual(location.state, "SP")
+        self.assertEqual(location.postal_code, "01001000")
+        self.assertEqual(location.country, "BR")
 
     def test_event_photo_is_unique_per_event_and_photo(self) -> None:
         now = timezone.now()

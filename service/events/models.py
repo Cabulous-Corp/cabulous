@@ -1,3 +1,4 @@
+import re
 import uuid
 from decimal import Decimal
 from pathlib import Path
@@ -204,6 +205,17 @@ class EventLocation(BaseModel):
     def clean(self) -> None:
         super().clean()
         errors = {}
+        self.state = (self.state or "").strip().upper()
+        self.country = (self.country or "").strip().upper()
+        postal_code = (self.postal_code or "").strip()
+        if re.fullmatch(r"[A-Z]{2}", self.state) is None:
+            errors["state"] = "A UF deve conter exatamente duas letras."
+        if re.fullmatch(r"[0-9]{5}-?[0-9]{3}", postal_code) is None:
+            errors["postal_code"] = "O CEP deve conter exatamente oito dígitos."
+        else:
+            self.postal_code = postal_code.replace("-", "")
+        if self.country != "BR":
+            errors["country"] = "O país deve ser BR."
         if self.latitude is not None and not Decimal("-90") <= self.latitude <= Decimal("90"):
             errors["latitude"] = "A latitude deve estar entre -90 e 90."
         if self.longitude is not None and not Decimal("-180") <= self.longitude <= Decimal("180"):
