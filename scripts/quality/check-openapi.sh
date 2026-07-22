@@ -33,8 +33,7 @@ if [ ! -f "$WAIVERS" ]; then
     exit 1
 fi
 
-WAIVERS_POSIX=$(cygpath -u "$WAIVERS")
-ACTIVE=$(WAIVERS_PATH="$WAIVERS_POSIX" uv run python -c "
+ACTIVE=$(WAIVERS_PATH="$WAIVERS" uv run python -c "
 import yaml, os, pathlib
 from datetime import date
 p = pathlib.Path(os.environ['WAIVERS_PATH'])
