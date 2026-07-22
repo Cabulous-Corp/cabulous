@@ -8,24 +8,26 @@ on:
       - main
 
 jobs:
-  quality:
+  # ── Blocking: Backend ────────────────────────────────────────────────
+
+  backend-lint:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: service
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v4
 
-      - name: Setup Python
-        run: uv python install 3.13
+      - run: uv python install 3.13
 
-      - name: Sync dependencies
-        run: uv sync --all-groups
+      - uses: actions/cache@v4
+        with:
+          path: service/.venv
+          key: uv-${{ runner.os }}-${{ hashFiles('service/uv.lock') }}
+
+      - run: uv sync --all-groups
 
       - name: Ruff check
         run: uv run ruff check .
@@ -33,5 +35,337 @@ jobs:
       - name: Ruff format check
         run: uv run ruff format --check .
 
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-lint-results
+          path: |
+            service/.ruff_cache
+
+  backend-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+
+      - run: uv python install 3.13
+
+      - uses: actions/cache@v4
+        with:
+          path: service/.venv
+          key: uv-${{ runner.os }}-${{ hashFiles('service/uv.lock') }}
+
+      - run: uv sync --all-groups
+
       - name: Mypy
         run: uv run mypy .
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-typecheck-results
+          path: |
+            service/.mypy_cache
+
+  backend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: service
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cabulous
+          POSTGRES_PASSWORD: cabulous
+          POSTGRES_DB: cabulous
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U cabulous"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE__HOST: localhost
+      DATABASE__PORT: 5432
+      DATABASE__NAME: cabulous
+      DATABASE__USER: cabulous
+      DATABASE__PASSWORD: cabulous
+      DATABASE__ENGINE: django.db.backends.postgresql
+      SECRET_KEY: ci-test-key
+      REDIS__URL: redis://localhost:6379/1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+
+      - run: uv python install 3.13
+
+      - uses: actions/cache@v4
+        with:
+          path: service/.venv
+          key: uv-${{ runner.os }}-${{ hashFiles('service/uv.lock') }}
+
+      - run: uv sync --all-groups
+
+      - name: Run tests with coverage
+        run: uv run pytest tests/ --tb=short --junitxml=report.xml --cov=. --cov-report=json:coverage.json --cov-report=term-missing -q
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: |
+            service/report.xml
+            service/coverage.json
+
+  backend-duplication:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+
+      - run: uv python install 3.13
+
+      - uses: actions/cache@v4
+        with:
+          path: service/.venv
+          key: uv-${{ runner.os }}-${{ hashFiles('service/uv.lock') }}
+
+      - run: uv sync --all-groups
+
+      - name: Duplication check (jscpd)
+        run: uv run jscpd --min-lines 5 --min-tokens 50 --reporters console --output report.json .
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-duplication-results
+          path: |
+            service/report.json
+
+  backend-contract:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+
+      - run: uv python install 3.13
+
+      - uses: actions/cache@v4
+        with:
+          path: service/.venv
+          key: uv-${{ runner.os }}-${{ hashFiles('service/uv.lock') }}
+
+      - run: uv sync --all-groups
+
+      - name: OpenAPI contract check
+        run: bash ../scripts/quality/check-openapi.sh
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-contract-results
+          path: |
+            quality/openapi/baseline.json
+
+  backend-migration:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: service
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cabulous
+          POSTGRES_PASSWORD: cabulous
+          POSTGRES_DB: cabulous
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U cabulous"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE__HOST: localhost
+      DATABASE__PORT: 5432
+      DATABASE__NAME: cabulous
+      DATABASE__USER: cabulous
+      DATABASE__PASSWORD: cabulous
+      DATABASE__ENGINE: django.db.backends.postgresql
+      SECRET_KEY: ci-test-key
+      REDIS__URL: redis://localhost:6379/1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+
+      - run: uv python install 3.13
+
+      - uses: actions/cache@v4
+        with:
+          path: service/.venv
+          key: uv-${{ runner.os }}-${{ hashFiles('service/uv.lock') }}
+
+      - run: uv sync --all-groups
+
+      - name: Check for missing migrations
+        run: uv run python manage.py makemigrations --check --dry-run 2>&1 | tee migration-check.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-migration-results
+          path: |
+            service/migration-check.txt
+
+  # ── Blocking: Frontend ───────────────────────────────────────────────
+
+  frontend-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/cache@v4
+        with:
+          path: app/web/node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('app/web/bun.lock') }}
+
+      - run: bun install --frozen-lockfile
+
+      - name: ESLint
+        run: bun run lint
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-lint-results
+          path: |
+            app/web/.next/cache
+
+  frontend-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/cache@v4
+        with:
+          path: app/web/node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('app/web/bun.lock') }}
+
+      - run: bun install --frozen-lockfile
+
+      - name: TypeScript type check
+        run: bun run typecheck
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-typecheck-results
+          path: |
+            app/web/tsconfig.tsbuildinfo
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/cache@v4
+        with:
+          path: app/web/node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('app/web/bun.lock') }}
+
+      - run: bun install --frozen-lockfile
+
+      - name: Next.js build
+        run: bun run build
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-build-results
+          path: |
+            app/web/.next
+
+  frontend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/cache@v4
+        with:
+          path: app/web/node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('app/web/bun.lock') }}
+
+      - run: bun install --frozen-lockfile
+
+      - name: Unit tests with coverage
+        run: bun run test:coverage
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-test-results
+          path: |
+            app/web/coverage
+
+  # ── Observational ────────────────────────────────────────────────────
+
+  semgrep:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: p/default
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-results
+          path: |
+            semgrep.sarif

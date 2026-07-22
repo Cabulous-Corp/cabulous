@@ -1,0 +1,49 @@
+name: CodeQL
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - python
+          - javascript
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - if: matrix.language == 'python'
+        name: Autobuild Python
+        uses: github/codeql-action/autobuild@v3
+
+      - if: matrix.language == 'javascript'
+        name: Autobuild JavaScript
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codeql-results-${{ matrix.language }}
+          path: |
+            /tmp/codeql-results
+          retention-days: 30
