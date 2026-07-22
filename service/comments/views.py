@@ -1,4 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from rest_framework import mixins, status
 from rest_framework.response import Response
@@ -64,7 +65,7 @@ class CommentViewSet(
         # Validate target_type against registry
         try:
             resolve_target_model(target_type)
-        except Exception:
+        except DjangoValidationError:
             return Response(
                 {"target_type": ["Unsupported comment target type."]},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -87,12 +88,8 @@ class CommentViewSet(
         serializer = CommentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        parent = None
-        if data.get("parent_id"):
-            try:
-                parent = Comment.objects.get(id=data["parent_id"])
-            except Comment.DoesNotExist:
-                parent = None
+        parent_id = data.get("parent_id")
+        parent = Comment.objects.get(id=parent_id) if parent_id else None
         comment = create_comment(
             author=request.user,
             target_type=data["target_type"],
