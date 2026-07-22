@@ -350,6 +350,52 @@ jobs:
           path: |
             app/web/coverage
 
+  # ── Blocking: Security ──────────────────────────────────────────────
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save Gitleaks report
+        if: always()
+        run: |
+          cp results.sarif gitleaks-results.sarif 2>/dev/null || \
+          echo '{"runs":[]}' > gitleaks-results.sarif
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gitleaks-results
+          path: gitleaks-results.sarif
+
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependency Review (OSV)
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+
+      - name: Write dependency review summary
+        if: always()
+        run: echo "Dependency review completed at $(date -u +%Y-%m-%dT%H:%M:%SZ)" > dependency-review-results.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-review-results
+          path: dependency-review-results.txt
+
   # ── Observational ────────────────────────────────────────────────────
 
   semgrep:

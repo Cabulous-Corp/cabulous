@@ -64,6 +64,8 @@ BLOCKING_JOBS = [
     "frontend-typecheck",
     "frontend-build",
     "frontend-test",
+    "gitleaks",
+    "dependency-review",
 ]
 
 OBSERVATIONAL_JOBS = [
