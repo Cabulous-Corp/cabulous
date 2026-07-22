@@ -1,0 +1,6 @@
+{
+  "max_function_length": 50,
+  "exclude": ["*/migrations/*", "*/tests/*", "*/.venv/*"],
+  "current_violations": 0,
+  "updated": "2026-07-22"
+}

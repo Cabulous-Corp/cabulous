@@ -37,6 +37,23 @@ lint-fix-unsafe: ## Run lint and fix issues (unsafe)
 	@echo "Running lint..."
 	@bun run lint:fix-unsafe
 
+typecheck: ## Run TypeScript type checking
+	@echo "Running TypeScript type check..."
+	@bun run typecheck
+
+test: ## Run all tests
+	@echo "Running tests..."
+	@bun run test
+
+coverage: ## Run tests with coverage report
+	@echo "Running tests with coverage..."
+	@bun run test:coverage
+
+quality: ## Run all quality checks (lint + typecheck + build + coverage)
+	@echo "Running quality checks..."
+	@bun run quality
+	@echo "All quality checks passed!"
+
 generate-api-types: ## Generate API types
 	@echo "Downloading API schema..."
 	@curl http://localhost:8000/openapi.json > openapi.json

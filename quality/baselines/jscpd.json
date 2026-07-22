@@ -1,0 +1,15 @@
+{
+  "total_duplicates": 1,
+  "total_duplicated_lines": 18,
+  "total_duplicated_percentage": 0.15,
+  "known_duplicates": [
+    {
+      "first_file": "service/authentication/serializers.py",
+      "second_file": "service/users/serializers.py",
+      "lines": 19
+    }
+  ],
+  "max_new_lines_in_changed_file_pct": 3.0,
+  "updated": "2026-07-22",
+  "note": "Initial baseline from jscpd scan. 1 clone in Python serializers (validate_* pattern)."
+}

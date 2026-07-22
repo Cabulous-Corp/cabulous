@@ -1,0 +1,8 @@
+{
+  "min_coverage": 20,
+  "current_coverage": 0,
+  "source": ["app/web/lib/**", "app/web/hooks/**", "app/web/components/**", "app/web/app/**"],
+  "exclude": ["**/*.test.*", "**/*.spec.*", "**/*.d.ts", "**/types/**", "**/mocks/**", "**/tests/**"],
+  "note": "Initial baseline at 20%. Raise after coverage improves.",
+  "updated": "2026-07-22"
+}

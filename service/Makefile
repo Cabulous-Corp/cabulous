@@ -6,7 +6,7 @@ cmd ?=
 MANAGE_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 MANAGE_CMD ?= $(cmd)
 
-ALL_TARGETS := help setup setup-dev up down build restart logs ps bash shell dbshell psql migrate makemigrations superuser test collectstatic manage web-logs db-logs redis-logs minio-logs minio-init-logs worker-logs beat-logs flower-logs restart-worker restart-beat restart-flower up-dev down-dev build-dev restart-dev logs-dev ps-dev bash-dev shell-dev dbshell-dev psql-dev migrate-dev makemigrations-dev superuser-dev test-dev collectstatic-dev manage-dev web-logs-dev db-logs-dev redis-logs-dev minio-logs-dev minio-init-logs-dev worker-logs-dev beat-logs-dev flower-logs-dev restart-worker-dev restart-beat-dev restart-flower-dev up-prod down-prod build-prod restart-prod logs-prod ps-prod bash-prod shell-prod dbshell-prod psql-prod migrate-prod makemigrations-prod superuser-prod test-prod collectstatic-prod manage-prod web-logs-prod db-logs-prod redis-logs-prod minio-logs-prod minio-init-logs-prod worker-logs-prod beat-logs-prod flower-logs-prod restart-worker-prod restart-beat-prod restart-flower-prod lint format typecheck check
+ALL_TARGETS := help setup setup-dev up down build restart logs ps bash shell dbshell psql migrate makemigrations superuser test collectstatic manage web-logs db-logs redis-logs minio-logs minio-init-logs worker-logs beat-logs flower-logs restart-worker restart-beat restart-flower up-dev down-dev build-dev restart-dev logs-dev ps-dev bash-dev shell-dev dbshell-dev psql-dev migrate-dev makemigrations-dev superuser-dev test-dev collectstatic-dev manage-dev web-logs-dev db-logs-dev redis-logs-dev minio-logs-dev minio-init-logs-dev worker-logs-dev beat-logs-dev flower-logs-dev restart-worker-dev restart-beat-dev restart-flower-dev up-prod down-prod build-prod restart-prod logs-prod ps-prod bash-prod shell-prod dbshell-prod psql-prod migrate-prod makemigrations-prod superuser-prod test-prod collectstatic-prod manage-prod web-logs-prod db-logs-prod redis-logs-prod minio-logs-prod minio-init-logs-prod worker-logs-prod beat-logs-prod flower-logs-prod restart-worker-prod restart-beat-prod restart-flower-prod lint format typecheck check contract-check
 
 ifneq ($(filter manage manage-dev manage-prod,$(firstword $(MAKECMDGOALS))),)
   ifeq ($(strip $(MANAGE_CMD)),)
@@ -303,3 +303,24 @@ check:
 	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m ruff check .
 	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m ruff format --check .
 	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m mypy .
+
+test-ci:
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) pytest tests/ -q --tb=short
+
+coverage:
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) pytest --branch --cov=. --cov-report=term-missing --cov-report=json:coverage.json -q
+
+function-length:
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) flake8 --select=C901,MFL000 --max-complexity=10 --max-function-length=50 --exclude='*/migrations/*,*/tests/*,*/.venv/*,*/__pycache__/*,*/site-packages/*' .
+
+duplication:
+	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) jscpd --min-lines 5 --min-tokens 50 --reporters console .
+
+migration-check:
+	@echo "migration-check: skipped locally (requires PostgreSQL); runs in CI"
+
+contract-check:
+	@bash ../scripts/quality/check-openapi.sh
+
+quality: lint typecheck test-ci coverage function-length duplication migration-check contract-check
+	@echo "All backend quality checks passed"

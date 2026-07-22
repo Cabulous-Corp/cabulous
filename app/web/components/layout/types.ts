@@ -1,7 +1,12 @@
+// ponytail: using React.ComponentType to cover both lucide-react and react-icons icon families
+import type { ComponentType } from 'react'
+
+export type IconComponent = ComponentType<{ className?: string }>
+
 export type SidebarLinkItem = {
   href: string
   target?: string
-  icon?: any
+  icon?: IconComponent
   label: string
   end?: boolean
   active?: boolean
@@ -10,7 +15,7 @@ export type SidebarLinkItem = {
 
 export type SidebarCollapsibleItem = {
   id: string
-  icon: any
+  icon: IconComponent
   label: string
   items: {
     href: string

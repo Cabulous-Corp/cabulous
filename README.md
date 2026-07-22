@@ -46,6 +46,18 @@ As configuracoes do workspace ficam em [`.vscode/settings.json`](.vscode/setting
 - interpretador Python apontando para o ambiente virtual do backend em `service/.venv`
 - Prettier como formatter padrao para arquivos TypeScript e JavaScript
 
+## Quality Gates
+
+O monorepo possui quality gates que garantem qualidade minima em cada PR. Veja [docs/quality-gates.md](docs/quality-gates.md) para documentacao completa sobre comandos, baselines, waivers e politica de promocao.
+
+Resumo rapido:
+
+```bash
+make service quality   # Todos os checks do backend
+make app quality       # Todos os checks do frontend
+bash scripts/quality/tests/test_gate_fixtures.sh  # Testes dos gates
+```
+
 ## Fluxo esperado
 
 Durante o desenvolvimento:
