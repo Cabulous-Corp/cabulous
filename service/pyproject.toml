@@ -40,7 +40,7 @@ dev = [
 ]
 
 [tool.ruff]
-extend-exclude = [".uv-cache", ".uv-python", ".venv"]
+extend-exclude = [".uv-cache", ".uv-python", ".venv", "*/fixtures/*"]
 line-length = 100
 target-version = "py313"
 

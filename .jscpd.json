@@ -14,7 +14,8 @@
     "**/.next/**",
     "**/out/**",
     "**/coverage/**",
-    "**/jscpd-report/**"
+    "**/jscpd-report/**",
+    "**/fixtures/**"
   ],
   "ignoreCase": false,
   "minLines": 5,
