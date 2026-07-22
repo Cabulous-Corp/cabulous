@@ -179,7 +179,7 @@ class EventModelTests(TestCase):
             title="Highlight test", start_at=start, end_at=start + timedelta(hours=1),
             type=EventType.CABULOUS, creator=self.creator, status=EventStatus.SCHEDULED,
         )
-        h = Highlight.objects.create(event=event, text="Great moment")
+        h = Highlight.objects.create(event=event, author=self.creator, text="Great moment")
         hp = HighlightPhoto.objects.create(highlight=h, photo=photo)
         self.assertEqual(h.photos.count(), 1)
         self.assertEqual(hp.highlight, h)

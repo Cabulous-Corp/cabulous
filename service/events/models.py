@@ -209,6 +209,12 @@ class Highlight(BaseModel):
         on_delete=models.CASCADE,
         related_name="highlights",
     )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="created_highlights",
+        verbose_name="Autor",
+    )
     text = models.CharField(max_length=500, verbose_name="Texto")
 
     class Meta(BaseModel.Meta):

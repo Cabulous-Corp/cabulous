@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from events.constants import EVENT_TYPE_COLOR_MAP
 from events.enums import Audience, EventType
-from events.models import Event, EventLocation, EventParticipant, EventPhoto
+from events.models import Event, EventLocation, EventParticipant, EventPhoto, Highlight
 
 
 class EventLocationWriteSerializer(serializers.Serializer):
@@ -153,3 +153,40 @@ class EventPhotoReadSerializer(serializers.ModelSerializer):
 
 class ThumbnailSerializer(serializers.Serializer):
     photo_id = serializers.UUIDField(required=False, allow_null=True)
+
+
+# ---------------------------------------------------------------------------
+# Highlights
+# ---------------------------------------------------------------------------
+
+
+class HighlightPhotoReadSerializer(serializers.Serializer):
+    """Lightweight read serializer for a photo linked to a highlight."""
+
+    id = serializers.UUIDField(source="photo.id", read_only=True)
+    object_key = serializers.CharField(source="photo.object_key", read_only=True)
+    content_type = serializers.CharField(source="photo.content_type", read_only=True)
+
+    class Meta:
+        fields = ["id", "object_key", "content_type"]
+
+
+class HighlightReadSerializer(serializers.ModelSerializer):
+    photos = HighlightPhotoReadSerializer(many=True, read_only=True)
+    author_id = serializers.UUIDField(read_only=True)
+
+    class Meta:
+        model = Highlight
+        fields = ["id", "text", "author_id", "photos", "created_at", "updated_at"]
+        read_only_fields = fields
+
+
+class HighlightWriteSerializer(serializers.ModelSerializer):
+    text = serializers.CharField(max_length=500)
+    photo_ids = serializers.ListField(
+        child=serializers.UUIDField(), required=False, default=list
+    )
+
+    class Meta:
+        model = Highlight
+        fields = ["text", "photo_ids"]

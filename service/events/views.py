@@ -12,13 +12,15 @@ from authentication.permissions import IsAuthenticatedWithOnboardingGuard
 from common.pagination import StandardPageNumberPagination
 from events.enums import Audience, EventStatus, EventType
 from events.filters import EventFilter
-from events.models import Event, EventParticipant, EventPhoto
+from events.models import Event, EventParticipant, EventPhoto, Highlight
 from events.permissions import IsEventCreatorOrStaff, IsStaffOnly
 from events.serializers import (
     EventCreateSerializer,
     EventPhotoReadSerializer,
     EventReadSerializer,
     EventUpdateSerializer,
+    HighlightReadSerializer,
+    HighlightWriteSerializer,
     ParticipantAddSerializer,
     ParticipantReadSerializer,
     PhotoLinkSerializer,
@@ -34,6 +36,7 @@ from events.services.relations import (
     set_thumbnail,
     unlink_photo,
 )
+from events.services.highlights import create_highlight, delete_highlight, update_highlight
 from media.models import Photo
 
 
@@ -130,6 +133,8 @@ class EventViewSet(
             return [IsAuthenticatedWithOnboardingGuard(), IsEventCreatorOrStaff()]
         if self.action == "thumbnail":
             return [IsAuthenticatedWithOnboardingGuard(), IsEventCreatorOrStaff()]
+        if self.action in ("highlight_detail",) and self.request.method in ("PATCH", "DELETE"):
+            return [IsAuthenticatedWithOnboardingGuard()]
         return [IsAuthenticatedWithOnboardingGuard()]
 
     @action(detail=False, methods=["get"])
@@ -296,3 +301,117 @@ class EventViewSet(
             )
         row = set_thumbnail(event=event, photo=photo)
         return Response(EventPhotoReadSerializer(row).data, status=status.HTTP_200_OK)
+
+    # -------------------------------------------------------------------
+    # Highlights
+    # -------------------------------------------------------------------
+
+    def _get_event_and_highlight(self, request, pk, highlight_pk):
+        """Fetch event and highlight, scoped by event_id."""
+        event = self.get_object()
+        try:
+            highlight = (
+                Highlight.objects.select_related("author")
+                .prefetch_related("photos__photo")
+                .get(id=highlight_pk, event=event)
+            )
+        except Highlight.DoesNotExist:
+            return event, None
+        return event, highlight
+
+    @action(detail=True, methods=["get", "post"], url_path="highlights")
+    def highlights(self, request, pk=None):
+        event = self.get_object()
+
+        if request.method == "POST":
+            # creator/staff/participant can create
+            is_participant = (
+                request.user.is_staff
+                or event.creator_id == request.user.id
+                or EventParticipant.objects.filter(event=event, user=request.user).exists()
+            )
+            if not is_participant:
+                raise PermissionDenied(
+                    {"detail": "Only the creator, staff, or participants can create highlights."}
+                )
+            serializer = HighlightWriteSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            data = serializer.validated_data
+            try:
+                hl = create_highlight(
+                    event=event,
+                    author=request.user,
+                    text=data["text"],
+                    photo_ids=data.get("photo_ids", []),
+                )
+            except Exception:
+                raise
+            return Response(
+                HighlightReadSerializer(hl).data, status=status.HTTP_201_CREATED
+            )
+
+        # GET - list
+        qs = Highlight.objects.filter(event=event).prefetch_related(
+            "photos__photo"
+        ).order_by("created_at")
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = HighlightReadSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        return Response(HighlightReadSerializer(qs, many=True).data)
+
+    @action(
+        detail=True,
+        methods=["get", "patch", "delete"],
+        url_path=r"highlights/(?P<highlight_pk>[^/.]+)",
+    )
+    def highlight_detail(self, request, pk=None, highlight_pk=None):
+        event, highlight = self._get_event_and_highlight(request, pk, highlight_pk)
+        if highlight is None:
+            return Response(
+                {"detail": "Highlight not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if request.method == "GET":
+            return Response(HighlightReadSerializer(highlight).data)
+
+        if request.method == "DELETE":
+            # creator/staff can delete any; author can delete own
+            if not (
+                request.user.is_staff
+                or event.creator_id == request.user.id
+                or highlight.author_id == request.user.id
+            ):
+                raise PermissionDenied(
+                    {"detail": "You do not have permission to delete this highlight."}
+                )
+            delete_highlight(highlight=highlight)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # PATCH
+        # creator/staff can edit any; author can edit own
+        if not (
+            request.user.is_staff
+            or event.creator_id == request.user.id
+            or highlight.author_id == request.user.id
+        ):
+            raise PermissionDenied(
+                {"detail": "You do not have permission to edit this highlight."}
+            )
+
+        serializer = HighlightWriteSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        try:
+            update_highlight(
+                highlight=highlight,
+                text=data.get("text"),
+                photo_ids=data.get("photo_ids"),
+            )
+        except Exception:
+            raise
+
+        highlight.refresh_from_db()
+        return Response(HighlightReadSerializer(highlight).data)
