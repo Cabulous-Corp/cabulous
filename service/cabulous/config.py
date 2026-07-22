@@ -30,6 +30,40 @@ class CelerySettings(BaseModel):
     beat_schedule_filename: str = "/tmp/celerybeat-schedule"
 
 
+class MinioSettings(BaseModel):
+    enabled: bool = True
+    endpoint_url: str = "http://minio:9000"
+    public_endpoint: str = "http://localhost:9000"
+    access_key: str = "cabulous"
+    secret_key: str = "cabulous123"
+    bucket_name: str = "cabulous-media"
+    region_name: str = "us-east-1"
+    default_acl: str | None = None
+    querystring_auth: bool = True
+
+
+class JwtSettings(BaseModel):
+    access_token_lifetime_minutes: int = 15
+    refresh_token_lifetime_days: int = 7
+    rotate_refresh_tokens: bool = True
+    blacklist_after_rotation: bool = True
+    update_last_login: bool = False
+    auth_header_types: list[str] = Field(default_factory=lambda: ["Bearer"])
+
+
+class EmailSettings(BaseModel):
+    backend: str = "django.core.mail.backends.smtp.EmailBackend"
+    host: str = "smtp.gmail.com"
+    port: int = 587
+    use_tls: bool = True
+    use_ssl: bool = False
+    timeout: int = 10
+    host_user: str = "cabulousgang@gmail.com"
+    host_password: str = ""
+    default_from_email: str = "Cabulous <cabulousgang@gmail.com>"
+    server_email: str = "cabulousgang@gmail.com"
+
+
 class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -43,9 +77,13 @@ class AppSettings(BaseSettings):
     allowed_hosts: list[str] = Field(default_factory=lambda: ["localhost", "127.0.0.1", "0.0.0.0"])
     time_zone: str = "America/Sao_Paulo"
     web_port: int = 8000
+    app_frontend_url: str = "http://localhost:3000"
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     celery: CelerySettings = Field(default_factory=CelerySettings)
+    minio: MinioSettings = Field(default_factory=MinioSettings)
+    jwt: JwtSettings = Field(default_factory=JwtSettings)
+    email: EmailSettings = Field(default_factory=EmailSettings)
 
     @field_validator("allowed_hosts", mode="before")
     @classmethod

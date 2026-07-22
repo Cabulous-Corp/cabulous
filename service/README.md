@@ -10,6 +10,7 @@ Este diretorio concentra a API, o painel administrativo e os servicos de backend
 - Django REST Framework
 - Celery
 - Flower
+- MinIO
 - Postgres 17
 - Redis
 - Docker Compose
@@ -26,6 +27,7 @@ Esta aplicacao backend existe para sustentar o ecossistema do Cabulous Site, ofe
 - processamento de tarefas assíncronas com Celery
 - agendamentos com Celery Beat
 - monitoramento do Celery com Flower
+- armazenamento de arquivos com bucket S3 self-hosted (MinIO)
 - persistencia de dados com Postgres
 - cache e broker com Redis
 
@@ -52,25 +54,75 @@ No modo de desenvolvimento:
 - o Flower tambem roda com reinicio automatico quando arquivos Python mudam
 - as migracoes sao aplicadas automaticamente na subida da aplicacao web
 
-## Requisitos
+## Setup
+
+### Requisitos
 
 - Docker
 - Docker Compose
-- `make`
-- `uv`
+- `make` instalado no sistema
+- `uv` instalado no sistema
 
-## Configuracao inicial
+### Subida do ambiente
 
-1. Crie o arquivo de ambiente a partir do exemplo:
+Comandos minimos para subir o backend em desenvolvimento:
+
+1. Rodar o setup completo:
 
 ```bash
-cp .env.example .env
+make setup
 ```
 
-2. Suba a stack de desenvolvimento:
+Esse comando irá:
+
+- criar `.env` automaticamente (se ainda nao existir)
+- criar o ambiente virtual `.venv`
+- instalar todas as dependências Python do projeto
+- instalar o hook de `pre-push`
+
+2. Subir a stack:
 
 ```bash
 make up-dev
+```
+
+Ambiente de desenvolvimento de pé!
+
+### VS Code (recomendado)
+
+Antes de selecionar o interpretador Python, é necessário criar o ambiente virtual do projeto utilizando o `uv`.
+
+Dentro do diretório `service`, execute caso não tenha executado:
+
+```bash
+make setup
+```
+
+Após isso, para completar o setup de desenvolvimento no VS Code:
+
+- selecione o interpretador Python da venv do projeto (`service/.venv`)
+- instale as extensoes recomendadas do workspace (`.vscode/extensions.json`)
+- mantenha `BasedPyright` (`detachhead.basedpyright`) habilitado para experiencia de IDE
+- mantenha `Mypy Type Checker` (`ms-python.mypy-type-checker`) habilitado para analise de tipos do projeto
+
+Com isso, lint, formatacao e analise de codigo ficam padronizados no projeto.
+
+### Hooks Git (pre-push)
+
+Este repositorio usa `pre-push` no push:
+
+- `pre-push`: roda `make lint` somente quando houver mudancas em `service/`
+
+O check completo (`make check`) roda no workflow de CI.
+
+### Workflow
+
+Este projeto utiliza o Git Flow como estratégia de workflow
+
+Inicie com:
+
+```bash
+git flow init
 ```
 
 ## Servicos disponiveis
@@ -81,6 +133,8 @@ Ao subir o ambiente de desenvolvimento, os principais servicos ficam disponiveis
 - Django Admin: [http://localhost:8000/admin/](http://localhost:8000/admin/)
 - healthcheck da API: [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
 - Flower: [http://localhost:5555](http://localhost:5555)
+- MinIO API: [http://localhost:9000](http://localhost:9000)
+- MinIO Console: [http://localhost:9001](http://localhost:9001)
 - Postgres exposto localmente na porta `5433`
 - Redis exposto localmente na porta `6380`
 
@@ -92,6 +146,8 @@ Os servicos principais da stack sao:
 - `worker`: processamento de tarefas assíncronas
 - `beat`: agendador do Celery
 - `flower`: painel de monitoramento do Celery
+- `minio`: armazenamento de arquivos S3 self-hosted
+- `minio-init`: bootstrap do bucket inicial
 - `db`: banco Postgres
 - `redis`: cache e broker
 
@@ -99,7 +155,7 @@ Os servicos principais da stack sao:
 
 As configuracoes da aplicacao sao centralizadas com `pydantic-settings`.
 
-O arquivo [`.env.example`](C:\Users\clebm\Projetos\cabulous\service\.env.example) mostra os valores esperados para:
+O arquivo `.env.example` mostra os valores esperados para:
 
 - aplicacao Django
 - banco de dados
@@ -109,17 +165,19 @@ O arquivo [`.env.example`](C:\Users\clebm\Projetos\cabulous\service\.env.example
 
 ## Dependencias Python
 
-As dependencias sao gerenciadas com `uv`.
+As dependencias Python sao gerenciadas com `uv`.
 
-Quando for necessario sincronizar o ambiente Python fora dos containers, use:
+Para criar o ambiente virtual `.venv` e instalar as dependencias do projeto, execute:
 
 ```bash
 uv sync
 ```
 
+Esse comando deve ser executado sempre que o ambiente Python ainda nao existir ou quando houver alteracoes nas dependencias do projeto.
+
 ## Comandos do projeto
 
-Os comandos de operacao e desenvolvimento estao organizados no [Makefile](C:\Users\clebm\Projetos\cabulous\service\Makefile).
+Os comandos de operacao e desenvolvimento estao organizados no Makefile.
 
 Para ver a lista disponivel:
 

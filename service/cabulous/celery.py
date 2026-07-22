@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from celery import Celery
 
@@ -10,5 +11,5 @@ app.autodiscover_tasks()
 
 
 @app.task(bind=True)
-def debug_task(self):
+def debug_task(self: Any) -> None:
     print(f"Request: {self.request!r}")

@@ -1,5 +1,7 @@
 services:
   web:
+    healthcheck:
+      disable: true
     command:
       [
         "sh",

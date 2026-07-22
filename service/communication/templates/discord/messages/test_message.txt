@@ -1,0 +1,2 @@
+Test message from Cabulous communication service.
+User: {{ username|default:"anonymous" }}

@@ -6,4 +6,11 @@ __pycache__/
 *.py[cod]
 *.sqlite3
 .ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
 staticfiles/

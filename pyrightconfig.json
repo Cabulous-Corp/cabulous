@@ -1,0 +1,20 @@
+{
+  "include": ["service"],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    "service/.venv",
+    "service/.uv-cache"
+  ],
+  "venvPath": "service",
+  "venv": ".venv",
+  "typeCheckingMode": "off",
+  "reportIncompatibleVariableOverride": "none",
+  "executionEnvironments": [
+    {
+      "root": "service",
+      "extraPaths": ["service"]
+    }
+  ]
+}
