@@ -1,0 +1,54 @@
+# Taskfile.app.yml
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  default:
+    desc: "List all app tasks"
+    cmd: task --list
+
+  dev:
+    desc: "Start Next.js dev server"
+    cmd: bun run dev
+
+  build:
+    desc: "Build Next.js app"
+    cmd: bun run build
+
+  lint:
+    desc: "Run ESLint"
+    cmd: bun run lint
+
+  lint-fix:
+    desc: "Run ESLint with auto-fix"
+    cmd: bun run lint:fix
+
+  lint-fix-unsafe:
+    desc: "Run ESLint with unsafe auto-fix"
+    cmd: bun run lint:fix-unsafe
+
+  typecheck:
+    desc: "Run TypeScript check"
+    cmd: bun run typecheck
+
+  test:
+    desc: "Run Vitest tests"
+    cmd: bun run test
+
+  coverage:
+    desc: "Run tests with coverage"
+    cmd: bun run test:coverage
+
+  quality:
+    desc: "Run all quality checks (lint + typecheck + build + coverage)"
+    cmds:
+      - bun run quality
+      - echo "All frontend quality checks passed!"
+
+  generate-api-types:
+    desc: "Generate API types from OpenAPI schema"
+    cmds:
+      - curl http://localhost:8000/openapi.json > openapi.json
+      - bunx openapi-typescript openapi.json -o ./types/api.d.ts
+      - rm openapi.json
