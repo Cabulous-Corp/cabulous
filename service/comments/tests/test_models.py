@@ -97,7 +97,7 @@ class CommentDomainTests(TestCase):
                 parent=None,
             )
 
-    def test_immutable_parent(self) -> None:
+    def test_parent_is_set_correctly_at_creation(self) -> None:
         comment = create_comment(
             author=self.user,
             target_type="events.event",
@@ -112,22 +112,30 @@ class CommentDomainTests(TestCase):
             body="Reply",
             parent=comment,
         )
-        # Attempting to change parent on an existing comment should be a no-op
-        # (the service doesn't support updating; we verify parent is never
-        # reassigned by trying to create with a different parent for the same reply).
-        comment_b = create_comment(
-            author=self.user,
-            target_type="events.event",
-            target_id=self.event_b.id,
-            body="Another root",
-            parent=None,
-        )
-        # The reply comment already has parent=comment; we can't really "change"
-        # it via the service — but ensure the design is sound: fetching reply
-        # still shows the original parent.
         reply.refresh_from_db()
         self.assertEqual(reply.parent_id, comment.id)
-        self.assertNotEqual(reply.parent_id, comment_b.id)
+
+    def test_arbitrary_deep_chain(self) -> None:
+        """Reply-of-reply-of-reply — no nesting limit enforced."""
+        c1 = create_comment(
+            author=self.user, target_type="events.event",
+            target_id=self.event_a.id, body="Level 1", parent=None,
+        )
+        c2 = create_comment(
+            author=self.user, target_type="events.event",
+            target_id=self.event_a.id, body="Level 2", parent=c1,
+        )
+        c3 = create_comment(
+            author=self.user, target_type="events.event",
+            target_id=self.event_a.id, body="Level 3", parent=c2,
+        )
+        # All three share the same target
+        self.assertEqual(c1.object_id, self.event_a.id)
+        self.assertEqual(c2.object_id, self.event_a.id)
+        self.assertEqual(c3.object_id, self.event_a.id)
+        # Chain integrity: c3→c2→c1
+        self.assertEqual(c3.parent_id, c2.id)
+        self.assertEqual(c2.parent_id, c1.id)
 
     def test_soft_delete_behavior(self) -> None:
         comment = create_comment(
