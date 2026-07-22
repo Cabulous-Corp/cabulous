@@ -181,9 +181,7 @@ class EventUpdateTests(TestCase):
     def test_other_user_cannot_patch(self) -> None:
         event = _create_event(self.creator)
         self.client.force_authenticate(self.other)
-        response = self.client.patch(
-            f"/api/events/{event.id}/", {"title": "Hacked"}, format="json"
-        )
+        response = self.client.patch(f"/api/events/{event.id}/", {"title": "Hacked"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_staff_can_patch(self) -> None:

@@ -7,6 +7,7 @@ import django.db.models.deletion
 
 def _compute_status(start_at, end_at):
     from django.utils import timezone
+
     now = timezone.now()
     if end_at and now > end_at:
         return "COMPLETED"
@@ -31,9 +32,7 @@ def forwards(apps, schema_editor):
     creator = _find_creator(apps, schema_editor)
     if creator is None:
         if Event.objects.exists():
-            raise RuntimeError(
-                "Cannot backfill: events exist but no active users found."
-            )
+            raise RuntimeError("Cannot backfill: events exist but no active users found.")
         return
 
     for event in Event.objects.all():
@@ -54,7 +53,6 @@ def reverse(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("events", "0001_initial"),
@@ -99,7 +97,6 @@ class Migration(migrations.Migration):
             name="deleted_at",
             field=models.DateTimeField(null=True, blank=True, verbose_name="Excluído em"),
         ),
-
         # Step 2: Create related tables
         migrations.CreateModel(
             name="EventAudience",
@@ -196,9 +193,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(
-                        blank=True, max_length=255, verbose_name="Nome do local"
-                    ),
+                    models.CharField(blank=True, max_length=255, verbose_name="Nome do local"),
                 ),
                 ("address", models.TextField(verbose_name="Endereço")),
                 ("latitude", models.DecimalField(max_digits=9, decimal_places=6)),
@@ -326,10 +321,8 @@ class Migration(migrations.Migration):
                 "abstract": False,
             },
         ),
-
         # Step 3: Data migration
         migrations.RunPython(forwards, reverse),
-
         # Step 4: Make fields non-nullable
         migrations.AlterField(
             model_name="event",
@@ -360,7 +353,6 @@ class Migration(migrations.Migration):
             name="end_at",
             field=models.DateTimeField(verbose_name="Fim do evento"),
         ),
-
         # Step 5: Remove old indexes (SQLite requires this before column drop)
         migrations.RemoveIndex(
             model_name="event",
@@ -370,7 +362,6 @@ class Migration(migrations.Migration):
             model_name="event",
             name="events_even_public_5bbabb_idx",
         ),
-
         # Step 6: Remove old columns
         migrations.RemoveField(
             model_name="event",
@@ -380,18 +371,15 @@ class Migration(migrations.Migration):
             model_name="event",
             name="thumbnail",
         ),
-
         # Step 7: New indexes and constraints
         migrations.AddIndex(
             model_name="event",
-            index=models.Index(
-                fields=["type", "start_at"], name="events_type_start_idx"
-            ),
+            index=models.Index(fields=["type", "start_at"], name="events_type_start_idx"),
         ),
         migrations.AddConstraint(
             model_name="event",
             constraint=models.CheckConstraint(
-                check=models.Q(end_at__gte=models.F("start_at")),
+                condition=models.Q(end_at__gte=models.F("start_at")),
                 name="events_end_gte_start",
             ),
         ),

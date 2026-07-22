@@ -20,15 +20,14 @@ def create_highlight(
 
     if photo_ids:
         linked = set(
-            EventPhoto.objects.filter(event=event, photo_id__in=photo_ids)
-            .values_list("photo_id", flat=True)
+            EventPhoto.objects.filter(event=event, photo_id__in=photo_ids).values_list(
+                "photo_id", flat=True
+            )
         )
         missing = set(photo_ids) - linked
         if missing:
             joined = ", ".join(str(p) for p in missing)
-            raise ValidationError(
-                {"photo_ids": f"Photos not linked to this event: {joined}"}
-            )
+            raise ValidationError({"photo_ids": f"Photos not linked to this event: {joined}"})
 
     hl = Highlight.objects.create(event=event, author=author, text=text)
     if photo_ids:
@@ -52,15 +51,14 @@ def update_highlight(
 
     if photo_ids is not None:
         linked = set(
-            EventPhoto.objects.filter(event=highlight.event, photo_id__in=photo_ids)
-            .values_list("photo_id", flat=True)
+            EventPhoto.objects.filter(event=highlight.event, photo_id__in=photo_ids).values_list(
+                "photo_id", flat=True
+            )
         )
         missing = set(photo_ids) - linked
         if missing:
             joined = ", ".join(str(p) for p in missing)
-            raise ValidationError(
-                {"photo_ids": f"Photos not linked to this event: {joined}"}
-            )
+            raise ValidationError({"photo_ids": f"Photos not linked to this event: {joined}"})
         highlight.photos.all().delete()
         if photo_ids:
             HighlightPhoto.objects.bulk_create(

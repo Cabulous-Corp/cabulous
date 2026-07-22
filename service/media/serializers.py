@@ -25,9 +25,7 @@ class PhotoUploadUrlsRequestSerializer(serializers.Serializer):
             suffix = Path(filename).suffix.lower()
 
             if content_type not in ALLOWED_CONTENT_TYPES:
-                raise serializers.ValidationError(
-                    f"Unsupported content type: {content_type}."
-                )
+                raise serializers.ValidationError(f"Unsupported content type: {content_type}.")
 
             if suffix not in ALLOWED_CONTENT_TYPES[content_type]:
                 raise serializers.ValidationError(

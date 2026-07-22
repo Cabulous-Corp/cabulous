@@ -133,12 +133,20 @@ class EventModelTests(TestCase):
         )
         start = timezone.now() + timedelta(days=1)
         e1 = Event.objects.create(
-            title="E1", start_at=start, end_at=start + timedelta(hours=1),
-            type=EventType.SHOW, creator=self.creator, status=EventStatus.SCHEDULED,
+            title="E1",
+            start_at=start,
+            end_at=start + timedelta(hours=1),
+            type=EventType.SHOW,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
         )
         e2 = Event.objects.create(
-            title="E2", start_at=start, end_at=start + timedelta(hours=1),
-            type=EventType.SHOW, creator=self.creator, status=EventStatus.SCHEDULED,
+            title="E2",
+            start_at=start,
+            end_at=start + timedelta(hours=1),
+            type=EventType.SHOW,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
         )
         EventPhoto.objects.create(event=e1, photo=photo, is_thumbnail=True)
         EventPhoto.objects.create(event=e2, photo=photo, is_thumbnail=False)
@@ -149,17 +157,27 @@ class EventModelTests(TestCase):
             username="uploader2", email="up2@example.com", password="secret"
         )
         photo1 = Photo.objects.create(
-            object_key="k2", uploader=user, taken_on=timezone.now().date(),
-            content_type="image/jpeg", size_bytes=1024,
+            object_key="k2",
+            uploader=user,
+            taken_on=timezone.now().date(),
+            content_type="image/jpeg",
+            size_bytes=1024,
         )
         photo2 = Photo.objects.create(
-            object_key="k3", uploader=user, taken_on=timezone.now().date(),
-            content_type="image/png", size_bytes=2048,
+            object_key="k3",
+            uploader=user,
+            taken_on=timezone.now().date(),
+            content_type="image/png",
+            size_bytes=2048,
         )
         start = timezone.now() + timedelta(days=1)
         event = Event.objects.create(
-            title="Thumb", start_at=start, end_at=start + timedelta(hours=1),
-            type=EventType.CINEMA, creator=self.creator, status=EventStatus.SCHEDULED,
+            title="Thumb",
+            start_at=start,
+            end_at=start + timedelta(hours=1),
+            type=EventType.CINEMA,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
         )
         EventPhoto.objects.create(event=event, photo=photo1, is_thumbnail=True)
 
@@ -167,17 +185,22 @@ class EventModelTests(TestCase):
             EventPhoto.objects.create(event=event, photo=photo2, is_thumbnail=True)
 
     def test_highlight_and_photo_relations(self) -> None:
-        user = User.objects.create_user(
-            username="huser", email="h@example.com", password="secret"
-        )
+        user = User.objects.create_user(username="huser", email="h@example.com", password="secret")
         photo = Photo.objects.create(
-            object_key="k4", uploader=user, taken_on=timezone.now().date(),
-            content_type="image/jpeg", size_bytes=1024,
+            object_key="k4",
+            uploader=user,
+            taken_on=timezone.now().date(),
+            content_type="image/jpeg",
+            size_bytes=1024,
         )
         start = timezone.now() + timedelta(days=1)
         event = Event.objects.create(
-            title="Highlight test", start_at=start, end_at=start + timedelta(hours=1),
-            type=EventType.CABULOUS, creator=self.creator, status=EventStatus.SCHEDULED,
+            title="Highlight test",
+            start_at=start,
+            end_at=start + timedelta(hours=1),
+            type=EventType.CABULOUS,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
         )
         h = Highlight.objects.create(event=event, author=self.creator, text="Great moment")
         hp = HighlightPhoto.objects.create(highlight=h, photo=photo)
@@ -187,12 +210,20 @@ class EventModelTests(TestCase):
     def test_active_and_all_managers(self) -> None:
         start = timezone.now() + timedelta(days=1)
         Event.objects.create(
-            title="Active", start_at=start, end_at=start + timedelta(hours=1),
-            type=EventType.DINNER, creator=self.creator, status=EventStatus.SCHEDULED,
+            title="Active",
+            start_at=start,
+            end_at=start + timedelta(hours=1),
+            type=EventType.DINNER,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
         )
         e2 = Event.objects.create(
-            title="SoftDeleted", start_at=start, end_at=start + timedelta(hours=1),
-            type=EventType.DINNER, creator=self.creator, status=EventStatus.SCHEDULED,
+            title="SoftDeleted",
+            start_at=start,
+            end_at=start + timedelta(hours=1),
+            type=EventType.DINNER,
+            creator=self.creator,
+            status=EventStatus.SCHEDULED,
         )
         e2.soft_delete()
         self.assertEqual(Event.objects.count(), 1)

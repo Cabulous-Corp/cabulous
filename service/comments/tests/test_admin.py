@@ -57,7 +57,7 @@ class CommentsAdminRegistrationTests(TestCase):
         """Admin list page uses bounded queries.
         Captured exact count: session, user load, contenttype list,
         count x2, select_related queryset (with author + contenttype),
-        permissions x2.
+        permissions x2, event lookup for admin.
         """
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(9):
             self.client.get("/admin/comments/comment/")

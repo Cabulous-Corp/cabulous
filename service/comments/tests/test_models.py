@@ -118,16 +118,25 @@ class CommentDomainTests(TestCase):
     def test_arbitrary_deep_chain(self) -> None:
         """Reply-of-reply-of-reply — no nesting limit enforced."""
         c1 = create_comment(
-            author=self.user, target_type="events.event",
-            target_id=self.event_a.id, body="Level 1", parent=None,
+            author=self.user,
+            target_type="events.event",
+            target_id=self.event_a.id,
+            body="Level 1",
+            parent=None,
         )
         c2 = create_comment(
-            author=self.user, target_type="events.event",
-            target_id=self.event_a.id, body="Level 2", parent=c1,
+            author=self.user,
+            target_type="events.event",
+            target_id=self.event_a.id,
+            body="Level 2",
+            parent=c1,
         )
         c3 = create_comment(
-            author=self.user, target_type="events.event",
-            target_id=self.event_a.id, body="Level 3", parent=c2,
+            author=self.user,
+            target_type="events.event",
+            target_id=self.event_a.id,
+            body="Level 3",
+            parent=c2,
         )
         # All three share the same target
         self.assertEqual(c1.object_id, self.event_a.id)

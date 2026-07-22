@@ -5,15 +5,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('comments', '0001_initial'),
+        ("comments", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='comment',
-            name='body',
-            field=models.TextField(max_length=5000, validators=[django.core.validators.MaxLengthValidator(5000)]),
+            model_name="comment",
+            name="body",
+            field=models.TextField(
+                max_length=5000, validators=[django.core.validators.MaxLengthValidator(5000)]
+            ),
         ),
     ]

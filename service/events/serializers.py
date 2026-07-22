@@ -44,9 +44,7 @@ class EventCreateSerializer(serializers.Serializer):
 
     def validate(self, data):
         if data["end_at"] < data["start_at"]:
-            raise serializers.ValidationError(
-                {"end_at": "End date must not be before start date."}
-            )
+            raise serializers.ValidationError({"end_at": "End date must not be before start date."})
         return data
 
 
@@ -114,9 +112,7 @@ class EventUpdateSerializer(serializers.Serializer):
         start = data.get("start_at") or getattr(self.instance, "start_at", None)
         end = data.get("end_at") or getattr(self.instance, "end_at", None)
         if start and end and end < start:
-            raise serializers.ValidationError(
-                {"end_at": "End date must not be before start date."}
-            )
+            raise serializers.ValidationError({"end_at": "End date must not be before start date."})
         return data
 
 
@@ -189,9 +185,7 @@ class HighlightReadSerializer(serializers.ModelSerializer):
 
 class HighlightWriteSerializer(serializers.ModelSerializer):
     text = serializers.CharField(max_length=500)
-    photo_ids = serializers.ListField(
-        child=serializers.UUIDField(), required=False, default=list
-    )
+    photo_ids = serializers.ListField(child=serializers.UUIDField(), required=False, default=list)
 
     class Meta:
         model = Highlight

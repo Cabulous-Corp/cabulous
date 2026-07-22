@@ -6,7 +6,14 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from events.enums import Audience, EventStatus, EventType
-from events.models import Event, EventAudience, EventParticipant, EventPhoto, Highlight, HighlightPhoto
+from events.models import (
+    Event,
+    EventAudience,
+    EventParticipant,
+    EventPhoto,
+    Highlight,
+    HighlightPhoto,
+)
 from media.models import Photo
 from users.models import User
 
@@ -59,9 +66,7 @@ def _create_event_photo(event, photo, **overrides) -> EventPhoto:
 def _create_highlight(event, author, text="Test highlight", photos=None) -> Highlight:
     hl = Highlight.objects.create(event=event, author=author, text=text)
     if photos:
-        HighlightPhoto.objects.bulk_create(
-            [HighlightPhoto(highlight=hl, photo=p) for p in photos]
-        )
+        HighlightPhoto.objects.bulk_create([HighlightPhoto(highlight=hl, photo=p) for p in photos])
     return hl
 
 
@@ -82,9 +87,7 @@ class HighlightCreateTests(TestCase):
 
     def test_creator_can_create_highlight(self) -> None:
         self.client.force_authenticate(self.creator)
-        response = self.client.post(
-            self.url, {"text": "Great party!"}, format="json"
-        )
+        response = self.client.post(self.url, {"text": "Great party!"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Highlight.objects.count(), 1)
         hl = Highlight.objects.first()
@@ -94,38 +97,28 @@ class HighlightCreateTests(TestCase):
     def test_participant_can_create_highlight(self) -> None:
         EventParticipant.objects.create(event=self.event, user=self.other)
         self.client.force_authenticate(self.other)
-        response = self.client.post(
-            self.url, {"text": "Awesome!"}, format="json"
-        )
+        response = self.client.post(self.url, {"text": "Awesome!"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_staff_can_create_highlight(self) -> None:
         self.client.force_authenticate(self.staff)
-        response = self.client.post(
-            self.url, {"text": "Staff says hi"}, format="json"
-        )
+        response = self.client.post(self.url, {"text": "Staff says hi"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_outsider_cannot_create_highlight(self) -> None:
         stranger = _create_user("stranger")
         self.client.force_authenticate(stranger)
-        response = self.client.post(
-            self.url, {"text": "Hacked!"}, format="json"
-        )
+        response = self.client.post(self.url, {"text": "Hacked!"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_text_500_accepted(self) -> None:
         self.client.force_authenticate(self.creator)
-        response = self.client.post(
-            self.url, {"text": "x" * 500}, format="json"
-        )
+        response = self.client.post(self.url, {"text": "x" * 500}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_text_501_rejected(self) -> None:
         self.client.force_authenticate(self.creator)
-        response = self.client.post(
-            self.url, {"text": "x" * 501}, format="json"
-        )
+        response = self.client.post(self.url, {"text": "x" * 501}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_with_linked_photos(self) -> None:
@@ -180,9 +173,7 @@ class HighlightCreateTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_anonymous_401(self) -> None:
-        response = self.client.post(
-            self.url, {"text": "Anon"}, format="json"
-        )
+        response = self.client.post(self.url, {"text": "Anon"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -247,19 +238,13 @@ class HighlightUpdateTests(TestCase):
         self.event = _create_event(self.creator)
         self.photo = _create_photo(self.creator)
         EventParticipant.objects.create(event=self.event, user=self.other)
-        self.hl = _create_highlight(
-            self.event, self.creator, text="Original"
-        )
-        self.other_hl = _create_highlight(
-            self.event, self.other, text="Other's highlight"
-        )
+        self.hl = _create_highlight(self.event, self.creator, text="Original")
+        self.other_hl = _create_highlight(self.event, self.other, text="Other's highlight")
         self.url = f"/api/events/{self.event.id}/highlights/{self.hl.id}/"
 
     def test_author_can_patch_text(self) -> None:
         self.client.force_authenticate(self.creator)
-        response = self.client.patch(
-            self.url, {"text": "Updated text"}, format="json"
-        )
+        response = self.client.patch(self.url, {"text": "Updated text"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.hl.refresh_from_db()
         self.assertEqual(self.hl.text, "Updated text")
@@ -267,24 +252,18 @@ class HighlightUpdateTests(TestCase):
     def test_creator_can_patch_others_highlight(self) -> None:
         url = f"/api/events/{self.event.id}/highlights/{self.other_hl.id}/"
         self.client.force_authenticate(self.creator)
-        response = self.client.patch(
-            url, {"text": "Edited by creator"}, format="json"
-        )
+        response = self.client.patch(url, {"text": "Edited by creator"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_staff_can_patch_any_highlight(self) -> None:
         self.client.force_authenticate(self.staff)
-        response = self.client.patch(
-            self.url, {"text": "Staff edit"}, format="json"
-        )
+        response = self.client.patch(self.url, {"text": "Staff edit"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_non_author_participant_cannot_patch_others(self) -> None:
         # other is not the author of self.hl (creator is)
         self.client.force_authenticate(self.other)
-        response = self.client.patch(
-            self.url, {"text": "Hacked"}, format="json"
-        )
+        response = self.client.patch(self.url, {"text": "Hacked"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_update_replace_photos(self) -> None:
@@ -296,9 +275,7 @@ class HighlightUpdateTests(TestCase):
         photo_hl = _create_highlight(self.event, self.creator, photos=[self.photo])
         url = f"/api/events/{self.event.id}/highlights/{photo_hl.id}/"
         # Replace with a different photo
-        response = self.client.patch(
-            url, {"photo_ids": [str(photo2.id)]}, format="json"
-        )
+        response = self.client.patch(url, {"photo_ids": [str(photo2.id)]}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         photo_hl.refresh_from_db()
         self.assertEqual(photo_hl.photos.count(), 1)
@@ -308,9 +285,7 @@ class HighlightUpdateTests(TestCase):
         photo_hl = _create_highlight(self.event, self.creator, photos=[self.photo])
         url = f"/api/events/{self.event.id}/highlights/{photo_hl.id}/"
         self.client.force_authenticate(self.creator)
-        response = self.client.patch(
-            url, {"photo_ids": []}, format="json"
-        )
+        response = self.client.patch(url, {"photo_ids": []}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         photo_hl.refresh_from_db()
         self.assertEqual(photo_hl.photos.count(), 0)
@@ -318,9 +293,7 @@ class HighlightUpdateTests(TestCase):
     def test_update_with_invalid_photo_rejected(self) -> None:
         self.client.force_authenticate(self.creator)
         fake_id = "00000000-0000-0000-0000-000000000000"
-        response = self.client.patch(
-            self.url, {"photo_ids": [fake_id]}, format="json"
-        )
+        response = self.client.patch(self.url, {"photo_ids": [fake_id]}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
@@ -338,12 +311,8 @@ class HighlightDeleteTests(TestCase):
         self.event = _create_event(self.creator)
         self.photo = _create_photo(self.creator)
         EventParticipant.objects.create(event=self.event, user=self.other)
-        self.hl = _create_highlight(
-            self.event, self.creator, text="To delete"
-        )
-        self.other_hl = _create_highlight(
-            self.event, self.other, text="Other's"
-        )
+        self.hl = _create_highlight(self.event, self.creator, text="To delete")
+        self.other_hl = _create_highlight(self.event, self.other, text="Other's")
         self.url = f"/api/events/{self.event.id}/highlights/{self.hl.id}/"
 
     def test_author_can_delete(self) -> None:
@@ -397,9 +366,7 @@ class HighlightRetrieveTests(TestCase):
         self.creator = _create_user("creator")
         self.event = _create_event(self.creator)
         self.photo = _create_photo(self.creator)
-        self.hl = _create_highlight(
-            self.event, self.creator, text="Single", photos=[self.photo]
-        )
+        self.hl = _create_highlight(self.event, self.creator, text="Single", photos=[self.photo])
         self.url = f"/api/events/{self.event.id}/highlights/{self.hl.id}/"
         self.client.force_authenticate(self.creator)
 
@@ -416,7 +383,5 @@ class HighlightRetrieveTests(TestCase):
 
     def test_retrieve_404_from_other_event(self) -> None:
         other_event = _create_event(self.creator, title="Other")
-        response = self.client.get(
-            f"/api/events/{other_event.id}/highlights/{self.hl.id}/"
-        )
+        response = self.client.get(f"/api/events/{other_event.id}/highlights/{self.hl.id}/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

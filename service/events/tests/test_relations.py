@@ -68,35 +68,25 @@ class ParticipantApiTests(TestCase):
 
     def test_creator_can_add_participants(self) -> None:
         self.client.force_authenticate(self.creator)
-        response = self.client.post(
-            self.url, {"user_ids": [str(self.other.id)]}, format="json"
-        )
+        response = self.client.post(self.url, {"user_ids": [str(self.other.id)]}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(
-            EventParticipant.objects.filter(event=self.event, user=self.other).exists()
-        )
+        self.assertTrue(EventParticipant.objects.filter(event=self.event, user=self.other).exists())
 
     def test_staff_can_add_participants(self) -> None:
         self.client.force_authenticate(self.staff)
-        response = self.client.post(
-            self.url, {"user_ids": [str(self.other.id)]}, format="json"
-        )
+        response = self.client.post(self.url, {"user_ids": [str(self.other.id)]}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_non_participant_cannot_add(self) -> None:
         stranger = _create_user("stranger")
         self.client.force_authenticate(stranger)
-        response = self.client.post(
-            self.url, {"user_ids": [str(stranger.id)]}, format="json"
-        )
+        response = self.client.post(self.url, {"user_ids": [str(stranger.id)]}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_duplicate_add_is_idempotent(self) -> None:
         # Creator is already a participant from _create_event
         self.client.force_authenticate(self.creator)
-        response = self.client.post(
-            self.url, {"user_ids": [str(self.creator.id)]}, format="json"
-        )
+        response = self.client.post(self.url, {"user_ids": [str(self.creator.id)]}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(
             EventParticipant.objects.filter(event=self.event, user=self.creator).count(),
@@ -106,35 +96,27 @@ class ParticipantApiTests(TestCase):
     def test_inactive_user_rejected(self) -> None:
         inactive = _create_user("inactive", is_active=False)
         self.client.force_authenticate(self.creator)
-        response = self.client.post(
-            self.url, {"user_ids": [str(inactive.id)]}, format="json"
-        )
+        response = self.client.post(self.url, {"user_ids": [str(inactive.id)]}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_deleted_user_rejected(self) -> None:
         deleted = _create_user("deleted")
         deleted.soft_delete()
         self.client.force_authenticate(self.creator)
-        response = self.client.post(
-            self.url, {"user_ids": [str(deleted.id)]}, format="json"
-        )
+        response = self.client.post(self.url, {"user_ids": [str(deleted.id)]}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_nonexistent_user_rejected(self) -> None:
         fake_id = "00000000-0000-0000-0000-000000000000"
         self.client.force_authenticate(self.creator)
-        response = self.client.post(
-            self.url, {"user_ids": [fake_id]}, format="json"
-        )
+        response = self.client.post(self.url, {"user_ids": [fake_id]}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     # -- remove (DELETE) ----------------------------------------------------
 
     def test_creator_can_remove_participant(self) -> None:
         self.client.force_authenticate(self.creator)
-        response = self.client.delete(
-            f"{self.url}{self.other.id}/", format="json"
-        )
+        response = self.client.delete(f"{self.url}{self.other.id}/", format="json")
         # other isn't a participant yet, so 404
         self.assertIn(
             response.status_code,
@@ -145,30 +127,22 @@ class ParticipantApiTests(TestCase):
         # Add other as participant first
         EventParticipant.objects.create(event=self.event, user=self.other)
         self.client.force_authenticate(self.other)
-        response = self.client.delete(
-            f"{self.url}{self.other.id}/", format="json"
-        )
+        response = self.client.delete(f"{self.url}{self.other.id}/", format="json")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(
-            EventParticipant.objects.filter(
-                event=self.event, user=self.other
-            ).exists()
+            EventParticipant.objects.filter(event=self.event, user=self.other).exists()
         )
 
     def test_non_participant_cannot_remove_others(self) -> None:
         EventParticipant.objects.create(event=self.event, user=self.other)
         stranger = _create_user("stranger")
         self.client.force_authenticate(stranger)
-        response = self.client.delete(
-            f"{self.url}{self.other.id}/", format="json"
-        )
+        response = self.client.delete(f"{self.url}{self.other.id}/", format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_creator_cannot_remove_self(self) -> None:
         self.client.force_authenticate(self.creator)
-        response = self.client.delete(
-            f"{self.url}{self.creator.id}/", format="json"
-        )
+        response = self.client.delete(f"{self.url}{self.creator.id}/", format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     # -- list (GET) ---------------------------------------------------------
@@ -184,9 +158,7 @@ class ParticipantApiTests(TestCase):
         users = [_create_user(f"p{i}") for i in range(25)]
         ids = [str(u.id) for u in users]
         self.client.force_authenticate(self.creator)
-        self.client.post(
-            self.url, {"user_ids": ids}, format="json"
-        )
+        self.client.post(self.url, {"user_ids": ids}, format="json")
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 26)  # 25 + creator
@@ -213,13 +185,9 @@ class EventPhotoApiTests(TestCase):
 
     def test_creator_can_link_photo(self) -> None:
         self.client.force_authenticate(self.creator)
-        response = self.client.post(
-            self.url, {"photo_id": str(self.photo.id)}, format="json"
-        )
+        response = self.client.post(self.url, {"photo_id": str(self.photo.id)}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(
-            EventPhoto.objects.filter(event=self.event, photo=self.photo).exists()
-        )
+        self.assertTrue(EventPhoto.objects.filter(event=self.event, photo=self.photo).exists())
 
     def test_participant_can_link_photo(self) -> None:
         self.client.force_authenticate(self.creator)
@@ -227,45 +195,33 @@ class EventPhotoApiTests(TestCase):
         EventParticipant.objects.create(event=self.event, user=self.other)
         self.client.force_authenticate(self.other)
         other_photo = _create_photo(self.other)
-        response = self.client.post(
-            self.url, {"photo_id": str(other_photo.id)}, format="json"
-        )
+        response = self.client.post(self.url, {"photo_id": str(other_photo.id)}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_staff_can_link_photo(self) -> None:
         self.client.force_authenticate(self.staff)
-        response = self.client.post(
-            self.url, {"photo_id": str(self.photo.id)}, format="json"
-        )
+        response = self.client.post(self.url, {"photo_id": str(self.photo.id)}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_outsider_cannot_link_photo(self) -> None:
         stranger = _create_user("stranger")
         self.client.force_authenticate(stranger)
-        response = self.client.post(
-            self.url, {"photo_id": str(self.photo.id)}, format="json"
-        )
+        response = self.client.post(self.url, {"photo_id": str(self.photo.id)}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_nonexistent_photo_rejected(self) -> None:
         fake_id = "00000000-0000-0000-0000-000000000000"
         self.client.force_authenticate(self.creator)
-        response = self.client.post(
-            self.url, {"photo_id": fake_id}, format="json"
-        )
+        response = self.client.post(self.url, {"photo_id": fake_id}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_same_photo_on_two_events(self) -> None:
         event2 = _create_event(self.creator, title="Event 2")
         self.client.force_authenticate(self.creator)
-        response1 = self.client.post(
-            self.url, {"photo_id": str(self.photo.id)}, format="json"
-        )
+        response1 = self.client.post(self.url, {"photo_id": str(self.photo.id)}, format="json")
         self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
         url2 = f"/api/events/{event2.id}/photos/"
-        response2 = self.client.post(
-            url2, {"photo_id": str(self.photo.id)}, format="json"
-        )
+        response2 = self.client.post(url2, {"photo_id": str(self.photo.id)}, format="json")
         self.assertEqual(response2.status_code, status.HTTP_201_CREATED)
 
     # -- unlink (DELETE) ----------------------------------------------------
@@ -273,40 +229,26 @@ class EventPhotoApiTests(TestCase):
     def test_creator_can_unlink_any_photo(self) -> None:
         EventPhoto.objects.create(event=self.event, photo=self.photo)
         self.client.force_authenticate(self.creator)
-        response = self.client.delete(
-            f"{self.url}{self.photo.id}/", format="json"
-        )
+        response = self.client.delete(f"{self.url}{self.photo.id}/", format="json")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(
-            EventPhoto.objects.filter(
-                event=self.event, photo=self.photo
-            ).exists()
-        )
+        self.assertFalse(EventPhoto.objects.filter(event=self.event, photo=self.photo).exists())
 
     def test_linker_can_unlink_own_photo(self) -> None:
         EventParticipant.objects.create(event=self.event, user=self.other)
         other_photo = _create_photo(self.other)
-        EventPhoto.objects.create(
-            event=self.event, photo=other_photo, linked_by=self.other
-        )
+        EventPhoto.objects.create(event=self.event, photo=other_photo, linked_by=self.other)
         self.client.force_authenticate(self.other)
-        response = self.client.delete(
-            f"{self.url}{other_photo.id}/", format="json"
-        )
+        response = self.client.delete(f"{self.url}{other_photo.id}/", format="json")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_non_linker_participant_cannot_unlink_others(self) -> None:
         EventParticipant.objects.create(event=self.event, user=self.other)
         other_photo = _create_photo(self.other)
-        EventPhoto.objects.create(
-            event=self.event, photo=other_photo, linked_by=self.other
-        )
+        EventPhoto.objects.create(event=self.event, photo=other_photo, linked_by=self.other)
         stranger = _create_user("stranger")
         EventParticipant.objects.create(event=self.event, user=stranger)
         self.client.force_authenticate(stranger)
-        response = self.client.delete(
-            f"{self.url}{other_photo.id}/", format="json"
-        )
+        response = self.client.delete(f"{self.url}{other_photo.id}/", format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     # -- list (GET) ---------------------------------------------------------
@@ -324,9 +266,7 @@ class EventPhotoApiTests(TestCase):
         EventPhoto.objects.create(event=self.event, photo=self.photo)
         self.client.force_authenticate(self.creator)
         thumb_url = f"/api/events/{self.event.id}/thumbnail/"
-        response = self.client.put(
-            thumb_url, {"photo_id": str(self.photo.id)}, format="json"
-        )
+        response = self.client.put(thumb_url, {"photo_id": str(self.photo.id)}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         ep = EventPhoto.objects.get(event=self.event, photo=self.photo)
         self.assertTrue(ep.is_thumbnail)
@@ -337,16 +277,10 @@ class EventPhotoApiTests(TestCase):
         EventPhoto.objects.create(event=self.event, photo=photo2)
         self.client.force_authenticate(self.creator)
         thumb_url = f"/api/events/{self.event.id}/thumbnail/"
-        response = self.client.put(
-            thumb_url, {"photo_id": str(photo2.id)}, format="json"
-        )
+        response = self.client.put(thumb_url, {"photo_id": str(photo2.id)}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(
-            EventPhoto.objects.get(event=self.event, photo=self.photo).is_thumbnail
-        )
-        self.assertTrue(
-            EventPhoto.objects.get(event=self.event, photo=photo2).is_thumbnail
-        )
+        self.assertFalse(EventPhoto.objects.get(event=self.event, photo=self.photo).is_thumbnail)
+        self.assertTrue(EventPhoto.objects.get(event=self.event, photo=photo2).is_thumbnail)
 
     def test_clear_thumbnail(self) -> None:
         EventPhoto.objects.create(event=self.event, photo=self.photo, is_thumbnail=True)
@@ -354,17 +288,11 @@ class EventPhotoApiTests(TestCase):
         thumb_url = f"/api/events/{self.event.id}/thumbnail/"
         response = self.client.delete(thumb_url, format="json")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(
-            EventPhoto.objects.filter(
-                event=self.event, is_thumbnail=True
-            ).exists()
-        )
+        self.assertFalse(EventPhoto.objects.filter(event=self.event, is_thumbnail=True).exists())
 
     def test_set_thumbnail_unlinked_photo_rejected(self) -> None:
         # photo is not linked to event
         self.client.force_authenticate(self.creator)
         thumb_url = f"/api/events/{self.event.id}/thumbnail/"
-        response = self.client.put(
-            thumb_url, {"photo_id": str(self.photo.id)}, format="json"
-        )
+        response = self.client.put(thumb_url, {"photo_id": str(self.photo.id)}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

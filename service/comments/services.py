@@ -35,13 +35,10 @@ def create_comment(
     content_type = ContentType.objects.get_for_model(target)
     object_id = target.id
 
-    if (
-        parent is not None
-        and (parent.content_type_id != content_type.id or parent.object_id != object_id)
+    if parent is not None and (
+        parent.content_type_id != content_type.id or parent.object_id != object_id
     ):
-        raise ValidationError(
-            {"parent": "Child comment must share the same target as its parent."}
-        )
+        raise ValidationError({"parent": "Child comment must share the same target as its parent."})
 
     comment = Comment(
         author=author,

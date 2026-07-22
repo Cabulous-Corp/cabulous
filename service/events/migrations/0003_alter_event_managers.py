@@ -5,17 +5,16 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('events', '0002_event_domain'),
+        ("events", "0002_event_domain"),
     ]
 
     operations = [
         migrations.AlterModelManagers(
-            name='event',
+            name="event",
             managers=[
-                ('objects', events.models.EventManager()),
-                ('all_objects', events.models.AllEventManager()),
+                ("objects", events.models.EventManager()),
+                ("all_objects", events.models.AllEventManager()),
             ],
         ),
     ]

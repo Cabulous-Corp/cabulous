@@ -33,10 +33,7 @@ class CommentViewSet(
     pagination_class = StandardPageNumberPagination
 
     def get_queryset(self):
-        return (
-            Comment.objects.select_related("author", "content_type")
-            .order_by("created_at", "id")
-        )
+        return Comment.objects.select_related("author", "content_type").order_by("created_at", "id")
 
     def _get_filtered_queryset(self):
         """List requires target_type and target_id query params."""
@@ -44,9 +41,7 @@ class CommentViewSet(
         # Exclude comments on deleted Event targets
         event_ct = ContentType.objects.get_for_model(Event)
         active_event_ids = Event.objects.values_list("id", flat=True)
-        qs = qs.exclude(
-            Q(content_type=event_ct) & ~Q(object_id__in=active_event_ids)
-        )
+        qs = qs.exclude(Q(content_type=event_ct) & ~Q(object_id__in=active_event_ids))
         return qs
 
     def list(self, request, *args, **kwargs):

@@ -10,21 +10,15 @@ from media.models import Photo
 from users.models import User
 
 
-def add_participants(
-    *, event: Event, user_ids: list[str]
-) -> list[EventParticipant]:
+def add_participants(*, event: Event, user_ids: list[str]) -> list[EventParticipant]:
     """Batch-add participants. Skips inactive/deleted/nonexistent users."""
-    users = User.objects.filter(
-        id__in=user_ids, is_active=True, deleted_at__isnull=True
-    )
+    users = User.objects.filter(id__in=user_ids, is_active=True, deleted_at__isnull=True)
     found_ids = {str(u.id) for u in users}
 
     invalid = [uid for uid in user_ids if uid not in found_ids]
     if invalid:
         joined = ", ".join(invalid)
-        raise ValidationError(
-            {"user_ids": f"Invalid or inactive user IDs: {joined}"}
-        )
+        raise ValidationError({"user_ids": f"Invalid or inactive user IDs: {joined}"})
 
     rows = [EventParticipant(event=event, user_id=uid) for uid in user_ids]
     EventParticipant.objects.bulk_create(rows, ignore_conflicts=True)
@@ -62,9 +56,7 @@ def can_unlink(*, event: Event, photo_id: str, user: User) -> bool:
     """Check if user can unlink a photo: creator/staff always, otherwise only their own link."""
     if user.is_staff or event.creator_id == user.id:
         return True
-    return EventPhoto.objects.filter(
-        event=event, photo_id=photo_id, linked_by=user
-    ).exists()
+    return EventPhoto.objects.filter(event=event, photo_id=photo_id, linked_by=user).exists()
 
 
 @transaction.atomic
@@ -76,16 +68,12 @@ def set_thumbnail(*, event: Event, photo: Photo | None) -> EventPhoto | None:
     try:
         relation = EventPhoto.objects.get(event=event, photo=photo)
     except EventPhoto.DoesNotExist as err:
-        raise ValidationError(
-            {"photo_id": "Photo is not linked to this event."}
-        ) from err
+        raise ValidationError({"photo_id": "Photo is not linked to this event."}) from err
     relation.is_thumbnail = True
     # If a concurrent request sets a different thumbnail, the unique constraint
     # (events_one_thumbnail) raises IntegrityError — surface as 409.
     try:
         relation.save(update_fields=["is_thumbnail"])
     except IntegrityError as err:
-        raise Conflict(
-            detail="Another thumbnail was set concurrently. Retry."
-        ) from err
+        raise Conflict(detail="Another thumbnail was set concurrently. Retry.") from err
     return relation

@@ -6,20 +6,30 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('events', '0004_add_linked_by_to_eventphoto'),
+        ("events", "0004_add_linked_by_to_eventphoto"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='highlightphoto',
-            options={'ordering': ['created_at'], 'verbose_name': 'Foto do destaque', 'verbose_name_plural': 'Fotos do destaque'},
+            name="highlightphoto",
+            options={
+                "ordering": ["created_at"],
+                "verbose_name": "Foto do destaque",
+                "verbose_name_plural": "Fotos do destaque",
+            },
         ),
         migrations.AddField(
-            model_name='highlight',
-            name='author',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='created_highlights', to=settings.AUTH_USER_MODEL, verbose_name='Autor'),
+            model_name="highlight",
+            name="author",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="created_highlights",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Autor",
+            ),
         ),
     ]

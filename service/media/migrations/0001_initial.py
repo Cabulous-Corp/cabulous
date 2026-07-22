@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -16,22 +15,37 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Photo',
+            name="Photo",
             fields=[
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('object_key', models.CharField(max_length=1024, unique=True)),
-                ('taken_on', models.DateField()),
-                ('caption', models.TextField(blank=True, default='')),
-                ('content_type', models.CharField(max_length=100)),
-                ('size_bytes', models.PositiveBigIntegerField()),
-                ('uploader', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='uploaded_photos', to=settings.AUTH_USER_MODEL)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
+                ("object_key", models.CharField(max_length=1024, unique=True)),
+                ("taken_on", models.DateField()),
+                ("caption", models.TextField(blank=True, default="")),
+                ("content_type", models.CharField(max_length=100)),
+                ("size_bytes", models.PositiveBigIntegerField()),
+                (
+                    "uploader",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="uploaded_photos",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-taken_on', '-created_at', '-id'],
-                'abstract': False,
-                'indexes': [models.Index(fields=['taken_on', 'id'], name='media_photo_taken_idx'), models.Index(fields=['uploader', 'taken_on'], name='media_photo_user_idx')],
+                "ordering": ["-taken_on", "-created_at", "-id"],
+                "abstract": False,
+                "indexes": [
+                    models.Index(fields=["taken_on", "id"], name="media_photo_taken_idx"),
+                    models.Index(fields=["uploader", "taken_on"], name="media_photo_user_idx"),
+                ],
             },
         ),
     ]

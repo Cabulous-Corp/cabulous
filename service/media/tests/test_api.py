@@ -42,11 +42,15 @@ class PhotoListPermissionTests(TestCase):
 
     def test_list_returns_own_photos_only(self) -> None:
         user = User.objects.create_user(
-            username="uploader", email="u@example.com", password="secret",
+            username="uploader",
+            email="u@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
         other = User.objects.create_user(
-            username="other", email="o@example.com", password="secret",
+            username="other",
+            email="o@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
         _create_photo(user, object_key="media/photos/user1/a.jpg")
@@ -63,11 +67,15 @@ class PhotoRetrievePermissionTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = User.objects.create_user(
-            username="uploader", email="u@example.com", password="secret",
+            username="uploader",
+            email="u@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
         self.other = User.objects.create_user(
-            username="other", email="o@example.com", password="secret",
+            username="other",
+            email="o@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
 
@@ -88,11 +96,15 @@ class PhotoUpdatePermissionTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = User.objects.create_user(
-            username="uploader", email="u@example.com", password="secret",
+            username="uploader",
+            email="u@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
         self.other = User.objects.create_user(
-            username="other", email="o@example.com", password="secret",
+            username="other",
+            email="o@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
 
@@ -119,11 +131,15 @@ class PhotoDestroyPermissionTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = User.objects.create_user(
-            username="uploader", email="u@example.com", password="secret",
+            username="uploader",
+            email="u@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
         self.other = User.objects.create_user(
-            username="other", email="o@example.com", password="secret",
+            username="other",
+            email="o@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
 
@@ -148,12 +164,17 @@ class PhotoStaffOverrideTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.owner = User.objects.create_user(
-            username="owner", email="owner@example.com", password="secret",
+            username="owner",
+            email="owner@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
         self.staff = User.objects.create_user(
-            username="staff", email="staff@example.com", password="secret",
-            is_staff=True, onboarding_completed_at=timezone.now(),
+            username="staff",
+            email="staff@example.com",
+            password="secret",
+            is_staff=True,
+            onboarding_completed_at=timezone.now(),
         )
 
     def test_staff_can_retrieve_any_photo(self) -> None:
@@ -186,7 +207,9 @@ class PhotoPaginationTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = User.objects.create_user(
-            username="uploader", email="u@example.com", password="secret",
+            username="uploader",
+            email="u@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
         self.client.force_authenticate(self.user)
@@ -213,7 +236,9 @@ class PhotoOrderingTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = User.objects.create_user(
-            username="uploader", email="u@example.com", password="secret",
+            username="uploader",
+            email="u@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
         self.client.force_authenticate(self.user)
@@ -232,26 +257,36 @@ class PhotoFilterTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = User.objects.create_user(
-            username="uploader", email="u@example.com", password="secret",
+            username="uploader",
+            email="u@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
         self.other = User.objects.create_user(
-            username="other", email="o@example.com", password="secret",
+            username="other",
+            email="o@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
         self.client.force_authenticate(self.user)
 
         self.p1 = _create_photo(
-            self.user, object_key="m/p/a.jpg",
-            taken_on=date(2026, 7, 1), caption="Beach party",
+            self.user,
+            object_key="m/p/a.jpg",
+            taken_on=date(2026, 7, 1),
+            caption="Beach party",
         )
         self.p2 = _create_photo(
-            self.user, object_key="m/p/b.jpg",
-            taken_on=date(2026, 7, 15), caption="Mountain hike",
+            self.user,
+            object_key="m/p/b.jpg",
+            taken_on=date(2026, 7, 15),
+            caption="Mountain hike",
         )
         self.p3 = _create_photo(
-            self.other, object_key="m/p/c.jpg",
-            taken_on=date(2026, 7, 10), caption="Beach sunset",
+            self.other,
+            object_key="m/p/c.jpg",
+            taken_on=date(2026, 7, 10),
+            caption="Beach sunset",
         )
 
     def test_filter_taken_from(self) -> None:
@@ -277,8 +312,12 @@ class PhotoFilterTests(TestCase):
 
     def test_filter_event(self) -> None:
         event = Event.objects.create(
-            title="Party", start_at=timezone.now(), end_at=timezone.now(),
-            type=EventType.CASUAL_HANGOUT, creator=self.user, status=EventStatus.SCHEDULED,
+            title="Party",
+            start_at=timezone.now(),
+            end_at=timezone.now(),
+            type=EventType.CASUAL_HANGOUT,
+            creator=self.user,
+            status=EventStatus.SCHEDULED,
         )
         EventPhoto.objects.create(event=event, photo=self.p1)
         response = self.client.get("/api/media/photos/", {"event": str(event.id)})
@@ -297,7 +336,9 @@ class PhotoHardDeleteTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = User.objects.create_user(
-            username="uploader", email="u@example.com", password="secret",
+            username="uploader",
+            email="u@example.com",
+            password="secret",
             onboarding_completed_at=timezone.now(),
         )
         self.client.force_authenticate(self.user)

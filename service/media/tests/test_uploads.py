@@ -22,10 +22,7 @@ class PhotoUploadUrlsTests(TestCase):
 
     @patch("media.services.upload_signing._build_s3_client")
     def test_rejects_more_than_fifty_files(self, client_builder: Mock) -> None:
-        payload = [
-            {"filename": f"{i}.jpg", "content_type": "image/jpeg"}
-            for i in range(51)
-        ]
+        payload = [{"filename": f"{i}.jpg", "content_type": "image/jpeg"} for i in range(51)]
         response = self.client.post(self.url, {"files": payload}, format="json")
         self.assertEqual(response.status_code, 400)
         client_builder.assert_not_called()
@@ -36,10 +33,7 @@ class PhotoUploadUrlsTests(TestCase):
         mock_client.generate_presigned_url.return_value = "https://minio.example.com/signed"
         client_builder.return_value = mock_client
 
-        payload = [
-            {"filename": f"{i}.jpg", "content_type": "image/jpeg"}
-            for i in range(50)
-        ]
+        payload = [{"filename": f"{i}.jpg", "content_type": "image/jpeg"} for i in range(50)]
         response = self.client.post(self.url, {"files": payload}, format="json")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data["photos"]), 50)
@@ -102,22 +96,30 @@ class PhotoConfirmTests(TestCase):
 
     @patch("media.services.upload_signing.default_storage")
     def test_rejects_declared_size_above_limit(self, mock_storage: Mock) -> None:
-        payload = {"files": [{
-            "object_key": f"{self.base_key}/abc123.jpg",
-            "taken_on": "2026-07-20",
-            "content_type": "image/jpeg",
-            "size_bytes": 26 * 1024 * 1024,
-        }]}
+        payload = {
+            "files": [
+                {
+                    "object_key": f"{self.base_key}/abc123.jpg",
+                    "taken_on": "2026-07-20",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 26 * 1024 * 1024,
+                }
+            ]
+        }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 400)
 
     def test_rejects_invalid_prefix(self) -> None:
-        payload = {"files": [{
-            "object_key": "wrong/prefix/photo.jpg",
-            "taken_on": "2026-07-20",
-            "content_type": "image/jpeg",
-            "size_bytes": 1024,
-        }]}
+        payload = {
+            "files": [
+                {
+                    "object_key": "wrong/prefix/photo.jpg",
+                    "taken_on": "2026-07-20",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 1024,
+                }
+            ]
+        }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 400)
 
@@ -127,12 +129,16 @@ class PhotoConfirmTests(TestCase):
             "content_type": "image/png",
             "content_length": 1024,
         }
-        payload = {"files": [{
-            "object_key": f"{self.base_key}/abc123.jpg",
-            "taken_on": "2026-07-20",
-            "content_type": "image/jpeg",
-            "size_bytes": 1024,
-        }]}
+        payload = {
+            "files": [
+                {
+                    "object_key": f"{self.base_key}/abc123.jpg",
+                    "taken_on": "2026-07-20",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 1024,
+                }
+            ]
+        }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 400)
 
@@ -142,12 +148,16 @@ class PhotoConfirmTests(TestCase):
             "content_type": "image/jpeg",
             "content_length": 26 * 1024 * 1024,
         }
-        payload = {"files": [{
-            "object_key": f"{self.base_key}/abc123.jpg",
-            "taken_on": "2026-07-20",
-            "content_type": "image/jpeg",
-            "size_bytes": 1024,
-        }]}
+        payload = {
+            "files": [
+                {
+                    "object_key": f"{self.base_key}/abc123.jpg",
+                    "taken_on": "2026-07-20",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 1024,
+                }
+            ]
+        }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 400)
 
@@ -159,20 +169,22 @@ class PhotoConfirmTests(TestCase):
             return {"content_type": "image/jpeg", "content_length": 1024}
 
         mock_storage.head.side_effect = head_side_effect
-        payload = {"files": [
-            {
-                "object_key": f"{self.base_key}/bad.jpg",
-                "taken_on": "2026-07-20",
-                "content_type": "image/jpeg",
-                "size_bytes": 1024,
-            },
-            {
-                "object_key": f"{self.base_key}/good.jpg",
-                "taken_on": "2026-07-20",
-                "content_type": "image/jpeg",
-                "size_bytes": 1024,
-            },
-        ]}
+        payload = {
+            "files": [
+                {
+                    "object_key": f"{self.base_key}/bad.jpg",
+                    "taken_on": "2026-07-20",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 1024,
+                },
+                {
+                    "object_key": f"{self.base_key}/good.jpg",
+                    "taken_on": "2026-07-20",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 1024,
+                },
+            ]
+        }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(Photo.objects.count(), 0)
@@ -183,22 +195,24 @@ class PhotoConfirmTests(TestCase):
             "content_type": "image/jpeg",
             "content_length": 1024,
         }
-        payload = {"files": [
-            {
-                "object_key": f"{self.base_key}/abc123.jpg",
-                "taken_on": "2026-07-20",
-                "caption": "First photo",
-                "content_type": "image/jpeg",
-                "size_bytes": 1024,
-            },
-            {
-                "object_key": f"{self.base_key}/def456.jpg",
-                "taken_on": "2026-07-21",
-                "caption": "Second photo",
-                "content_type": "image/jpeg",
-                "size_bytes": 2048,
-            },
-        ]}
+        payload = {
+            "files": [
+                {
+                    "object_key": f"{self.base_key}/abc123.jpg",
+                    "taken_on": "2026-07-20",
+                    "caption": "First photo",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 1024,
+                },
+                {
+                    "object_key": f"{self.base_key}/def456.jpg",
+                    "taken_on": "2026-07-21",
+                    "caption": "Second photo",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 2048,
+                },
+            ]
+        }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 201)
         self.assertEqual(len(response.data), 2)
@@ -216,43 +230,52 @@ class PhotoConfirmTests(TestCase):
             return {"content_type": "image/jpeg", "content_length": 100}
 
         mock_storage.head.side_effect = head_side_effect
-        payload = {"files": [
-            {
-                "object_key": f"{self.base_key}/first.jpg",
-                "taken_on": "2026-07-20",
-                "content_type": "image/jpeg",
-                "size_bytes": 100,
-            },
-            {
-                "object_key": f"{self.base_key}/second.jpg",
-                "taken_on": "2026-07-21",
-                "content_type": "image/jpeg",
-                "size_bytes": 200,
-            },
-            {
-                "object_key": f"{self.base_key}/third.jpg",
-                "taken_on": "2026-07-22",
-                "content_type": "image/jpeg",
-                "size_bytes": 300,
-            },
-        ]}
+        payload = {
+            "files": [
+                {
+                    "object_key": f"{self.base_key}/first.jpg",
+                    "taken_on": "2026-07-20",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 100,
+                },
+                {
+                    "object_key": f"{self.base_key}/second.jpg",
+                    "taken_on": "2026-07-21",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 200,
+                },
+                {
+                    "object_key": f"{self.base_key}/third.jpg",
+                    "taken_on": "2026-07-22",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 300,
+                },
+            ]
+        }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 201)
         keys = [item["object_key"] for item in response.data]
-        self.assertEqual(keys, [
-            f"{self.base_key}/first.jpg",
-            f"{self.base_key}/second.jpg",
-            f"{self.base_key}/third.jpg",
-        ])
+        self.assertEqual(
+            keys,
+            [
+                f"{self.base_key}/first.jpg",
+                f"{self.base_key}/second.jpg",
+                f"{self.base_key}/third.jpg",
+            ],
+        )
 
     def test_requires_authentication(self) -> None:
         self.client.force_authenticate(user=None)
-        payload = {"files": [{
-            "object_key": f"{self.base_key}/abc.jpg",
-            "taken_on": "2026-07-20",
-            "content_type": "image/jpeg",
-            "size_bytes": 1024,
-        }]}
+        payload = {
+            "files": [
+                {
+                    "object_key": f"{self.base_key}/abc.jpg",
+                    "taken_on": "2026-07-20",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 1024,
+                }
+            ]
+        }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 401)
 
@@ -263,11 +286,15 @@ class PhotoConfirmTests(TestCase):
             password="secret",
         )
         self.client.force_authenticate(pending_user)
-        payload = {"files": [{
-            "object_key": "media/photos/fake/photo.jpg",
-            "taken_on": "2026-07-20",
-            "content_type": "image/jpeg",
-            "size_bytes": 1024,
-        }]}
+        payload = {
+            "files": [
+                {
+                    "object_key": "media/photos/fake/photo.jpg",
+                    "taken_on": "2026-07-20",
+                    "content_type": "image/jpeg",
+                    "size_bytes": 1024,
+                }
+            ]
+        }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 403)

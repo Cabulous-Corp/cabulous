@@ -86,9 +86,7 @@ def confirm_upload(*, user: User, photos_data: list[dict]) -> list[Photo]:
         declared_size = data["size_bytes"]
 
         if declared_size > MAX_PHOTO_SIZE_BYTES:
-            raise ValidationError(
-                f"Declared size {declared_size} exceeds limit for {object_key}."
-            )
+            raise ValidationError(f"Declared size {declared_size} exceeds limit for {object_key}.")
 
         if not object_key.startswith(expected_prefix):
             raise ValidationError(f"Invalid object key prefix for {object_key}.")
@@ -104,18 +102,18 @@ def confirm_upload(*, user: User, photos_data: list[dict]) -> list[Photo]:
             )
 
         if actual_size > MAX_PHOTO_SIZE_BYTES:
-            raise ValidationError(
-                f"File too large for {object_key}: {actual_size} bytes."
-            )
+            raise ValidationError(f"File too large for {object_key}: {actual_size} bytes.")
 
-        validated.append(Photo(
-            object_key=object_key,
-            uploader=user,
-            taken_on=data["taken_on"],
-            caption=data.get("caption", ""),
-            content_type=declared_content_type,
-            size_bytes=actual_size,
-        ))
+        validated.append(
+            Photo(
+                object_key=object_key,
+                uploader=user,
+                taken_on=data["taken_on"],
+                caption=data.get("caption", ""),
+                content_type=declared_content_type,
+                size_bytes=actual_size,
+            )
+        )
 
     with transaction.atomic():
         return Photo.objects.bulk_create(validated)

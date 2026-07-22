@@ -41,9 +41,7 @@ class EventAdminRegistrationTests(TestCase):
         cls.admin_user = _create_user("superadmin", is_staff=True, is_superuser=True)
         cls.regular_user = _create_user("regular")
         cls.event = _create_event(cls.regular_user)
-        cls.deleted_event = _create_event(
-            cls.regular_user, title="Deleted Event"
-        )
+        cls.deleted_event = _create_event(cls.regular_user, title="Deleted Event")
         cls.deleted_event.soft_delete()
 
     def setUp(self):

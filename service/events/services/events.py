@@ -45,9 +45,7 @@ def create_event(
         type=event_type,
         status=EventStatus.SCHEDULED,
     )
-    EventAudience.objects.bulk_create(
-        [EventAudience(event=event, audience=a) for a in audiences]
-    )
+    EventAudience.objects.bulk_create([EventAudience(event=event, audience=a) for a in audiences])
     if location is not None:
         _build_location(event, location)
     EventParticipant.objects.create(event=event, user=creator)

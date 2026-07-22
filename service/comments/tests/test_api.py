@@ -67,7 +67,7 @@ class CommentListTests(TestCase):
                 author=self.user,
                 target_type="events.event",
                 target_id=self.event.id,
-                body=f"Comment {i+1}",
+                body=f"Comment {i + 1}",
                 parent=None,
             )
         params = {"target_type": "events.event", "target_id": self.event.id}

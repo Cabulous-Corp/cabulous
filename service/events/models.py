@@ -56,9 +56,7 @@ class Event(AbstractSoftDeleteModel, BaseModel):
     start_at = models.DateTimeField(verbose_name="Início do evento")
     end_at = models.DateTimeField(verbose_name="Fim do evento")
     type = models.CharField(choices=EventType.choices, max_length=30, verbose_name="Tipo")
-    status = models.CharField(
-        choices=EventStatus.choices, max_length=20, verbose_name="Status"
-    )
+    status = models.CharField(choices=EventStatus.choices, max_length=20, verbose_name="Status")
     cancelled_at = models.DateTimeField(null=True, blank=True, verbose_name="Cancelado em")
 
     objects = EventManager()
@@ -81,7 +79,7 @@ class Event(AbstractSoftDeleteModel, BaseModel):
         ]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(end_at__gte=models.F("start_at")),
+                condition=models.Q(end_at__gte=models.F("start_at")),
                 name="events_end_gte_start",
             ),
         ]
@@ -111,9 +109,7 @@ class EventAudience(BaseModel):
         verbose_name = "Público do evento"
         verbose_name_plural = "Públicos do evento"
         constraints = [
-            models.UniqueConstraint(
-                fields=["event", "audience"], name="events_audience_unique"
-            ),
+            models.UniqueConstraint(fields=["event", "audience"], name="events_audience_unique"),
         ]
 
     def __str__(self) -> str:
@@ -136,9 +132,7 @@ class EventParticipant(BaseModel):
         verbose_name = "Participante"
         verbose_name_plural = "Participantes"
         constraints = [
-            models.UniqueConstraint(
-                fields=["event", "user"], name="events_participant_unique"
-            ),
+            models.UniqueConstraint(fields=["event", "user"], name="events_participant_unique"),
         ]
 
     def __str__(self) -> str:
@@ -189,9 +183,7 @@ class EventPhoto(BaseModel):
         verbose_name = "Foto do evento"
         verbose_name_plural = "Fotos do evento"
         constraints = [
-            models.UniqueConstraint(
-                fields=["event", "photo"], name="events_photo_unique"
-            ),
+            models.UniqueConstraint(fields=["event", "photo"], name="events_photo_unique"),
             models.UniqueConstraint(
                 fields=["event"],
                 condition=models.Q(is_thumbnail=True),

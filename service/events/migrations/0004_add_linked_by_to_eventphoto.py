@@ -6,16 +6,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('events', '0003_alter_event_managers'),
+        ("events", "0003_alter_event_managers"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='eventphoto',
-            name='linked_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='linked_event_photos', to=settings.AUTH_USER_MODEL, verbose_name='Vinculado por'),
+            model_name="eventphoto",
+            name="linked_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="linked_event_photos",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Vinculado por",
+            ),
         ),
     ]

@@ -152,12 +152,10 @@ class EventViewSet(
                     for value, label in EventType.choices
                 ],
                 "audiences": [
-                    {"value": value, "label": label}
-                    for value, label in Audience.choices
+                    {"value": value, "label": label} for value, label in Audience.choices
                 ],
                 "statuses": [
-                    {"value": value, "label": label}
-                    for value, label in EventStatus.choices
+                    {"value": value, "label": label} for value, label in EventStatus.choices
                 ],
             }
         )
@@ -223,9 +221,7 @@ class EventViewSet(
         # Creator/staff can remove any; participants can remove themselves
         is_self = str(request.user.id) == user_id
         can_remove = (
-            request.user.is_staff
-            or str(event.creator_id) == str(request.user.id)
-            or is_self
+            request.user.is_staff or str(event.creator_id) == str(request.user.id) or is_self
         )
         if not can_remove:
             raise PermissionDenied(
@@ -245,9 +241,7 @@ class EventViewSet(
             if not (
                 request.user.is_staff
                 or event.creator_id == request.user.id
-                or EventParticipant.objects.filter(
-                    event=event, user=request.user
-                ).exists()
+                or EventParticipant.objects.filter(event=event, user=request.user).exists()
             ):
                 raise PermissionDenied(
                     {"detail": "Only the creator, staff, or participants can link photos."}
@@ -277,9 +271,7 @@ class EventViewSet(
     def unlink_photo(self, request, pk=None, photo_pk=None):
         event = self.get_object()
         if not can_unlink(event=event, photo_id=photo_pk, user=request.user):
-            raise PermissionDenied(
-                {"detail": "You do not have permission to unlink this photo."}
-            )
+            raise PermissionDenied({"detail": "You do not have permission to unlink this photo."})
         unlink_photo(event=event, photo_id=photo_pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -347,14 +339,14 @@ class EventViewSet(
                 text=data["text"],
                 photo_ids=data.get("photo_ids", []),
             )
-            return Response(
-                HighlightReadSerializer(hl).data, status=status.HTTP_201_CREATED
-            )
+            return Response(HighlightReadSerializer(hl).data, status=status.HTTP_201_CREATED)
 
         # GET - list
-        qs = Highlight.objects.filter(event=event).prefetch_related(
-            "photos__photo"
-        ).order_by("created_at")
+        qs = (
+            Highlight.objects.filter(event=event)
+            .prefetch_related("photos__photo")
+            .order_by("created_at")
+        )
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = HighlightReadSerializer(page, many=True)
@@ -397,9 +389,7 @@ class EventViewSet(
             or event.creator_id == request.user.id
             or highlight.author_id == request.user.id
         ):
-            raise PermissionDenied(
-                {"detail": "You do not have permission to edit this highlight."}
-            )
+            raise PermissionDenied({"detail": "You do not have permission to edit this highlight."})
 
         serializer = HighlightWriteSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
