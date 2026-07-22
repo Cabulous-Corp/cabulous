@@ -3,6 +3,7 @@ from __future__ import annotations
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -11,11 +12,29 @@ from authentication.permissions import IsAuthenticatedWithOnboardingGuard
 from common.pagination import StandardPageNumberPagination
 from events.enums import Audience, EventStatus, EventType
 from events.filters import EventFilter
-from events.models import Event
+from events.models import Event, EventParticipant, EventPhoto
 from events.permissions import IsEventCreatorOrStaff, IsStaffOnly
-from events.serializers import EventCreateSerializer, EventReadSerializer, EventUpdateSerializer
+from events.serializers import (
+    EventCreateSerializer,
+    EventPhotoReadSerializer,
+    EventReadSerializer,
+    EventUpdateSerializer,
+    ParticipantAddSerializer,
+    ParticipantReadSerializer,
+    PhotoLinkSerializer,
+    ThumbnailSerializer,
+)
 from events.services.events import _UNSET, create_event, update_event
 from events.services.lifecycle import cancel_event, reactivate_event, restore_event
+from events.services.relations import (
+    add_participants,
+    can_unlink,
+    link_photo,
+    remove_participant,
+    set_thumbnail,
+    unlink_photo,
+)
+from media.models import Photo
 
 
 class EventViewSet(
@@ -107,6 +126,10 @@ class EventViewSet(
             return [IsAuthenticatedWithOnboardingGuard(), IsStaffOnly()]
         if self.action in ("update", "partial_update", "destroy"):
             return [IsAuthenticatedWithOnboardingGuard(), IsEventCreatorOrStaff()]
+        if self.action in ("participants",) and self.request.method == "POST":
+            return [IsAuthenticatedWithOnboardingGuard(), IsEventCreatorOrStaff()]
+        if self.action == "thumbnail":
+            return [IsAuthenticatedWithOnboardingGuard(), IsEventCreatorOrStaff()]
         return [IsAuthenticatedWithOnboardingGuard()]
 
     @action(detail=False, methods=["get"])
@@ -158,3 +181,118 @@ class EventViewSet(
         self.check_object_permissions(request, event)
         event = restore_event(event=event)
         return Response(EventReadSerializer(event).data)
+
+    # -------------------------------------------------------------------
+    # Participants
+    # -------------------------------------------------------------------
+
+    @action(detail=True, methods=["get", "post"], url_path="participants")
+    def participants(self, request, pk=None):
+        event = self.get_object()
+        if request.method == "POST":
+            self.check_object_permissions(request, event)
+            serializer = ParticipantAddSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            rows = add_participants(
+                event=event, user_ids=[str(uid) for uid in serializer.validated_data["user_ids"]]
+            )
+            return Response(
+                ParticipantReadSerializer(rows, many=True).data,
+                status=status.HTTP_201_CREATED,
+            )
+        qs = EventParticipant.objects.filter(event=event).select_related("user").order_by("created_at")
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = ParticipantReadSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        return Response(ParticipantReadSerializer(qs, many=True).data)
+
+    @action(detail=True, methods=["delete"], url_path=r"participants/(?P<user_id>[^/.]+)")
+    def remove_participant(self, request, pk=None, user_id=None):
+        event = self.get_object()
+        user_id = str(user_id)
+        # Creator/staff can remove any; participants can remove themselves
+        is_self = str(request.user.id) == user_id
+        can_remove = (
+            request.user.is_staff
+            or str(event.creator_id) == str(request.user.id)
+            or is_self
+        )
+        if not can_remove:
+            raise PermissionDenied(
+                {"detail": "You do not have permission to remove this participant."}
+            )
+        remove_participant(event=event, user_id=user_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # -------------------------------------------------------------------
+    # Photos
+    # -------------------------------------------------------------------
+
+    @action(detail=True, methods=["get", "post"], url_path="photos")
+    def photos(self, request, pk=None):
+        event = self.get_object()
+        if request.method == "POST":
+            if not (
+                request.user.is_staff
+                or event.creator_id == request.user.id
+                or EventParticipant.objects.filter(
+                    event=event, user=request.user
+                ).exists()
+            ):
+                raise PermissionDenied(
+                    {"detail": "Only the creator, staff, or participants can link photos."}
+                )
+            serializer = PhotoLinkSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            try:
+                photo = Photo.objects.get(id=serializer.validated_data["photo_id"])
+            except Photo.DoesNotExist:
+                return Response(
+                    {"photo_id": "Photo not found."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            row = link_photo(event=event, photo=photo, user=request.user)
+            return Response(
+                EventPhotoReadSerializer(row).data,
+                status=status.HTTP_201_CREATED,
+            )
+        qs = EventPhoto.objects.filter(event=event).select_related("photo").order_by("created_at")
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = EventPhotoReadSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        return Response(EventPhotoReadSerializer(qs, many=True).data)
+
+    @action(detail=True, methods=["delete"], url_path=r"photos/(?P<photo_pk>[^/.]+)")
+    def unlink_photo(self, request, pk=None, photo_pk=None):
+        event = self.get_object()
+        if not can_unlink(event=event, photo_id=photo_pk, user=request.user):
+            raise PermissionDenied(
+                {"detail": "You do not have permission to unlink this photo."}
+            )
+        unlink_photo(event=event, photo_id=photo_pk)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # -------------------------------------------------------------------
+    # Thumbnail
+    # -------------------------------------------------------------------
+
+    @action(detail=True, methods=["put", "delete"], url_path="thumbnail")
+    def thumbnail(self, request, pk=None):
+        event = self.get_object()
+        self.check_object_permissions(request, event)
+        if request.method == "DELETE":
+            set_thumbnail(event=event, photo=None)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer = ThumbnailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            photo = Photo.objects.get(id=serializer.validated_data["photo_id"])
+        except Photo.DoesNotExist:
+            return Response(
+                {"photo_id": "Photo not found."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        row = set_thumbnail(event=event, photo=photo)
+        return Response(EventPhotoReadSerializer(row).data, status=status.HTTP_200_OK)

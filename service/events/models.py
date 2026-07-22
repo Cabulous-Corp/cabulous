@@ -176,6 +176,14 @@ class EventPhoto(BaseModel):
         related_name="event_photos",
     )
     is_thumbnail = models.BooleanField(default=False, verbose_name="É thumbnail")
+    linked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="linked_event_photos",
+        verbose_name="Vinculado por",
+    )
 
     class Meta(BaseModel.Meta):
         verbose_name = "Foto do evento"

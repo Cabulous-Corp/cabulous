@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from events.constants import EVENT_TYPE_COLOR_MAP
 from events.enums import Audience, EventType
-from events.models import Event, EventLocation
+from events.models import Event, EventLocation, EventParticipant, EventPhoto
 
 
 class EventLocationWriteSerializer(serializers.Serializer):
@@ -109,3 +109,47 @@ class EventUpdateSerializer(serializers.Serializer):
                 {"end_at": "End date must not be before start date."}
             )
         return data
+
+
+# ---------------------------------------------------------------------------
+# Participants
+# ---------------------------------------------------------------------------
+
+
+class ParticipantAddSerializer(serializers.Serializer):
+    user_ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        min_length=1,
+    )
+
+
+class ParticipantReadSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+
+    class Meta:
+        model = EventParticipant
+        fields = ["id", "user", "username", "created_at"]
+        read_only_fields = fields
+
+
+# ---------------------------------------------------------------------------
+# Event Photos
+# ---------------------------------------------------------------------------
+
+
+class PhotoLinkSerializer(serializers.Serializer):
+    photo_id = serializers.UUIDField()
+
+
+class EventPhotoReadSerializer(serializers.ModelSerializer):
+    content_type = serializers.CharField(source="photo.content_type", read_only=True)
+    object_key = serializers.CharField(source="photo.object_key", read_only=True)
+
+    class Meta:
+        model = EventPhoto
+        fields = ["id", "photo", "content_type", "object_key", "is_thumbnail", "created_at"]
+        read_only_fields = fields
+
+
+class ThumbnailSerializer(serializers.Serializer):
+    photo_id = serializers.UUIDField(required=False, allow_null=True)
