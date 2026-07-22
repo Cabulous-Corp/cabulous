@@ -19,6 +19,7 @@ dependencies = [
     "pydantic-settings>=2.13.1",
     "watchfiles>=1.1.1",
     "requests>=2.33.0",
+    "django-filter>=26.1",
 ]
 
 [dependency-groups]
