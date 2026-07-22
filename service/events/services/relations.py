@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from django.db import transaction
-from django.db.models import Q
 from django.db.utils import IntegrityError
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 
+from common.exceptions import Conflict
 from events.models import Event, EventParticipant, EventPhoto
 from media.models import Photo
 from users.models import User
@@ -62,13 +62,15 @@ def set_thumbnail(*, event: Event, photo: Photo | None) -> EventPhoto | None:
     EventPhoto.objects.filter(event=event, is_thumbnail=True).update(is_thumbnail=False)
     if photo is None:
         return None
-    relation = EventPhoto.objects.filter(event=event, photo=photo).first()
-    if relation is None:
-        raise ValidationError({"photo_id": "Photo is not linked to this event."})
-    # ponytail: IntegrityError from concurrent thumbnail set — catch and re-read
     try:
-        relation.is_thumbnail = True
-        relation.save(update_fields=["is_thumbnail", "updated_at"])
+        relation = EventPhoto.objects.get(event=event, photo=photo)
+    except EventPhoto.DoesNotExist:
+        raise ValidationError({"photo_id": "Photo is not linked to this event."})
+    relation.is_thumbnail = True
+    # If a concurrent request sets a different thumbnail, the unique constraint
+    # (events_one_thumbnail) raises IntegrityError — surface as 409.
+    try:
+        relation.save(update_fields=["is_thumbnail"])
     except IntegrityError:
-        relation.refresh_from_db()
+        raise Conflict(detail="Another thumbnail was set concurrently. Retry.")
     return relation
