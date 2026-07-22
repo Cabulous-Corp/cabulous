@@ -5,19 +5,19 @@ from django.test import TestCase
 from django.utils import timezone
 
 from comments.services import create_comment, soft_delete_comment
-from events.models import Event
 from events.enums import EventStatus, EventType
+from events.models import Event
 
 
 def _make_event(creator, **overrides) -> Event:
-    defaults = dict(
-        title="Test Event",
-        description="",
-        start_at=timezone.now() + timedelta(days=1),
-        end_at=timezone.now() + timedelta(days=2),
-        type=EventType.CLUB,
-        status=EventStatus.SCHEDULED,
-    )
+    defaults = {
+        "title": "Test Event",
+        "description": "",
+        "start_at": timezone.now() + timedelta(days=1),
+        "end_at": timezone.now() + timedelta(days=2),
+        "type": EventType.CLUB,
+        "status": EventStatus.SCHEDULED,
+    }
     defaults.update(overrides)
     return Event.objects.create(creator=creator, **defaults)
 

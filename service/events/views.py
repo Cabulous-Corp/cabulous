@@ -27,6 +27,7 @@ from events.serializers import (
     ThumbnailSerializer,
 )
 from events.services.events import _UNSET, create_event, update_event
+from events.services.highlights import create_highlight, delete_highlight, update_highlight
 from events.services.lifecycle import cancel_event, reactivate_event, restore_event
 from events.services.relations import (
     add_participants,
@@ -36,7 +37,6 @@ from events.services.relations import (
     set_thumbnail,
     unlink_photo,
 )
-from events.services.highlights import create_highlight, delete_highlight, update_highlight
 from media.models import Photo
 
 
@@ -205,7 +205,11 @@ class EventViewSet(
                 ParticipantReadSerializer(rows, many=True).data,
                 status=status.HTTP_201_CREATED,
             )
-        qs = EventParticipant.objects.filter(event=event).select_related("user").order_by("created_at")
+        qs = (
+            EventParticipant.objects.filter(event=event)
+            .select_related("user")
+            .order_by("created_at")
+        )
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = ParticipantReadSerializer(page, many=True)

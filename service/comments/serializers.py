@@ -18,7 +18,7 @@ class CommentCreateSerializer(serializers.Serializer):
         try:
             Comment.objects.get(id=parent_id)
         except Comment.DoesNotExist:
-            raise serializers.ValidationError("Comment not found.")
+            raise serializers.ValidationError("Comment not found.") from None
         return parent_id
 
     def validate(self, data):
@@ -33,7 +33,7 @@ class CommentCreateSerializer(serializers.Serializer):
         try:
             model_cls.objects.get(pk=target_id)
         except model_cls.DoesNotExist:
-            raise NotFound("Target not found.")
+            raise NotFound("Target not found.") from None
 
         # Validate parent belongs to same target if provided
         if parent_id is not None:
@@ -41,7 +41,9 @@ class CommentCreateSerializer(serializers.Serializer):
             try:
                 parent = Comment.objects.get(id=parent_id)
             except Comment.DoesNotExist:
-                raise serializers.ValidationError({"parent_id": "Comment not found."})
+                raise serializers.ValidationError(  # noqa: B904
+                    {"parent_id": "Comment not found."}
+                ) from None
             if parent.content_type_id != target_ct.id or parent.object_id != target_id:
                 raise serializers.ValidationError(
                     {"parent_id": "Parent comment must share the same target."}

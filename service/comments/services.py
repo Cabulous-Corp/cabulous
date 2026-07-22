@@ -14,7 +14,7 @@ def _validate_target_id(target_type: str, target_id: Any) -> Any:
     try:
         instance = model_cls.objects.get(pk=target_id)
     except model_cls.DoesNotExist:
-        raise ValidationError({"target_id": "Target object does not exist."})
+        raise ValidationError({"target_id": "Target object does not exist."}) from None
     # For soft-deletable models, reject deleted targets
     if getattr(instance, "deleted_at", None) is not None:
         raise ValidationError({"target_id": "Target object is deleted."})
@@ -35,11 +35,13 @@ def create_comment(
     content_type = ContentType.objects.get_for_model(target)
     object_id = target.id
 
-    if parent is not None:
-        if parent.content_type_id != content_type.id or parent.object_id != object_id:
-            raise ValidationError(
-                {"parent": "Child comment must share the same target as its parent."}
-            )
+    if (
+        parent is not None
+        and (parent.content_type_id != content_type.id or parent.object_id != object_id)
+    ):
+        raise ValidationError(
+            {"parent": "Child comment must share the same target as its parent."}
+        )
 
     comment = Comment(
         author=author,

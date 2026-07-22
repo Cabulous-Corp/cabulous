@@ -16,6 +16,4 @@ class CommentPermission(BasePermission):
         # PATCH / DELETE — only author or staff
         if request.user.is_staff:
             return True
-        if obj.author_id == request.user.id:
-            return True
-        return False
+        return obj.author_id == request.user.id

@@ -5,7 +5,6 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from comments.models import Comment
 from comments.services import create_comment, soft_delete_comment
 from events.enums import EventStatus, EventType
 from events.models import Event
@@ -71,7 +70,8 @@ class CommentListTests(TestCase):
                 body=f"Comment {i+1}",
                 parent=None,
             )
-        resp = self.client.get(self.url, {"target_type": "events.event", "target_id": self.event.id})
+        params = {"target_type": "events.event", "target_id": self.event.id}
+        resp = self.client.get(self.url, params)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data["results"]), 20)
         self.assertIsNotNone(resp.data["next"])
@@ -100,11 +100,11 @@ class CommentListTests(TestCase):
             body="Third",
             parent=None,
         )
-        resp = self.client.get(self.url, {"target_type": "events.event", "target_id": self.event.id})
+        params = {"target_type": "events.event", "target_id": self.event.id}
+        resp = self.client.get(self.url, params)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         results = resp.data["results"]
-        # Created sequence: c1 then c2 then third; c1 and c2 may share same created_at because of fast DB
-        # Order should at minimum be stable (same id order within created_at)
+        # c1 and c2 may share same created_at; stable ordering by id within created_at
         ids = [r["id"] for r in results]
         expected = [str(c1.id), str(c2.id)]
         # First two should be c1, c2 in that order since created_at, id
@@ -133,7 +133,8 @@ class CommentListTests(TestCase):
             body="Level 3",
             parent=c2,
         )
-        resp = self.client.get(self.url, {"target_type": "events.event", "target_id": self.event.id})
+        params = {"target_type": "events.event", "target_id": self.event.id}
+        resp = self.client.get(self.url, params)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         # All comments are flat in the same list, with parent_id indicating structure
         for item in resp.data["results"]:
@@ -162,7 +163,8 @@ class CommentListTests(TestCase):
         )
         # Delete event2
         event2.soft_delete()
-        resp = self.client.get(self.url, {"target_type": "events.event", "target_id": self.event.id})
+        params = {"target_type": "events.event", "target_id": self.event.id}
+        resp = self.client.get(self.url, params)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data["results"]), 1)
         self.assertEqual(resp.data["results"][0]["body"], "On active event")
@@ -184,7 +186,11 @@ class CommentCreateTests(TestCase):
         self.client.force_authenticate(self.user)
         resp = self.client.post(
             self.url,
-            {"target_type": "events.event", "target_id": str(self.event.id), "body": "Great event!"},
+            {
+                "target_type": "events.event",
+                "target_id": str(self.event.id),
+                "body": "Great event!",
+            },
             format="json",
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
@@ -218,7 +224,11 @@ class CommentCreateTests(TestCase):
         self.client.force_authenticate(self.user)
         resp = self.client.post(
             self.url,
-            {"target_type": "invalid.target", "target_id": str(self.event.id), "body": "Bad target"},
+            {
+                "target_type": "invalid.target",
+                "target_id": str(self.event.id),
+                "body": "Bad target",
+            },
             format="json",
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
@@ -242,7 +252,11 @@ class CommentCreateTests(TestCase):
         self.event.soft_delete()
         resp = self.client.post(
             self.url,
-            {"target_type": "events.event", "target_id": str(self.event.id), "body": "On deleted event"},
+            {
+                "target_type": "events.event",
+                "target_id": str(self.event.id),
+                "body": "On deleted event",
+            },
             format="json",
         )
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)

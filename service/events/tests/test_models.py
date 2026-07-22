@@ -186,7 +186,7 @@ class EventModelTests(TestCase):
 
     def test_active_and_all_managers(self) -> None:
         start = timezone.now() + timedelta(days=1)
-        e1 = Event.objects.create(
+        Event.objects.create(
             title="Active", start_at=start, end_at=start + timedelta(hours=1),
             type=EventType.DINNER, creator=self.creator, status=EventStatus.SCHEDULED,
         )

@@ -22,7 +22,10 @@ class PhotoUploadUrlsTests(TestCase):
 
     @patch("media.services.upload_signing._build_s3_client")
     def test_rejects_more_than_fifty_files(self, client_builder: Mock) -> None:
-        payload = [{"filename": f"{index}.jpg", "content_type": "image/jpeg"} for index in range(51)]
+        payload = [
+            {"filename": f"{i}.jpg", "content_type": "image/jpeg"}
+            for i in range(51)
+        ]
         response = self.client.post(self.url, {"files": payload}, format="json")
         self.assertEqual(response.status_code, 400)
         client_builder.assert_not_called()
@@ -33,7 +36,10 @@ class PhotoUploadUrlsTests(TestCase):
         mock_client.generate_presigned_url.return_value = "https://minio.example.com/signed"
         client_builder.return_value = mock_client
 
-        payload = [{"filename": f"{index}.jpg", "content_type": "image/jpeg"} for index in range(50)]
+        payload = [
+            {"filename": f"{i}.jpg", "content_type": "image/jpeg"}
+            for i in range(50)
+        ]
         response = self.client.post(self.url, {"files": payload}, format="json")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data["photos"]), 50)

@@ -15,7 +15,7 @@ def create_highlight(
     text: str,
     photo_ids: list[str] | None = None,
 ) -> Highlight:
-    """Create a highlight with optional linked photos. Validates all photo_ids exist before creating anything."""
+    """Create a highlight with optional linked photos."""
     photo_ids = photo_ids or []
 
     if photo_ids:
@@ -25,8 +25,9 @@ def create_highlight(
         )
         missing = set(photo_ids) - linked
         if missing:
+            joined = ", ".join(str(p) for p in missing)
             raise ValidationError(
-                {"photo_ids": f"Photos not linked to this event: {', '.join(str(p) for p in missing)}"}
+                {"photo_ids": f"Photos not linked to this event: {joined}"}
             )
 
     hl = Highlight.objects.create(event=event, author=author, text=text)
@@ -44,7 +45,7 @@ def update_highlight(
     text: str | None = None,
     photo_ids: list[str] | None = None,
 ) -> Highlight:
-    """Update a highlight's text and/or replace its photos. Validates photo_ids before touching anything."""
+    """Update a highlight's text and/or replace its photos."""
     if text is not None:
         highlight.text = text
         highlight.save(update_fields=["text", "updated_at"])
@@ -56,8 +57,9 @@ def update_highlight(
         )
         missing = set(photo_ids) - linked
         if missing:
+            joined = ", ".join(str(p) for p in missing)
             raise ValidationError(
-                {"photo_ids": f"Photos not linked to this event: {', '.join(str(p) for p in missing)}"}
+                {"photo_ids": f"Photos not linked to this event: {joined}"}
             )
         highlight.photos.all().delete()
         if photo_ids:

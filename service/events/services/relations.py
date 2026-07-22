@@ -10,14 +10,21 @@ from media.models import Photo
 from users.models import User
 
 
-def add_participants(*, event: Event, user_ids: list[str]) -> list[EventParticipant]:
-    """Batch-add participants. Skips inactive/deleted/nonexistent users, idempotent on duplicates."""
-    users = User.objects.filter(id__in=user_ids, is_active=True, deleted_at__isnull=True)
+def add_participants(
+    *, event: Event, user_ids: list[str]
+) -> list[EventParticipant]:
+    """Batch-add participants. Skips inactive/deleted/nonexistent users."""
+    users = User.objects.filter(
+        id__in=user_ids, is_active=True, deleted_at__isnull=True
+    )
     found_ids = {str(u.id) for u in users}
 
     invalid = [uid for uid in user_ids if uid not in found_ids]
     if invalid:
-        raise ValidationError({"user_ids": f"Invalid or inactive user IDs: {', '.join(invalid)}"})
+        joined = ", ".join(invalid)
+        raise ValidationError(
+            {"user_ids": f"Invalid or inactive user IDs: {joined}"}
+        )
 
     rows = [EventParticipant(event=event, user_id=uid) for uid in user_ids]
     return EventParticipant.objects.bulk_create(rows, ignore_conflicts=True)
@@ -64,13 +71,17 @@ def set_thumbnail(*, event: Event, photo: Photo | None) -> EventPhoto | None:
         return None
     try:
         relation = EventPhoto.objects.get(event=event, photo=photo)
-    except EventPhoto.DoesNotExist:
-        raise ValidationError({"photo_id": "Photo is not linked to this event."})
+    except EventPhoto.DoesNotExist as err:
+        raise ValidationError(
+            {"photo_id": "Photo is not linked to this event."}
+        ) from err
     relation.is_thumbnail = True
     # If a concurrent request sets a different thumbnail, the unique constraint
     # (events_one_thumbnail) raises IntegrityError — surface as 409.
     try:
         relation.save(update_fields=["is_thumbnail"])
-    except IntegrityError:
-        raise Conflict(detail="Another thumbnail was set concurrently. Retry.")
+    except IntegrityError as err:
+        raise Conflict(
+            detail="Another thumbnail was set concurrently. Retry."
+        ) from err
     return relation
