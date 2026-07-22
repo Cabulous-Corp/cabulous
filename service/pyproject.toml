@@ -35,6 +35,8 @@ dev = [
     "pytest-cov>=6.0.0",
     "flake8>=7.1.2",
     "flake8-max-function-length>=0.10.0",
+    "inflection>=0.5.1",
+    "uritemplate>=4.2.0",
 ]
 
 [tool.ruff]

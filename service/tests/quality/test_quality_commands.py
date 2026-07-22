@@ -20,7 +20,7 @@ def run_make(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess
 
 @pytest.mark.parametrize(
     "target",
-    ["lint", "format", "typecheck", "test-ci", "coverage", "function-length", "duplication", "migration-check", "quality"],
+    ["lint", "format", "typecheck", "test-ci", "coverage", "function-length", "duplication", "migration-check", "contract-check", "quality"],
 )
 def test_make_target_registered(target: str) -> None:
     result = run_make("-n", target)
@@ -42,17 +42,19 @@ def test_quality_target_forwards_via_root() -> None:
 
 
 def test_quality_targets_use_docker_compose() -> None:
-    """New quality targets should use the Docker Compose pattern, not bare uv."""
+    """Quality targets that run inside Docker should use the Docker Compose pattern."""
     result = run_make("-n", "quality")
     output = result.stdout
-    # make -n expands variables; the Docker Compose command contains "docker compose ... run --rm web uv run"
     assert "docker compose" in output and "run --rm web uv run" in output, (
         f"quality target should use Docker Compose pattern:\nstdout: {output}"
     )
-    # Ensure there are no bare "uv run" commands outside the Docker Compose wrapper
+    # Allow-listed local-only targets (no Docker volume access to repo root)
+    local_allowed = {"contract-check", "migration-check"}
     lines = [l.strip() for l in output.splitlines() if l.strip() and not l.strip().startswith("make") and not l.strip().startswith("echo") and "Entering" not in l and "Leaving" not in l]
     for line in lines:
         if "echo" in line:
+            continue
+        if any(loc in line for loc in local_allowed) or "check-openapi.sh" in line:
             continue
         assert "docker compose" in line, (
             f"Target command should use Docker Compose, got bare command:\n{line}"
