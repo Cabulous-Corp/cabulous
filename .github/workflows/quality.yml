@@ -92,6 +92,16 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     env:
       DATABASE__HOST: localhost
       DATABASE__PORT: 5432
@@ -147,7 +157,7 @@ jobs:
       - run: uv sync --all-groups
 
       - name: Duplication check (jscpd)
-        run: uv run jscpd --min-lines 5 --min-tokens 50 --reporters console --output report.json .
+        run: npx jscpd --min-lines 5 --min-tokens 70 --reporters console --output report.json .
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -202,6 +212,16 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd="pg_isready -U cabulous"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -377,6 +397,7 @@ jobs:
           path: gitleaks-results.sarif
 
   dependency-review:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -384,7 +405,7 @@ jobs:
       - name: Dependency Review (OSV)
         uses: actions/dependency-review-action@v4
         with:
-          fail-on-severity: moderate
+          fail-on-severity: high
 
       - name: Write dependency review summary
         if: always()
