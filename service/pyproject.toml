@@ -79,6 +79,7 @@ per-file-ignores = ["**/migrations/*.py:E"]
 
 [tool.coverage.run]
 source = ["."]
+branch = true
 omit = ["*/migrations/*", "*/tests/*", "*/conftest.py"]
 
 [tool.coverage.report]
