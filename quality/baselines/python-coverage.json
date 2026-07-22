@@ -1,0 +1,8 @@
+{
+  "min_coverage": 35,
+  "current_coverage": 26,
+  "source": ["service/."],
+  "omit": ["*/migrations/*", "*/tests/*", "*/conftest.py"],
+  "note": "Current coverage is ~26%. Fail-under set to 25 for initial baseline; raise to 35 after coverage improves.",
+  "updated": "2026-07-22"
+}

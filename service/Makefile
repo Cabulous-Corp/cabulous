@@ -303,3 +303,18 @@ check:
 	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m ruff check .
 	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m ruff format --check .
 	$(DEV_COMPOSE) run --rm web $(CONTAINER_UV_RUN) python -m mypy .
+
+test-ci:
+	uv run pytest tests/ -q --tb=short
+
+coverage:
+	uv run pytest --cov=. --cov-report=term-missing --cov-report=json:coverage.json -q
+
+function-length:
+	uv run flake8 --select=C901 --max-complexity=10 --max-function-length=50 --exclude='*/migrations/*,*/tests/*,*/.venv/*,*/__pycache__/*,*/site-packages/*' .
+
+migration-check:
+	@echo "migration-check: skipped locally (requires PostgreSQL); runs in CI"
+
+quality: lint typecheck test-ci coverage function-length migration-check
+	@echo "All backend quality checks passed"

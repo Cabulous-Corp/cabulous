@@ -30,6 +30,11 @@ dev = [
     "ruff>=0.15.6",
     "types-requests>=2.33.0.20260327",
     "boto3-stubs[s3]>=1.42.82",
+    "pytest>=8.3.5",
+    "pytest-django>=4.9.0",
+    "pytest-cov>=6.0.0",
+    "flake8>=7.1.2",
+    "flake8-max-function-length>=0.10.0",
 ]
 
 [tool.ruff]
@@ -65,3 +70,16 @@ ignore_missing_imports = true
 
 [tool.django-stubs]
 django_settings_module = "cabulous.settings"
+
+[tool.flake8]
+max-function-length = 50
+max-complexity = 10
+extend-ignore = ["E203", "E501", "W503"]
+per-file-ignores = ["**/migrations/*.py:E"]
+
+[tool.coverage.run]
+source = ["."]
+omit = ["*/migrations/*", "*/tests/*", "*/conftest.py"]
+
+[tool.coverage.report]
+fail_under = 25
