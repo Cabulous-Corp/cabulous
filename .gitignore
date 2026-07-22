@@ -1,2 +1,4 @@
 .worktrees/
 jscpd-report/
+.claude/
+**/__pycache__/

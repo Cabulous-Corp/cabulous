@@ -5,8 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 SERVICE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_DIR = SERVICE_DIR.parent
 EXPORT_SCRIPT = SERVICE_DIR / "scripts" / "export_openapi.py"
@@ -16,6 +14,7 @@ BASELINE_PATH = ROOT_DIR / "quality" / "openapi" / "baseline.json"
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def run_export() -> str:
     """Run the export script and return the JSON output."""
@@ -39,36 +38,36 @@ def run_export() -> str:
 
 
 class TestExportScriptExists:
-    def test_export_script_is_a_file(self):
+    def test_export_script_is_a_file(self) -> None:
         assert EXPORT_SCRIPT.is_file(), f"Missing {EXPORT_SCRIPT}"
 
 
 class TestOpenAPIExport:
-    def test_produces_valid_json(self):
+    def test_produces_valid_json(self) -> None:
         output = run_export()
         data = json.loads(output)
         assert isinstance(data, dict), "Output must be a JSON object"
 
-    def test_has_openapi_version_key(self):
+    def test_has_openapi_version_key(self) -> None:
         data = json.loads(run_export())
         assert "openapi" in data, "Schema must contain 'openapi' version key"
 
-    def test_openapi_version_is_3x(self):
+    def test_openapi_version_is_3x(self) -> None:
         data = json.loads(run_export())
         version = data["openapi"]
         assert version.startswith("3."), f"Expected OpenAPI 3.x, got {version}"
 
-    def test_has_info_block(self):
+    def test_has_info_block(self) -> None:
         data = json.loads(run_export())
         assert "info" in data, "Schema must contain 'info' block"
         info = data["info"]
         assert "title" in info and "version" in info, "info must have title and version"
 
-    def test_has_paths(self):
+    def test_has_paths(self) -> None:
         data = json.loads(run_export())
         assert "paths" in data, "Schema must contain 'paths'"
 
-    def test_deterministic_output(self):
+    def test_deterministic_output(self) -> None:
         """Running the exporter twice must produce identical output."""
         first = run_export()
         second = run_export()
@@ -76,9 +75,9 @@ class TestOpenAPIExport:
 
 
 class TestBaselineExists:
-    def test_baseline_file_exists(self):
+    def test_baseline_file_exists(self) -> None:
         assert BASELINE_PATH.is_file(), f"Missing baseline {BASELINE_PATH}"
 
-    def test_baseline_is_valid_json(self):
+    def test_baseline_is_valid_json(self) -> None:
         data = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
         assert "openapi" in data, "Baseline must contain 'openapi' key"

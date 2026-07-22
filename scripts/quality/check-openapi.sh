@@ -20,7 +20,7 @@ trap 'rm -f "$CURRENT"' EXIT
 uv run python scripts/export_openapi.py > "$CURRENT"
 
 # 2. Check for breaking changes using openapi-diff (semantic, not byte-level)
-if npx --yes @openapi-contrib/openapi-diff "$BASELINE" "$CURRENT" --fail-on-incompatible > /dev/null 2>&1; then
+if npx --yes openapi-diff "$BASELINE" "$CURRENT" --fail-on-incompatible > /dev/null 2>&1; then
     echo "OK contract: no breaking changes detected."
     exit 0
 fi
@@ -33,10 +33,12 @@ if [ ! -f "$WAIVERS" ]; then
     exit 1
 fi
 
-ACTIVE=$(uv run python -c "
-import yaml
+WAIVERS_POSIX=$(cygpath -u "$WAIVERS")
+ACTIVE=$(WAIVERS_PATH="$WAIVERS_POSIX" uv run python -c "
+import yaml, os, pathlib
 from datetime import date
-with open('$WAIVERS') as f:
+p = pathlib.Path(os.environ['WAIVERS_PATH'])
+with open(p) as f:
     data = yaml.safe_load(f) or []
 count = sum(1 for e in data if e.get('expires') and date.fromisoformat(str(e['expires'])) >= date.today())
 print(count)

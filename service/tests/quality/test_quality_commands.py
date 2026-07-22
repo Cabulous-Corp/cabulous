@@ -20,7 +20,18 @@ def run_make(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess
 
 @pytest.mark.parametrize(
     "target",
-    ["lint", "format", "typecheck", "test-ci", "coverage", "function-length", "duplication", "migration-check", "contract-check", "quality"],
+    [
+        "lint",
+        "format",
+        "typecheck",
+        "test-ci",
+        "coverage",
+        "function-length",
+        "duplication",
+        "migration-check",
+        "contract-check",
+        "quality",
+    ],
 )
 def test_make_target_registered(target: str) -> None:
     result = run_make("-n", target)
@@ -50,7 +61,15 @@ def test_quality_targets_use_docker_compose() -> None:
     )
     # Allow-listed local-only targets (no Docker volume access to repo root)
     local_allowed = {"contract-check", "migration-check"}
-    lines = [l.strip() for l in output.splitlines() if l.strip() and not l.strip().startswith("make") and not l.strip().startswith("echo") and "Entering" not in l and "Leaving" not in l]
+    lines = [
+        ln.strip()
+        for ln in output.splitlines()
+        if ln.strip()
+        and not ln.strip().startswith("make")
+        and not ln.strip().startswith("echo")
+        and "Entering" not in ln
+        and "Leaving" not in ln
+    ]
     for line in lines:
         if "echo" in line:
             continue

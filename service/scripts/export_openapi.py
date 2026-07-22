@@ -29,7 +29,7 @@ def main() -> int:
 
     generator = SchemaGenerator(title="Cabulous API", version="1.0.0")
     # public=True skips authentication requirements during generation
-    schema = generator.get_schema(request=None, public=True)
+    schema = generator.get_schema(request=None, public=True)  # type: ignore[arg-type]
 
     if schema is None:
         print("ERROR: SchemaGenerator returned None", file=sys.stderr)
