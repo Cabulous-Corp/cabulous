@@ -81,7 +81,7 @@ class Event(AbstractSoftDeleteModel, BaseModel):
         ]
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(end_at__gte=models.F("start_at")),
+                check=models.Q(end_at__gte=models.F("start_at")),
                 name="events_end_gte_start",
             ),
         ]

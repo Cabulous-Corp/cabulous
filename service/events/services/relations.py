@@ -27,7 +27,11 @@ def add_participants(
         )
 
     rows = [EventParticipant(event=event, user_id=uid) for uid in user_ids]
-    return EventParticipant.objects.bulk_create(rows, ignore_conflicts=True)
+    EventParticipant.objects.bulk_create(rows, ignore_conflicts=True)
+    # Re-fetch to get correct PKs — PostgreSQL omits them for ignored conflicts.
+    return list(
+        EventParticipant.objects.filter(event=event, user_id__in=user_ids).order_by("created_at")
+    )
 
 
 def remove_participant(*, event: Event, user_id: str) -> None:

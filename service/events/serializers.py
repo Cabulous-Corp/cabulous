@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework import serializers
 
 from events.constants import EVENT_TYPE_COLOR_MAP
@@ -10,8 +11,16 @@ from events.models import Event, EventLocation, EventParticipant, EventPhoto, Hi
 class EventLocationWriteSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255, required=False, default="")
     address = serializers.CharField()
-    latitude = serializers.DecimalField(max_digits=9, decimal_places=6)
-    longitude = serializers.DecimalField(max_digits=10, decimal_places=6)
+    latitude = serializers.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+    )
+    longitude = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=6,
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+    )
 
 
 class EventLocationReadSerializer(serializers.ModelSerializer):

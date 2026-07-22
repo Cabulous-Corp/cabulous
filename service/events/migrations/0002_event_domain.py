@@ -391,7 +391,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="event",
             constraint=models.CheckConstraint(
-                condition=models.Q(end_at__gte=models.F("start_at")),
+                check=models.Q(end_at__gte=models.F("start_at")),
                 name="events_end_gte_start",
             ),
         ),
