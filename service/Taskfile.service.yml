@@ -203,8 +203,7 @@ tasks:
     cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} jscpd --min-lines 5 --min-tokens 50 --reporters console .'
   migration-check:
     desc: "Check pending migrations (skipped locally, runs in CI)"
-    cmds:
-      - echo "migration-check: skipped locally (requires PostgreSQL); runs in CI"
+    cmd: 'echo "migration-check: skipped locally (requires PostgreSQL); runs in CI"'
   contract-check:
     desc: "Run OpenAPI contract check"
     cmd: bash ../scripts/quality/check-openapi.sh
