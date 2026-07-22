@@ -1,0 +1,22 @@
+{
+  "threshold": 0,
+  "reporters": ["console", "json"],
+  "output": "./jscpd-report",
+  "pattern": "**/*.{py,ts,tsx}",
+  "ignore": [
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/migrations/**",
+    "**/__pycache__/**",
+    "**/site-packages/**",
+    "**/build/**",
+    "**/dist/**",
+    "**/.next/**",
+    "**/out/**",
+    "**/coverage/**",
+    "**/jscpd-report/**"
+  ],
+  "ignoreCase": false,
+  "minLines": 5,
+  "minTokens": 70
+}
