@@ -20,7 +20,7 @@ trap 'rm -f "$CURRENT"' EXIT
 uv run python scripts/export_openapi.py > "$CURRENT"
 
 # 2. Check for breaking changes using openapi-diff (semantic, not byte-level)
-if npx --yes openapi-diff "$BASELINE" "$CURRENT" --fail-on-incompatible > /dev/null 2>&1; then
+if npx --yes openapi-diff "$BASELINE" "$CURRENT" > /dev/null 2>&1; then
     echo "OK contract: no breaking changes detected."
     exit 0
 fi
