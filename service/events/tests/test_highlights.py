@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from events.enums import Audience, EventStatus, EventType
-from events.models import Event, EventAudience, EventParticipant, Highlight, HighlightPhoto
+from events.models import Event, EventAudience, EventParticipant, EventPhoto, Highlight, HighlightPhoto
 from media.models import Photo
 from users.models import User
 
@@ -48,6 +48,12 @@ def _create_photo(uploader, **overrides) -> Photo:
     }
     defaults.update(overrides)
     return Photo.objects.create(**defaults)
+
+
+def _create_event_photo(event, photo, **overrides) -> EventPhoto:
+    defaults = {"event": event, "photo": photo}
+    defaults.update(overrides)
+    return EventPhoto.objects.create(**defaults)
 
 
 def _create_highlight(event, author, text="Test highlight", photos=None) -> Highlight:
@@ -125,6 +131,8 @@ class HighlightCreateTests(TestCase):
     def test_create_with_linked_photos(self) -> None:
         self.client.force_authenticate(self.creator)
         photo2 = _create_photo(self.creator, object_key="photos/creator/p2.jpg")
+        _create_event_photo(self.event, self.photo)
+        _create_event_photo(self.event, photo2)
         response = self.client.post(
             self.url,
             {
@@ -282,6 +290,8 @@ class HighlightUpdateTests(TestCase):
     def test_update_replace_photos(self) -> None:
         self.client.force_authenticate(self.creator)
         photo2 = _create_photo(self.creator, object_key="photos/creator/p2.jpg")
+        _create_event_photo(self.event, self.photo)
+        _create_event_photo(self.event, photo2)
         # First create with one photo
         photo_hl = _create_highlight(self.event, self.creator, photos=[self.photo])
         url = f"/api/events/{self.event.id}/highlights/{photo_hl.id}/"

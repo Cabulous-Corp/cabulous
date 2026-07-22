@@ -3,8 +3,7 @@ from __future__ import annotations
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
-from events.models import Highlight, HighlightPhoto
-from media.models import Photo
+from events.models import EventPhoto, Highlight, HighlightPhoto
 from users.models import User
 
 
@@ -20,13 +19,14 @@ def create_highlight(
     photo_ids = photo_ids or []
 
     if photo_ids:
-        existing = set(
-            Photo.objects.filter(id__in=photo_ids).values_list("id", flat=True)
+        linked = set(
+            EventPhoto.objects.filter(event=event, photo_id__in=photo_ids)
+            .values_list("photo_id", flat=True)
         )
-        missing = set(photo_ids) - existing
+        missing = set(photo_ids) - linked
         if missing:
             raise ValidationError(
-                {"photo_ids": f"Invalid photo IDs: {', '.join(str(p) for p in missing)}"}
+                {"photo_ids": f"Photos not linked to this event: {', '.join(str(p) for p in missing)}"}
             )
 
     hl = Highlight.objects.create(event=event, author=author, text=text)
@@ -50,13 +50,14 @@ def update_highlight(
         highlight.save(update_fields=["text", "updated_at"])
 
     if photo_ids is not None:
-        existing = set(
-            Photo.objects.filter(id__in=photo_ids).values_list("id", flat=True)
+        linked = set(
+            EventPhoto.objects.filter(event=highlight.event, photo_id__in=photo_ids)
+            .values_list("photo_id", flat=True)
         )
-        missing = set(photo_ids) - existing
+        missing = set(photo_ids) - linked
         if missing:
             raise ValidationError(
-                {"photo_ids": f"Invalid photo IDs: {', '.join(str(p) for p in missing)}"}
+                {"photo_ids": f"Photos not linked to this event: {', '.join(str(p) for p in missing)}"}
             )
         highlight.photos.all().delete()
         if photo_ids:
@@ -67,7 +68,6 @@ def update_highlight(
     return highlight
 
 
-@transaction.atomic
 def delete_highlight(*, highlight: Highlight) -> None:
     """Delete a highlight. Only removes join table records — Photo objects are never deleted."""
     highlight.delete()

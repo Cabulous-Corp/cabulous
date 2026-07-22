@@ -337,15 +337,12 @@ class EventViewSet(
             serializer = HighlightWriteSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             data = serializer.validated_data
-            try:
-                hl = create_highlight(
-                    event=event,
-                    author=request.user,
-                    text=data["text"],
-                    photo_ids=data.get("photo_ids", []),
-                )
-            except Exception:
-                raise
+            hl = create_highlight(
+                event=event,
+                author=request.user,
+                text=data["text"],
+                photo_ids=data.get("photo_ids", []),
+            )
             return Response(
                 HighlightReadSerializer(hl).data, status=status.HTTP_201_CREATED
             )
@@ -404,14 +401,11 @@ class EventViewSet(
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        try:
-            update_highlight(
-                highlight=highlight,
-                text=data.get("text"),
-                photo_ids=data.get("photo_ids"),
-            )
-        except Exception:
-            raise
+        update_highlight(
+            highlight=highlight,
+            text=data.get("text"),
+            photo_ids=data.get("photo_ids"),
+        )
 
         highlight.refresh_from_db()
         return Response(HighlightReadSerializer(highlight).data)

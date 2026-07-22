@@ -211,7 +211,9 @@ class Highlight(BaseModel):
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="created_highlights",
         verbose_name="Autor",
     )
@@ -240,6 +242,7 @@ class HighlightPhoto(BaseModel):
     class Meta(BaseModel.Meta):
         verbose_name = "Foto do destaque"
         verbose_name_plural = "Fotos do destaque"
+        ordering = ["created_at"]
 
     def __str__(self) -> str:
         return f"{self.highlight} - {self.photo}"

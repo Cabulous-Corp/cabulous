@@ -167,9 +167,6 @@ class HighlightPhotoReadSerializer(serializers.Serializer):
     object_key = serializers.CharField(source="photo.object_key", read_only=True)
     content_type = serializers.CharField(source="photo.content_type", read_only=True)
 
-    class Meta:
-        fields = ["id", "object_key", "content_type"]
-
 
 class HighlightReadSerializer(serializers.ModelSerializer):
     photos = HighlightPhotoReadSerializer(many=True, read_only=True)
