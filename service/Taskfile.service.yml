@@ -1,0 +1,223 @@
+# Taskfile.service.yml
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  DEV_COMPOSE: docker compose -f docker-compose.yaml -f docker-compose.dev.yaml
+  PROD_COMPOSE: docker compose -f docker-compose.yaml
+  UV_RUN: uv run
+
+tasks:
+  default:
+    desc: "List all service tasks"
+    cmd: task --list
+
+  # === Dev ===
+  dev:
+    desc: "Start dev stack with hot reload"
+    cmd: '{{.DEV_COMPOSE}} up --build -d'
+  up:
+    desc: "Start dev stack (alias for dev)"
+    cmd: '{{.DEV_COMPOSE}} up --build -d'
+  down:
+    desc: "Stop dev stack"
+    cmd: '{{.DEV_COMPOSE}} down'
+  build:
+    desc: "Build dev images"
+    cmd: '{{.DEV_COMPOSE}} build'
+  restart:
+    desc: "Restart dev stack"
+    cmds:
+      - task: down
+      - task: up
+  logs:
+    desc: "Follow dev logs"
+    cmd: '{{.DEV_COMPOSE}} logs -f'
+  ps:
+    desc: "List dev services"
+    cmd: '{{.DEV_COMPOSE}} ps'
+  bash:
+    desc: "Open shell in web container"
+    cmd: '{{.DEV_COMPOSE}} exec web sh'
+  shell:
+    desc: "Open Django shell"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py shell'
+  dbshell:
+    desc: "Open Django dbshell"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py dbshell'
+  psql:
+    desc: "Open psql in PostgreSQL"
+    cmd: '{{.DEV_COMPOSE}} exec db sh -lc ''psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'''
+  migrate:
+    desc: "Apply migrations"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py migrate'
+  makemigrations:
+    desc: "Create migrations"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py makemigrations'
+  superuser:
+    desc: "Create superuser"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py createsuperuser'
+  test:
+    desc: "Run Django tests"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py test'
+  collectstatic:
+    desc: "Collect static files"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py collectstatic --noinput'
+  manage:
+    desc: "Run arbitrary manage.py command (usage: task service:manage CMD='check')"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py {{.CMD}}'
+    vars:
+      CMD: '{{.CMD}}'
+
+  # === Celery ===
+  worker:
+    desc: "Start Celery worker"
+    cmd: '{{.DEV_COMPOSE}} up -d --build --force-recreate worker'
+  beat:
+    desc: "Start Celery beat"
+    cmd: '{{.DEV_COMPOSE}} up -d --build --force-recreate beat'
+  flower:
+    desc: "Start Flower monitoring"
+    cmd: '{{.DEV_COMPOSE}} up -d --build --force-recreate flower'
+  worker-logs:
+    desc: "Follow worker logs"
+    cmd: '{{.DEV_COMPOSE}} logs -f worker'
+  beat-logs:
+    desc: "Follow beat logs"
+    cmd: '{{.DEV_COMPOSE}} logs -f beat'
+  flower-logs:
+    desc: "Follow flower logs"
+    cmd: '{{.DEV_COMPOSE}} logs -f flower'
+  restart-worker:
+    desc: "Restart worker"
+    cmd: '{{.DEV_COMPOSE}} up -d --build --force-recreate worker'
+  restart-beat:
+    desc: "Restart beat"
+    cmd: '{{.DEV_COMPOSE}} up -d --build --force-recreate beat'
+  restart-flower:
+    desc: "Restart flower"
+    cmd: '{{.DEV_COMPOSE}} up -d --build --force-recreate flower'
+
+  # === Production ===
+  prod:
+    desc: "Start production stack"
+    cmd: '{{.PROD_COMPOSE}} up --build -d'
+  prod-down:
+    desc: "Stop production stack"
+    cmd: '{{.PROD_COMPOSE}} down'
+  prod-build:
+    desc: "Build production images"
+    cmd: '{{.PROD_COMPOSE}} build'
+  prod-restart:
+    desc: "Restart production stack"
+    cmds:
+      - task: prod-down
+      - task: prod
+  prod-logs:
+    desc: "Follow production logs"
+    cmd: '{{.PROD_COMPOSE}} logs -f web'
+  prod-ps:
+    desc: "List production services"
+    cmd: '{{.PROD_COMPOSE}} ps'
+  prod-bash:
+    desc: "Open shell in production web container"
+    cmd: '{{.PROD_COMPOSE}} exec web sh'
+  prod-shell:
+    desc: "Open Django shell (production)"
+    cmd: '{{.PROD_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py shell'
+  prod-dbshell:
+    desc: "Open Django dbshell (production)"
+    cmd: '{{.PROD_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py dbshell'
+  prod-psql:
+    desc: "Open psql (production)"
+    cmd: '{{.PROD_COMPOSE}} exec db sh -lc ''psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'''
+  prod-migrate:
+    desc: "Apply migrations (production)"
+    cmd: '{{.PROD_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py migrate'
+  prod-makemigrations:
+    desc: "Create migrations (production)"
+    cmd: '{{.PROD_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py makemigrations'
+  prod-superuser:
+    desc: "Create superuser (production)"
+    cmd: '{{.PROD_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py createsuperuser'
+  prod-test:
+    desc: "Run tests (production)"
+    cmd: '{{.PROD_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py test'
+  prod-collectstatic:
+    desc: "Collect static files (production)"
+    cmd: '{{.PROD_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py collectstatic --noinput'
+  prod-manage:
+    desc: "Run manage.py in production (usage: task service:prod-manage CMD='check')"
+    cmd: '{{.PROD_COMPOSE}} run --rm web {{.UV_RUN}} python manage.py {{.CMD}}'
+    vars:
+      CMD: '{{.CMD}}'
+  prod-worker-logs:
+    desc: "Worker logs (production)"
+    cmd: '{{.PROD_COMPOSE}} logs -f worker'
+  prod-beat-logs:
+    desc: "Beat logs (production)"
+    cmd: '{{.PROD_COMPOSE}} logs -f beat'
+  prod-flower-logs:
+    desc: "Flower logs (production)"
+    cmd: '{{.PROD_COMPOSE}} logs -f flower'
+  prod-restart-worker:
+    desc: "Restart worker (production)"
+    cmd: '{{.PROD_COMPOSE}} up -d --build --force-recreate worker'
+  prod-restart-beat:
+    desc: "Restart beat (production)"
+    cmd: '{{.PROD_COMPOSE}} up -d --build --force-recreate beat'
+  prod-restart-flower:
+    desc: "Restart flower (production)"
+    cmd: '{{.PROD_COMPOSE}} up -d --build --force-recreate flower'
+
+  # === Quality ===
+  lint:
+    desc: "Run ruff check"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python -m ruff check .'
+  format:
+    desc: "Apply ruff fix + format"
+    cmds:
+      - '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python -m ruff check . --fix'
+      - '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python -m ruff format .'
+  typecheck:
+    desc: "Run mypy type checking"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python -m mypy .'
+  check:
+    desc: "Run lint + format check + typecheck"
+    cmds:
+      - '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python -m ruff check .'
+      - '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python -m ruff format --check .'
+      - '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} python -m mypy .'
+  test-ci:
+    desc: "Run tests in CI mode"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} pytest tests/ -q --tb=short'
+  coverage:
+    desc: "Run tests with coverage"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} pytest --branch --cov=. --cov-report=term-missing --cov-report=json:coverage.json -q'
+  function-length:
+    desc: "Run flake8 function-length check"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} flake8 --select=C901,MFL000 --max-complexity=10 --max-function-length=50 --exclude=''*/migrations/*,*/tests/*,*/.venv/*,*/__pycache__/*,*/site-packages/*'' .'
+  duplication:
+    desc: "Run jscpd duplication check"
+    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} jscpd --min-lines 5 --min-tokens 50 --reporters console .'
+  migration-check:
+    desc: "Check pending migrations (skipped locally, runs in CI)"
+    cmds:
+      - echo "migration-check: skipped locally (requires PostgreSQL); runs in CI"
+  contract-check:
+    desc: "Run OpenAPI contract check"
+    cmd: bash ../scripts/quality/check-openapi.sh
+  quality:
+    desc: "Run all quality checks"
+    deps:
+      - lint
+      - typecheck
+      - test-ci
+      - coverage
+      - function-length
+      - duplication
+      - migration-check
+      - contract-check
+    cmds:
+      - echo "All backend quality checks passed"
