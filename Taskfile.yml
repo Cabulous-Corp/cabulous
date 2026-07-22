@@ -1,0 +1,23 @@
+# Taskfile.yml
+# https://taskfile.dev
+
+version: "3"
+
+includes:
+  service:
+    taskfile: ./service/Taskfile.service.yml
+    dir: ./service
+  app:
+    taskfile: ./app/web/Taskfile.app.yml
+    dir: ./app/web
+
+tasks:
+  default:
+    desc: "List all available tasks"
+    cmd: task --list
+
+  setup:
+    desc: "Full project bootstrap (build service + install app/web)"
+    cmds:
+      - task: service:build
+      - task: app:install
