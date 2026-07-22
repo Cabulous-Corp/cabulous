@@ -184,6 +184,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "users.tasks.cleanup_magic_links",
         "schedule": crontab(minute=0, hour=4, day_of_month=1),
     },
+    "events_reconcile_statuses_every_minute": {
+        "task": "events.tasks.reconcile_event_statuses",
+        "schedule": crontab(minute="*"),
+    },
 }
 
 REST_FRAMEWORK = {
