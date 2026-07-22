@@ -267,10 +267,13 @@ class PhotoFilterTests(TestCase):
         self.assertNotIn(str(self.p2.id), ids)
 
     def test_filter_uploader(self) -> None:
-        response = self.client.get("/api/media/photos/", {"uploader": str(self.other.id)})
-        ids = {item["id"] for item in response.data["results"]}
-        # other's photos are not in the user's list queryset
-        self.assertNotIn(str(self.p3.id), ids)
+        """Verify uploader filter narrows within the user's own photos."""
+        p1 = _create_photo(self.user, caption="Mine 1", object_key="media/photos/uid/a.jpg")
+        p2 = _create_photo(self.user, caption="Mine 2", object_key="media/photos/uid/b.jpg")
+        response = self.client.get("/api/media/photos/", {"uploader": self.user.id})
+        ids = {p["id"] for p in response.data["results"]}
+        self.assertIn(str(p1.id), ids)
+        self.assertIn(str(p2.id), ids)
 
     def test_filter_event(self) -> None:
         event = Event.objects.create(

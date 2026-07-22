@@ -10,6 +10,7 @@ from mypy_boto3_s3.client import S3Client
 
 from cabulous.config import get_settings
 from media.models import Photo
+from users.models import User
 
 SIGNED_URL_EXPIRES_IN_SECONDS: Final[int] = 300
 MAX_UPLOAD_BATCH: Final[int] = 50
@@ -74,7 +75,7 @@ def generate_photo_upload_signed_url(
     }
 
 
-def confirm_upload(*, user: object, photos_data: list[dict]) -> list[Photo]:
+def confirm_upload(*, user: User, photos_data: list[dict]) -> list[Photo]:
     storage = default_storage
     expected_prefix = f"media/photos/{user.id}/"
     validated: list[Photo] = []
