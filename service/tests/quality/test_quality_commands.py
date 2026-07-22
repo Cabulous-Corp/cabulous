@@ -1,4 +1,4 @@
-"""Tests that verify backend quality Make targets are registered and runnable."""
+"""Tests that verify backend quality Task targets are registered and runnable."""
 
 import subprocess
 import tempfile
@@ -10,11 +10,13 @@ SERVICE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_DIR = SERVICE_DIR.parent
 
 
-def run_make(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess:
+def run_task(*args: str) -> subprocess.CompletedProcess:
+    """Run a task command from the project root (uses root Taskfile with namespace includes)."""
     return subprocess.run(
-        ["make", "-C", str(cwd or SERVICE_DIR), *args],
+        ["task", *args],
         capture_output=True,
         text=True,
+        cwd=ROOT_DIR,
     )
 
 
@@ -33,28 +35,23 @@ def run_make(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess
         "quality",
     ],
 )
-def test_make_target_registered(target: str) -> None:
-    result = run_make("-n", target)
+def test_task_target_registered(target: str) -> None:
+    result = run_task("-n", f"service:{target}")
     assert result.returncode == 0, (
-        f"make -n {target} failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+        f"task -n service:{target} failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
     )
 
 
 def test_quality_target_forwards_via_root() -> None:
-    result = subprocess.run(
-        ["make", "-n", "service", "quality"],
-        capture_output=True,
-        text=True,
-        cwd=ROOT_DIR,
-    )
+    result = run_task("-n", "service:quality")
     assert result.returncode == 0, (
-        f"make service quality failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+        f"task -n service:quality failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
     )
 
 
 def test_quality_targets_use_docker_compose() -> None:
     """Quality targets that run inside Docker should use the Docker Compose pattern."""
-    result = run_make("-n", "quality")
+    result = run_task("-n", "service:quality")
     output = result.stdout
     assert "docker compose" in output and "run --rm web uv run" in output, (
         f"quality target should use Docker Compose pattern:\nstdout: {output}"
@@ -65,7 +62,7 @@ def test_quality_targets_use_docker_compose() -> None:
         ln.strip()
         for ln in output.splitlines()
         if ln.strip()
-        and not ln.strip().startswith("make")
+        and not ln.strip().startswith("task")
         and not ln.strip().startswith("echo")
         and "Entering" not in ln
         and "Leaving" not in ln
@@ -82,7 +79,7 @@ def test_quality_targets_use_docker_compose() -> None:
 
 def test_quality_targets_include_duplication() -> None:
     """The quality aggregate should run the duplication check."""
-    result = run_make("-n", "quality")
+    result = run_task("-n", "service:quality")
     assert "jscpd" in result.stdout, (
         f"quality target should include duplication (jscpd):\nstdout: {result.stdout}"
     )
@@ -90,7 +87,7 @@ def test_quality_targets_include_duplication() -> None:
 
 def test_function_length_selects_mfl000() -> None:
     """The function-length target should use --select=C901,MFL000."""
-    result = run_make("-n", "function-length")
+    result = run_task("-n", "service:function-length")
     assert "MFL000" in result.stdout, (
         f"function-length target should include MFL000:\nstdout: {result.stdout}"
     )
@@ -98,7 +95,7 @@ def test_function_length_selects_mfl000() -> None:
 
 def test_coverage_enables_branch() -> None:
     """The coverage target should include --branch."""
-    result = run_make("-n", "coverage")
+    result = run_task("-n", "service:coverage")
     assert "--branch" in result.stdout, (
         f"coverage target should include --branch:\nstdout: {result.stdout}"
     )
