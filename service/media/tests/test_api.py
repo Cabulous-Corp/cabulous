@@ -40,7 +40,7 @@ class PhotoListPermissionTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 403)
 
-    def test_list_returns_own_photos_only(self) -> None:
+    def test_list_returns_all_photos_global_gallery(self) -> None:
         user = User.objects.create_user(
             username="uploader",
             email="u@example.com",
@@ -59,8 +59,7 @@ class PhotoListPermissionTests(TestCase):
         self.client.force_authenticate(user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 1)
-        self.assertEqual(response.data["results"][0]["object_key"], "media/photos/user1/a.jpg")
+        self.assertEqual(response.data["count"], 2)
 
 
 class PhotoRetrievePermissionTests(TestCase):
@@ -85,11 +84,13 @@ class PhotoRetrievePermissionTests(TestCase):
         response = self.client.get(f"/api/media/photos/{photo.id}/")
         self.assertEqual(response.status_code, 200)
 
-    def test_retrieve_other_photo_returns_403(self) -> None:
+    def test_retrieve_other_photo_succeeds_global_gallery(self) -> None:
+        """Any onboarded user can read any photo."""
         photo = _create_photo(self.other, object_key="media/photos/user2/other.jpg")
         self.client.force_authenticate(self.user)
         response = self.client.get(f"/api/media/photos/{photo.id}/")
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["object_key"], "media/photos/user2/other.jpg")
 
 
 class PhotoUpdatePermissionTests(TestCase):

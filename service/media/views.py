@@ -82,8 +82,6 @@ class PhotoViewSet(
     search_fields = ["caption"]
 
     def get_queryset(self):
-        if self.action == "list":
-            return Photo.objects.filter(uploader=self.request.user)
         return Photo.objects.all()
 
     def perform_destroy(self, instance: Photo) -> None:
