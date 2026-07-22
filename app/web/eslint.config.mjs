@@ -12,7 +12,18 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // Generated artifacts / mocks / tests:
+    'types/**',
+    '**/*.d.ts',
+    '**/mocks/**',
+    '**/tests/**',
+    'coverage/**',
   ]),
+  {
+    rules: {
+      'max-lines-per-function': ['warn', { max: 50, skipBlankLines: true, skipComments: true }],
+    },
+  },
 ])
 
 export default eslintConfig
