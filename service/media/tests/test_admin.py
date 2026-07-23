@@ -7,7 +7,7 @@ from media.models import Photo
 from users.models import User
 
 
-def _create_user(username: str = "admin_user", **overrides) -> User:
+def _create_user(username: str = "admin_user", **overrides: object) -> User:
     defaults = {
         "email": f"{username}@example.com",
         "password": "secret",
@@ -18,8 +18,12 @@ def _create_user(username: str = "admin_user", **overrides) -> User:
 
 
 class MediaAdminRegistrationTests(TestCase):
+    admin_user: User
+    uploader: User
+    photo: Photo
+
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         cls.admin_user = _create_user("superadmin", is_staff=True, is_superuser=True)
         cls.uploader = _create_user("uploader")
         cls.photo = Photo.objects.create(
@@ -30,15 +34,15 @@ class MediaAdminRegistrationTests(TestCase):
             size_bytes=2048,
         )
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.client.force_login(self.admin_user)
 
-    def test_photo_changelist_loads(self):
+    def test_photo_changelist_loads(self) -> None:
         """Admin photo list page returns 200."""
         response = self.client.get("/admin/media/photo/")
         self.assertEqual(response.status_code, 200)
 
-    def test_photo_changelist_query_count_bounded(self):
+    def test_photo_changelist_query_count_bounded(self) -> None:
         """Admin list page uses bounded queries.
         Captured exact count: session, user load, contenttype list,
         count x2, select_related queryset (with uploader),
