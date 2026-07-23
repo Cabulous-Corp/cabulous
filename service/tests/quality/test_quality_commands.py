@@ -1,6 +1,5 @@
 """Tests that verify backend quality Task targets are registered with correct commands."""
 
-import subprocess
 import tempfile
 from pathlib import Path
 
@@ -59,6 +58,7 @@ def test_quality_targets_use_docker_compose() -> None:
     # quality uses deps — check each dep task
     deps = quality_task.get("deps", [])
     local_allowed = {"contract-check", "migration-check"}
+    compose_indicators = ("{{.DEV_COMPOSE}}", "{{.PROD_COMPOSE}}", "docker compose")
     for dep in deps:
         if dep in local_allowed:
             continue
@@ -67,9 +67,11 @@ def test_quality_targets_use_docker_compose() -> None:
         cmds = task_data.get("cmds", [])
         all_cmds = ([cmd] if cmd else []) + cmds
         for c in all_cmds:
-            if "check-openapi.sh" in c or "echo" in c:
+            if isinstance(c, dict):
+                c = c.get("cmd", "")
+            if not c or "check-openapi.sh" in c or "echo" in c:
                 continue
-            assert "docker compose" in c, (
+            assert any(ind in c for ind in compose_indicators), (
                 f"Task '{dep}' should use Docker Compose, got:\n{c}"
             )
 
