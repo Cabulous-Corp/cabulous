@@ -47,9 +47,7 @@ def test_quality_target_forwards_via_root() -> None:
     with root_taskfile.open() as f:
         data = yaml.safe_load(f)
     includes = data.get("includes", {})
-    assert "service" in includes, (
-        f"Root Taskfile does not include service namespace:\n{includes}"
-    )
+    assert "service" in includes, f"Root Taskfile does not include service namespace:\n{includes}"
 
 
 def test_quality_targets_use_docker_compose() -> None:
@@ -80,25 +78,19 @@ def test_quality_targets_include_duplication() -> None:
     """The quality aggregate should include the duplication check."""
     quality_task = TASKS["quality"]
     deps = quality_task.get("deps", [])
-    assert "duplication" in deps, (
-        f"quality deps should include 'duplication':\n{deps}"
-    )
+    assert "duplication" in deps, f"quality deps should include 'duplication':\n{deps}"
 
 
 def test_function_length_selects_mfl000() -> None:
     """The function-length target should use --select=C901,MFL000."""
     cmd = TASKS["function-length"].get("cmd", "")
-    assert "MFL000" in cmd, (
-        f"function-length cmd should include MFL000:\n{cmd}"
-    )
+    assert "MFL000" in cmd, f"function-length cmd should include MFL000:\n{cmd}"
 
 
 def test_coverage_enables_branch() -> None:
     """The coverage target should include --branch."""
     cmd = TASKS["coverage"].get("cmd", "")
-    assert "--branch" in cmd, (
-        f"coverage cmd should include --branch:\n{cmd}"
-    )
+    assert "--branch" in cmd, f"coverage cmd should include --branch:\n{cmd}"
 
 
 def test_ruff_lints_clean_python_file() -> None:
