@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import Any
+
 import django_filters
+from django.db.models import QuerySet
 
 from events.models import Event
 
@@ -24,7 +29,7 @@ class EventFilter(django_filters.FilterSet):
             "creator",
         ]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         from events.enums import Audience, EventStatus, EventType
 
@@ -32,8 +37,8 @@ class EventFilter(django_filters.FilterSet):
         self.filters["type"].extra["choices"] = EventType.choices
         self.filters["audience"].extra["choices"] = Audience.choices
 
-    def filter_by_audience(self, queryset, name, value):
+    def filter_by_audience(self, queryset: QuerySet, _name: str, value: str) -> QuerySet:
         return queryset.filter(audiences__audience=value).distinct()
 
-    def filter_by_participant(self, queryset, name, value):
+    def filter_by_participant(self, queryset: QuerySet, _name: str, value: str) -> QuerySet:
         return queryset.filter(participants__user_id=value).distinct()

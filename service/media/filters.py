@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import django_filters
+from django.db.models import QuerySet
 
 from media.models import Photo
 
@@ -13,5 +16,5 @@ class PhotoFilter(django_filters.FilterSet):
         model = Photo
         fields = ["taken_from", "taken_until", "uploader", "event"]
 
-    def filter_by_event(self, queryset, name, value):
+    def filter_by_event(self, queryset: QuerySet, _name: str, value: str) -> QuerySet:
         return queryset.filter(event_photos__event_id=value)

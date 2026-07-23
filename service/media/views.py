@@ -1,7 +1,6 @@
 from typing import Any
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
@@ -10,6 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from authentication.permissions import IsAuthenticatedWithOnboardingGuard
+from common.filter_backends import DjangoFilterBackend
 from common.pagination import StandardPageNumberPagination
 from media.filters import PhotoFilter
 from media.models import Photo

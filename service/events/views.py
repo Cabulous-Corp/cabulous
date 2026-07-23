@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -9,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from authentication.permissions import IsAuthenticatedWithOnboardingGuard
+from common.filter_backends import DjangoFilterBackend
 from common.pagination import StandardPageNumberPagination
 from events.enums import Audience, EventStatus, EventType
 from events.filters import EventFilter
