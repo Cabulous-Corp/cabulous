@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 _UNSET = object()  # ponytail: sentinel for "location key not in payload"
 
 
-def _build_location(event: Event, location_data: dict) -> None:
-    EventLocation.objects.create(
+def _build_location(event: Event, location_data: dict[str, object]) -> None:
+    EventLocation.objects.create(  # type: ignore[misc]
         event=event,
         name=location_data.get("name", ""),
         address=location_data["address"],
@@ -30,13 +30,13 @@ def create_event(
     creator: User,
     title: str,
     description: str,
-    start_at,
-    end_at,
+    start_at: object,
+    end_at: object,
     event_type: str,
     audiences: list[str],
-    location: dict | None = None,
+    location: dict[str, object] | None = None,
 ) -> Event:
-    event = Event.objects.create(
+    event = Event.objects.create(  # type: ignore[misc]
         creator=creator,
         title=title,
         description=description,
@@ -58,13 +58,13 @@ def update_event(
     event: Event,
     title: str | None = None,
     description: str | None = None,
-    start_at=None,
-    end_at=None,
+    start_at: object | None = None,
+    end_at: object | None = None,
     event_type: str | None = None,
     audiences: list[str] | None = None,
-    location=_UNSET,
+    location: object = _UNSET,
 ) -> Event:
-    update_fields = []
+    update_fields: list[str] = []
     if title is not None:
         event.title = title
         update_fields.append("title")
@@ -72,10 +72,10 @@ def update_event(
         event.description = description
         update_fields.append("description")
     if start_at is not None:
-        event.start_at = start_at
+        event.start_at = start_at  # type: ignore[assignment]
         update_fields.append("start_at")
     if end_at is not None:
-        event.end_at = end_at
+        event.end_at = end_at  # type: ignore[assignment]
         update_fields.append("end_at")
     if event_type is not None:
         event.type = event_type
@@ -94,7 +94,7 @@ def update_event(
     if location is not _UNSET:
         EventLocation.objects.filter(event=event).delete()
         if location is not None:
-            _build_location(event, location)
+            _build_location(event, location)  # type: ignore[arg-type]
 
     event = reconcile_event_status(event=event)
     return event

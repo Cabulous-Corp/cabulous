@@ -1,4 +1,7 @@
+﻿from __future__ import annotations
+
 from datetime import timedelta
+from typing import Any
 
 from django.test import TestCase
 from django.utils import timezone
@@ -9,17 +12,17 @@ from events.models import Event
 from users.models import User
 
 
-def _create_user(username: str = "admin_user", **overrides) -> User:
-    defaults = {
+def _create_user(username: str = "admin_user", **overrides: object) -> User:
+    defaults: dict[str, object] = {
         "email": f"{username}@example.com",
         "password": "secret",
         "onboarding_completed_at": timezone.now(),
     }
     defaults.update(overrides)
-    return User.objects.create_user(username=username, **defaults)
+    return User.objects.create_user(username=username, **defaults)  # type: ignore[arg-type]
 
 
-def _create_event(creator) -> Event:
+def _create_event(creator: Any) -> Event:
     start = timezone.now() + timedelta(days=1)
     return Event.objects.create(
         title="Test Event",
@@ -32,8 +35,13 @@ def _create_event(creator) -> Event:
 
 
 class CommentsAdminRegistrationTests(TestCase):
+    admin_user: Any
+    author: Any
+    event: Any
+    comment: Any
+
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         cls.admin_user = _create_user("superadmin", is_staff=True, is_superuser=True)
         cls.author = _create_user("author")
         cls.event = _create_event(cls.author)
@@ -45,15 +53,15 @@ class CommentsAdminRegistrationTests(TestCase):
             parent=None,
         )
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.client.force_login(self.admin_user)
 
-    def test_comment_changelist_loads(self):
+    def test_comment_changelist_loads(self) -> None:
         """Admin comment list page returns 200."""
         response = self.client.get("/admin/comments/comment/")
         self.assertEqual(response.status_code, 200)
 
-    def test_comment_changelist_query_count_bounded(self):
+    def test_comment_changelist_query_count_bounded(self) -> None:
         """Admin list page uses bounded queries.
         Captured exact count: session, user load, contenttype list,
         count x2, select_related queryset (with author + contenttype),

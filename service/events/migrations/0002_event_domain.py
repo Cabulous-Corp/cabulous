@@ -1,11 +1,11 @@
-import uuid
+﻿import uuid
 
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 
 
-def _compute_status(start_at, end_at):
+def _compute_status(start_at: object, end_at: object) -> str:
     from django.utils import timezone
 
     now = timezone.now()
@@ -16,7 +16,7 @@ def _compute_status(start_at, end_at):
     return "SCHEDULED"
 
 
-def _find_creator(apps, schema_editor):
+def _find_creator(apps: object, schema_editor: object) -> object:
     User = apps.get_model(settings.AUTH_USER_MODEL)
     user = User.objects.filter(is_superuser=True).order_by("date_joined").first()
     if user is None:
@@ -24,7 +24,7 @@ def _find_creator(apps, schema_editor):
     return user
 
 
-def forwards(apps, schema_editor):
+def forwards(apps: object, schema_editor: object) -> None:
     Event = apps.get_model("events", "Event")
     EventAudience = apps.get_model("events", "EventAudience")
     User = apps.get_model(settings.AUTH_USER_MODEL)
@@ -42,7 +42,7 @@ def forwards(apps, schema_editor):
         event.save(update_fields=["creator_id", "status"])
 
 
-def reverse(apps, schema_editor):
+def reverse(apps: object, schema_editor: object) -> None:
     Event = apps.get_model("events", "Event")
     EventAudience = apps.get_model("events", "EventAudience")
     for event in Event.objects.all():
@@ -79,7 +79,7 @@ class Migration(migrations.Migration):
                 choices=[
                     ("SCHEDULED", "Agendado"),
                     ("IN_PROGRESS", "Em andamento"),
-                    ("COMPLETED", "Concluído"),
+                    ("COMPLETED", "ConcluÃ­do"),
                     ("CANCELLED", "Cancelado"),
                 ],
                 max_length=20,
@@ -95,7 +95,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="event",
             name="deleted_at",
-            field=models.DateTimeField(null=True, blank=True, verbose_name="Excluído em"),
+            field=models.DateTimeField(null=True, blank=True, verbose_name="ExcluÃ­do em"),
         ),
         # Step 2: Create related tables
         migrations.CreateModel(
@@ -118,11 +118,11 @@ class Migration(migrations.Migration):
                         choices=[
                             ("ILUMINADOS", "Iluminados"),
                             ("VOYEURS", "Voyeurs"),
-                            ("ELETRONICOS", "Eletrônicos"),
+                            ("ELETRONICOS", "EletrÃ´nicos"),
                             ("OTHERS", "Outros"),
                         ],
                         max_length=30,
-                        verbose_name="Público-alvo",
+                        verbose_name="PÃºblico-alvo",
                     ),
                 ),
                 (
@@ -135,8 +135,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "Público do evento",
-                "verbose_name_plural": "Públicos do evento",
+                "verbose_name": "PÃºblico do evento",
+                "verbose_name_plural": "PÃºblicos do evento",
                 "abstract": False,
             },
         ),
@@ -195,7 +195,7 @@ class Migration(migrations.Migration):
                     "name",
                     models.CharField(blank=True, max_length=255, verbose_name="Nome do local"),
                 ),
-                ("address", models.TextField(verbose_name="Endereço")),
+                ("address", models.TextField(verbose_name="EndereÃ§o")),
                 ("latitude", models.DecimalField(max_digits=9, decimal_places=6)),
                 ("longitude", models.DecimalField(max_digits=10, decimal_places=6)),
                 (
@@ -229,7 +229,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "is_thumbnail",
-                    models.BooleanField(default=False, verbose_name="É thumbnail"),
+                    models.BooleanField(default=False, verbose_name="Ã‰ thumbnail"),
                 ),
                 (
                     "event",
@@ -341,7 +341,7 @@ class Migration(migrations.Migration):
                 choices=[
                     ("SCHEDULED", "Agendado"),
                     ("IN_PROGRESS", "Em andamento"),
-                    ("COMPLETED", "Concluído"),
+                    ("COMPLETED", "ConcluÃ­do"),
                     ("CANCELLED", "Cancelado"),
                 ],
                 max_length=20,
@@ -410,3 +410,4 @@ class Migration(migrations.Migration):
             ),
         ),
     ]
+

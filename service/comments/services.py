@@ -1,3 +1,5 @@
+﻿from __future__ import annotations
+
 from typing import Any
 
 from django.contrib.contenttypes.models import ContentType
@@ -12,8 +14,8 @@ from .targets import resolve_target_model
 def _validate_target_id(target_type: str, target_id: Any) -> Any:
     model_cls = resolve_target_model(target_type)
     try:
-        instance = model_cls.objects.get(pk=target_id)
-    except model_cls.DoesNotExist:
+        instance = model_cls.objects.get(pk=target_id)  # type: ignore[attr-defined]
+    except model_cls.DoesNotExist:  # type: ignore[attr-defined]
         raise ValidationError({"target_id": "Target object does not exist."}) from None
     # For soft-deletable models, reject deleted targets
     if getattr(instance, "deleted_at", None) is not None:

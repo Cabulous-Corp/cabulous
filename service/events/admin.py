@@ -1,5 +1,10 @@
+from __future__ import annotations
+
+from typing import Any
+
 from django.contrib import admin
 from django.db import transaction
+from django.db.models import QuerySet
 
 from .models import (
     Event,
@@ -56,11 +61,11 @@ class EventAdmin(admin.ModelAdmin):
         HighlightInline,
     ]
 
-    def get_queryset(self, request):
+    def get_queryset(self, request: Any) -> QuerySet[Event]:
         return Event.all_objects.select_related("creator")
 
     @admin.action(description="Restore selected events")
-    def restore_event_action(self, request, queryset):
+    def restore_event_action(self, request: Any, queryset: QuerySet[Event]) -> None:
         restored = 0
         with transaction.atomic():
             for event in queryset:

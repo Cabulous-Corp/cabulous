@@ -1,4 +1,6 @@
-from __future__ import annotations
+﻿from __future__ import annotations
+
+from typing import Any
 
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -57,7 +59,7 @@ class EventViewSet(
     ordering_fields = ["start_at", "end_at", "created_at", "type", "status"]
     ordering = ["-start_at"]
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         qs = (
             Event.objects.select_related("creator", "location")
             .prefetch_related("audiences", "participants", "photos__photo")
@@ -68,14 +70,14 @@ class EventViewSet(
             qs = qs.exclude(status=EventStatus.CANCELLED)
         return qs
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[EventCreateSerializer] | type[EventReadSerializer] | type[EventUpdateSerializer]:
         if self.action == "create":
             return EventCreateSerializer
         if self.action in ("update", "partial_update"):
             return EventUpdateSerializer
         return EventReadSerializer
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -92,7 +94,7 @@ class EventViewSet(
         read_serializer = EventReadSerializer(event)
         return Response(read_serializer.data, status=status.HTTP_201_CREATED)
 
-    def update(self, request, *args, **kwargs):
+    def update(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         partial = kwargs.pop("partial", False)
         event = self.get_object()
         serializer = self.get_serializer(data=request.data, partial=partial)
@@ -117,10 +119,10 @@ class EventViewSet(
         read_serializer = EventReadSerializer(event)
         return Response(read_serializer.data)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: Event) -> None:
         instance.soft_delete()
 
-    def get_permissions(self):
+    def get_permissions(self) -> list[Any]:
         if self.action in ("options",):
             return [IsAuthenticatedWithOnboardingGuard()]
         if self.action in ("cancel", "reactivate"):
@@ -138,7 +140,7 @@ class EventViewSet(
         return [IsAuthenticatedWithOnboardingGuard()]
 
     @action(detail=False, methods=["get"])
-    def options(self, request):
+    def options(self, request: Any) -> Response:  # type: ignore[override]
         from events.constants import EVENT_TYPE_COLOR_MAP
 
         return Response(
@@ -161,19 +163,19 @@ class EventViewSet(
         )
 
     @action(detail=True, methods=["post"])
-    def cancel(self, request, pk=None):
+    def cancel(self, request: Any, pk: str | None = None) -> Response:
         event = self.get_object()
         event = cancel_event(event=event)
         return Response(EventReadSerializer(event).data)
 
     @action(detail=True, methods=["post"])
-    def reactivate(self, request, pk=None):
+    def reactivate(self, request: Any, pk: str | None = None) -> Response:
         event = self.get_object()
         event = reactivate_event(event=event)
         return Response(EventReadSerializer(event).data)
 
     @action(detail=True, methods=["post"])
-    def restore(self, request, pk=None):
+    def restore(self, request: Any, pk: str | None = None) -> Response:
         try:
             event = Event.all_objects.get_queryset().deleted().get(pk=pk)
         except Event.DoesNotExist:
@@ -190,7 +192,7 @@ class EventViewSet(
     # -------------------------------------------------------------------
 
     @action(detail=True, methods=["get", "post"], url_path="participants")
-    def participants(self, request, pk=None):
+    def participants(self, request: Any, pk: str | None = None) -> Response:
         event = self.get_object()
         if request.method == "POST":
             self.check_object_permissions(request, event)
@@ -210,12 +212,12 @@ class EventViewSet(
         )
         page = self.paginate_queryset(qs)
         if page is not None:
-            serializer = ParticipantReadSerializer(page, many=True)
+            serializer = ParticipantReadSerializer(page, many=True)  # type: ignore[assignment]
             return self.get_paginated_response(serializer.data)
         return Response(ParticipantReadSerializer(qs, many=True).data)
 
     @action(detail=True, methods=["delete"], url_path=r"participants/(?P<user_id>[^/.]+)")
-    def remove_participant(self, request, pk=None, user_id=None):
+    def remove_participant(self, request: Any, pk: str | None = None, user_id: str | None = None) -> Response:
         event = self.get_object()
         user_id = str(user_id)
         # Creator/staff can remove any; participants can remove themselves
@@ -235,7 +237,7 @@ class EventViewSet(
     # -------------------------------------------------------------------
 
     @action(detail=True, methods=["get", "post"], url_path="photos")
-    def photos(self, request, pk=None):
+    def photos(self, request: Any, pk: str | None = None) -> Response:
         event = self.get_object()
         if request.method == "POST":
             if not (
@@ -263,16 +265,16 @@ class EventViewSet(
         qs = EventPhoto.objects.filter(event=event).select_related("photo").order_by("created_at")
         page = self.paginate_queryset(qs)
         if page is not None:
-            serializer = EventPhotoReadSerializer(page, many=True)
+            serializer = EventPhotoReadSerializer(page, many=True)  # type: ignore[assignment]
             return self.get_paginated_response(serializer.data)
         return Response(EventPhotoReadSerializer(qs, many=True).data)
 
     @action(detail=True, methods=["delete"], url_path=r"photos/(?P<photo_pk>[^/.]+)")
-    def unlink_photo(self, request, pk=None, photo_pk=None):
+    def unlink_photo_action(self, request: Any, pk: str | None = None, photo_pk: str | None = None) -> Response:
         event = self.get_object()
-        if not can_unlink(event=event, photo_id=photo_pk, user=request.user):
+        if not can_unlink(event=event, photo_id=photo_pk, user=request.user):  # type: ignore[arg-type]
             raise PermissionDenied({"detail": "You do not have permission to unlink this photo."})
-        unlink_photo(event=event, photo_id=photo_pk)
+        unlink_photo(event=event, photo_id=photo_pk)  # type: ignore[arg-type]
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # -------------------------------------------------------------------
@@ -280,7 +282,7 @@ class EventViewSet(
     # -------------------------------------------------------------------
 
     @action(detail=True, methods=["put", "delete"], url_path="thumbnail")
-    def thumbnail(self, request, pk=None):
+    def thumbnail(self, request: Any, pk: str | None = None) -> Response:
         event = self.get_object()
         self.check_object_permissions(request, event)
         if request.method == "DELETE":
@@ -302,12 +304,12 @@ class EventViewSet(
     # Highlights
     # -------------------------------------------------------------------
 
-    def _get_event_and_highlight(self, request, pk, highlight_pk):
+    def _get_event_and_highlight(self, request: Any, pk: str | None, highlight_pk: str | None) -> tuple[Event, Highlight | None]:
         """Fetch event and highlight, scoped by event_id."""
         event = self.get_object()
         try:
             highlight = (
-                Highlight.objects.select_related("author")
+                Highlight.objects.select_related("author")  # type: ignore[misc]
                 .prefetch_related("photos__photo")
                 .get(id=highlight_pk, event=event)
             )
@@ -316,7 +318,7 @@ class EventViewSet(
         return event, highlight
 
     @action(detail=True, methods=["get", "post"], url_path="highlights")
-    def highlights(self, request, pk=None):
+    def highlights(self, request: Any, pk: str | None = None) -> Response:
         event = self.get_object()
 
         if request.method == "POST":
@@ -349,7 +351,7 @@ class EventViewSet(
         )
         page = self.paginate_queryset(qs)
         if page is not None:
-            serializer = HighlightReadSerializer(page, many=True)
+            serializer = HighlightReadSerializer(page, many=True)  # type: ignore[assignment]
             return self.get_paginated_response(serializer.data)
         return Response(HighlightReadSerializer(qs, many=True).data)
 
@@ -358,7 +360,7 @@ class EventViewSet(
         methods=["get", "patch", "delete"],
         url_path=r"highlights/(?P<highlight_pk>[^/.]+)",
     )
-    def highlight_detail(self, request, pk=None, highlight_pk=None):
+    def highlight_detail(self, request: Any, pk: str | None = None, highlight_pk: str | None = None) -> Response:
         event, highlight = self._get_event_and_highlight(request, pk, highlight_pk)
         if highlight is None:
             return Response(
@@ -403,3 +405,4 @@ class EventViewSet(
 
         highlight.refresh_from_db()
         return Response(HighlightReadSerializer(highlight).data)
+

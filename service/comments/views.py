@@ -1,3 +1,7 @@
+﻿from __future__ import annotations
+
+from typing import Any
+
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
@@ -32,10 +36,10 @@ class CommentViewSet(
     permission_classes = [IsAuthenticatedWithOnboardingGuard, CommentPermission]
     pagination_class = StandardPageNumberPagination
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         return Comment.objects.select_related("author", "content_type").order_by("created_at", "id")
 
-    def _get_filtered_queryset(self):
+    def _get_filtered_queryset(self) -> Any:
         """List requires target_type and target_id query params."""
         qs = self.get_queryset()
         # Exclude comments on deleted Event targets
@@ -44,7 +48,7 @@ class CommentViewSet(
         qs = qs.exclude(Q(content_type=event_ct) & ~Q(object_id__in=active_event_ids))
         return qs
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         target_type = request.query_params.get("target_type")
         target_id = request.query_params.get("target_id")
 
@@ -79,7 +83,7 @@ class CommentViewSet(
         serializer = CommentReadSerializer(qs, many=True)
         return Response(serializer.data)
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         serializer = CommentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -95,10 +99,10 @@ class CommentViewSet(
         read_serializer = CommentReadSerializer(comment)
         return Response(read_serializer.data, status=status.HTTP_201_CREATED)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: Comment) -> None:
         soft_delete_comment(comment=instance)
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[CommentCreateSerializer] | type[CommentReadSerializer] | type[CommentUpdateSerializer]:
         if self.action == "create":
             return CommentCreateSerializer
         if self.action in ("update", "partial_update"):

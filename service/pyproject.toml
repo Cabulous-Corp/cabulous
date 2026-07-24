@@ -75,6 +75,13 @@ module = [
 ]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = [
+    "events.migrations.*",
+    "comments.migrations.*",
+]
+ignore_errors = true
+
 [tool.django-stubs]
 django_settings_module = "cabulous.settings"
 

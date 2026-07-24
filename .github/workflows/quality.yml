@@ -127,7 +127,7 @@ jobs:
       - run: uv sync --all-groups
 
       - name: Run tests with coverage
-        run: uv run pytest tests/ --tb=short --junitxml=report.xml --cov=. --cov-report=json:coverage.json --cov-report=term-missing -q
+        run: uv run pytest --tb=short --junitxml=report.xml --cov=. --cov-report=json:coverage.json --cov-report=term-missing -q
 
       - uses: actions/upload-artifact@v4
         if: always()

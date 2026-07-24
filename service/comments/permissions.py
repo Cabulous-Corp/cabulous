@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from rest_framework.permissions import BasePermission
 
 
@@ -9,7 +13,7 @@ class CommentPermission(BasePermission):
     - Event creator without staff role cannot moderate others' comments.
     """
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request: Any, view: Any, obj: Any) -> bool:
         if request.method in ("GET", "HEAD", "OPTIONS"):
             return True
 

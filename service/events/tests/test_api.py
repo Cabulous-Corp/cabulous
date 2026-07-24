@@ -10,17 +10,17 @@ from events.models import Event, EventAudience, EventParticipant
 from users.models import User
 
 
-def _create_user(username: str = "user1", **overrides) -> User:
+def _create_user(username: str = "user1", **overrides: object) -> User:
     defaults = {
         "email": f"{username}@example.com",
         "password": "secret",
         "onboarding_completed_at": timezone.now(),
     }
     defaults.update(overrides)
-    return User.objects.create_user(username=username, **defaults)
+    return User.objects.create_user(username=username, **defaults)  # type: ignore[arg-type]
 
 
-def _make_event_data(**overrides) -> dict:
+def _make_event_data(**overrides: object) -> dict:
     start = timezone.now() + timedelta(days=30)
     defaults = {
         "title": "Test Event",
@@ -30,11 +30,11 @@ def _make_event_data(**overrides) -> dict:
         "type": EventType.CABULOUS,
         "audiences": [Audience.ILUMINADOS, Audience.VOYEURS],
     }
-    defaults.update(overrides)
+    defaults.update(overrides)  # type: ignore[arg-type]
     return defaults
 
 
-def _create_event(creator, **overrides) -> Event:
+def _create_event(creator: User, **overrides: object) -> Event:
     start = timezone.now() + timedelta(days=1)
     defaults = {
         "title": "Existing Event",
@@ -63,15 +63,15 @@ class EventCreateTests(TestCase):
         self.url = "/api/events/"
 
     def test_onboarded_user_creates_event_and_becomes_participant(self) -> None:
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         response = self.client.post(self.url, _make_event_data(), format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        event = Event.objects.get(id=response.data["id"])
+        event = Event.objects.get(id=response.data["id"])  # type: ignore[attr-defined]
         self.assertEqual(event.creator, self.user)
         self.assertTrue(event.participants.filter(user=self.user).exists())
 
     def test_create_with_location(self) -> None:
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         data = _make_event_data(
             location={
                 "name": "Bar do Ze",
@@ -82,30 +82,30 @@ class EventCreateTests(TestCase):
         )
         response = self.client.post(self.url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        event = Event.objects.get(id=response.data["id"])
+        event = Event.objects.get(id=response.data["id"])  # type: ignore[attr-defined]
         self.assertEqual(event.location.name, "Bar do Ze")
 
     def test_create_empty_audiences_list_rejected(self) -> None:
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         data = _make_event_data(audiences=[])
         response = self.client.post(self.url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_missing_audiences_rejected(self) -> None:
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         data = _make_event_data()
         del data["audiences"]
         response = self.client.post(self.url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_invalid_type_rejected(self) -> None:
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         data = _make_event_data(type="INVALID")
         response = self.client.post(self.url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_end_before_start_rejected(self) -> None:
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         start = timezone.now() + timedelta(days=30)
         data = _make_event_data(
             start_at=start.isoformat(),
@@ -120,7 +120,7 @@ class EventCreateTests(TestCase):
 
     def test_pending_onboarding_returns_403(self) -> None:
         pending = _create_user("pending", onboarding_completed_at=None)
-        self.client.force_authenticate(pending)
+        self.client.force_authenticate(pending)  # type: ignore[attr-defined]
         response = self.client.post(self.url, _make_event_data(), format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -142,18 +142,18 @@ class EventListTests(TestCase):
         _create_event(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["count"], 1)  # type: ignore[attr-defined]
 
     def test_list_includes_other_users_events(self) -> None:
         _create_event(self.other)
         response = self.client.get(self.url)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["count"], 1)  # type: ignore[attr-defined]
 
     def test_retrieve_returns_200(self) -> None:
         event = _create_event(self.user)
         response = self.client.get(f"/api/events/{event.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], str(event.id))
+        self.assertEqual(response.data["id"], str(event.id))  # type: ignore[attr-defined]
 
 
 # ---------------------------------------------------------------------------
@@ -180,13 +180,13 @@ class EventUpdateTests(TestCase):
 
     def test_other_user_cannot_patch(self) -> None:
         event = _create_event(self.creator)
-        self.client.force_authenticate(self.other)
+        self.client.force_authenticate(self.other)  # type: ignore[attr-defined]
         response = self.client.patch(f"/api/events/{event.id}/", {"title": "Hacked"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_staff_can_patch(self) -> None:
         event = _create_event(self.creator)
-        self.client.force_authenticate(self.staff)
+        self.client.force_authenticate(self.staff)  # type: ignore[attr-defined]
         response = self.client.patch(
             f"/api/events/{event.id}/", {"title": "Staff Edit"}, format="json"
         )
@@ -236,7 +236,7 @@ class EventDeleteTests(TestCase):
 
     def test_other_user_cannot_delete(self) -> None:
         event = _create_event(self.creator)
-        self.client.force_authenticate(self.other)
+        self.client.force_authenticate(self.other)  # type: ignore[attr-defined]
         response = self.client.delete(f"/api/events/{event.id}/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -262,7 +262,7 @@ class EventCancelReactivateTests(TestCase):
 
     def test_other_user_cannot_cancel(self) -> None:
         event = _create_event(self.creator)
-        self.client.force_authenticate(self.other)
+        self.client.force_authenticate(self.other)  # type: ignore[attr-defined]
         response = self.client.post(f"/api/events/{event.id}/cancel/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -283,7 +283,7 @@ class EventCancelReactivateTests(TestCase):
             status=EventStatus.CANCELLED,
             cancelled_at=timezone.now(),
         )
-        self.client.force_authenticate(self.other)
+        self.client.force_authenticate(self.other)  # type: ignore[attr-defined]
         response = self.client.post(f"/api/events/{event.id}/reactivate/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -292,7 +292,7 @@ class EventCancelReactivateTests(TestCase):
         cancelled = _create_event(self.creator, title="Cancelled")
         self.client.post(f"/api/events/{cancelled.id}/cancel/")
         response = self.client.get("/api/events/")
-        titles = [e["title"] for e in response.data["results"]]
+        titles = [e["title"] for e in response.data["results"]]  # type: ignore[attr-defined]
         self.assertNotIn("Cancelled", titles)
 
     def test_reactivated_event_visible_in_active_list(self) -> None:
@@ -304,7 +304,7 @@ class EventCancelReactivateTests(TestCase):
         )
         self.client.post(f"/api/events/{cancelled.id}/reactivate/")
         response = self.client.get("/api/events/")
-        titles = [e["title"] for e in response.data["results"]]
+        titles = [e["title"] for e in response.data["results"]]  # type: ignore[attr-defined]
         self.assertIn("Was cancelled", titles)
 
 
@@ -323,7 +323,7 @@ class EventRestoreTests(TestCase):
     def test_staff_can_restore(self) -> None:
         event = _create_event(self.creator)
         event.soft_delete()
-        self.client.force_authenticate(self.staff)
+        self.client.force_authenticate(self.staff)  # type: ignore[attr-defined]
         response = self.client.post(f"/api/events/{event.id}/restore/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         event.refresh_from_db()
@@ -332,19 +332,19 @@ class EventRestoreTests(TestCase):
     def test_creator_cannot_restore(self) -> None:
         event = _create_event(self.creator)
         event.soft_delete()
-        self.client.force_authenticate(self.creator)
+        self.client.force_authenticate(self.creator)  # type: ignore[attr-defined]
         response = self.client.post(f"/api/events/{event.id}/restore/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_other_user_cannot_restore(self) -> None:
         event = _create_event(self.creator)
         event.soft_delete()
-        self.client.force_authenticate(self.other)
+        self.client.force_authenticate(self.other)  # type: ignore[attr-defined]
         response = self.client.post(f"/api/events/{event.id}/restore/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_restore_404_for_nonexistent_event(self) -> None:
-        self.client.force_authenticate(self.staff)
+        self.client.force_authenticate(self.staff)  # type: ignore[attr-defined]
         fake_id = "00000000-0000-0000-0000-000000000000"
         response = self.client.post(f"/api/events/{fake_id}/restore/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -368,19 +368,19 @@ class EventPermissionTests(TestCase):
 
     def test_pending_onboarding_list_returns_403(self) -> None:
         pending = _create_user("pending", onboarding_completed_at=None)
-        self.client.force_authenticate(pending)
+        self.client.force_authenticate(pending)  # type: ignore[attr-defined]
         response = self.client.get("/api/events/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_any_onboarded_user_can_list(self) -> None:
         _create_event(self.other)
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         response = self.client.get("/api/events/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_any_onboarded_user_can_retrieve(self) -> None:
         event = _create_event(self.other)
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         response = self.client.get(f"/api/events/{event.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -435,56 +435,56 @@ class EventFilterTests(TestCase):
         response = self.client.get(
             "/api/events/", {"starts_from": (now + timedelta(days=9)).date().isoformat()}
         )
-        self.assertEqual(response.data["count"], 1)
-        self.assertEqual(response.data["results"][0]["id"], str(self.event2.id))
+        self.assertEqual(response.data["count"], 1)  # type: ignore[attr-defined]
+        self.assertEqual(response.data["results"][0]["id"], str(self.event2.id))  # type: ignore[attr-defined]
 
     def test_filter_starts_until(self) -> None:
         now = timezone.now()
         response = self.client.get(
             "/api/events/", {"starts_until": (now + timedelta(days=3)).date().isoformat()}
         )
-        self.assertEqual(response.data["count"], 1)
-        self.assertEqual(response.data["results"][0]["id"], str(self.event3.id))
+        self.assertEqual(response.data["count"], 1)  # type: ignore[attr-defined]
+        self.assertEqual(response.data["results"][0]["id"], str(self.event3.id))  # type: ignore[attr-defined]
 
     def test_filter_status(self) -> None:
         self.event1.cancelled_at = timezone.now()
         self.event1.status = EventStatus.CANCELLED
         self.event1.save(update_fields=["status", "cancelled_at", "updated_at"])
         response = self.client.get("/api/events/", {"status": EventStatus.CANCELLED})
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["count"], 1)  # type: ignore[attr-defined]
 
     def test_filter_type(self) -> None:
         response = self.client.get("/api/events/", {"type": EventType.BIRTHDAY})
-        self.assertEqual(response.data["count"], 1)
-        self.assertEqual(response.data["results"][0]["id"], str(self.event2.id))
+        self.assertEqual(response.data["count"], 1)  # type: ignore[attr-defined]
+        self.assertEqual(response.data["results"][0]["id"], str(self.event2.id))  # type: ignore[attr-defined]
 
     def test_filter_audience(self) -> None:
         response = self.client.get("/api/events/", {"audience": Audience.ILUMINADOS})
-        self.assertEqual(response.data["count"], 1)
-        self.assertEqual(response.data["results"][0]["id"], str(self.event3.id))
+        self.assertEqual(response.data["count"], 1)  # type: ignore[attr-defined]
+        self.assertEqual(response.data["results"][0]["id"], str(self.event3.id))  # type: ignore[attr-defined]
 
     def test_filter_participant(self) -> None:
         response = self.client.get("/api/events/", {"participant": str(self.user.id)})
-        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(response.data["count"], 2)  # type: ignore[attr-defined]
 
     def test_filter_creator(self) -> None:
         response = self.client.get("/api/events/", {"creator": str(self.user.id)})
-        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(response.data["count"], 2)  # type: ignore[attr-defined]
 
     def test_search_title(self) -> None:
         response = self.client.get("/api/events/", {"search": "Beach"})
-        self.assertEqual(response.data["count"], 1)
-        self.assertEqual(response.data["results"][0]["id"], str(self.event1.id))
+        self.assertEqual(response.data["count"], 1)  # type: ignore[attr-defined]
+        self.assertEqual(response.data["results"][0]["id"], str(self.event1.id))  # type: ignore[attr-defined]
 
     def test_search_description(self) -> None:
         self.event1.description = "Sunset cocktails"
         self.event1.save(update_fields=["description", "updated_at"])
         response = self.client.get("/api/events/", {"search": "Sunset"})
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["count"], 1)  # type: ignore[attr-defined]
 
     def test_ordering_start_at(self) -> None:
         response = self.client.get("/api/events/", {"ordering": "start_at"})
-        ids = [e["id"] for e in response.data["results"]]
+        ids = [e["id"] for e in response.data["results"]]  # type: ignore[attr-defined]
         self.assertEqual(ids[0], str(self.event3.id))
 
 
@@ -509,13 +509,13 @@ class EventPaginationTests(TestCase):
             )
         response = self.client.get("/api/events/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 25)
-        self.assertEqual(len(response.data["results"]), 20)
-        self.assertIsNotNone(response.data["next"])
+        self.assertEqual(response.data["count"], 25)  # type: ignore[attr-defined]
+        self.assertEqual(len(response.data["results"]), 20)  # type: ignore[attr-defined]
+        self.assertIsNotNone(response.data["next"])  # type: ignore[attr-defined]
 
-        response2 = self.client.get(response.data["next"])
-        self.assertEqual(len(response2.data["results"]), 5)
-        self.assertIsNone(response2.data["next"])
+        response2 = self.client.get(response.data["next"])  # type: ignore[attr-defined]
+        self.assertEqual(len(response2.data["results"]), 5)  # type: ignore[attr-defined]
+        self.assertIsNone(response2.data["next"])  # type: ignore[attr-defined]
 
 
 # ---------------------------------------------------------------------------
@@ -539,7 +539,7 @@ class EventQueryCountTests(TestCase):
             )
         with self.assertNumQueries(5):
             response = self.client.get("/api/events/")
-        self.assertEqual(len(response.data["results"]), 10)
+        self.assertEqual(len(response.data["results"]), 10)  # type: ignore[attr-defined]
 
 
 # ---------------------------------------------------------------------------
@@ -556,11 +556,11 @@ class EventOptionsTests(TestCase):
     def test_options_returns_enums(self) -> None:
         response = self.client.get("/api/events/options/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("types", response.data)
-        self.assertIn("audiences", response.data)
-        self.assertIn("statuses", response.data)
+        self.assertIn("types", response.data)  # type: ignore[attr-defined]
+        self.assertIn("audiences", response.data)  # type: ignore[attr-defined]
+        self.assertIn("statuses", response.data)  # type: ignore[attr-defined]
         # Each entry should have value and label
-        first_type = response.data["types"][0]
+        first_type = response.data["types"][0]  # type: ignore[attr-defined]
         self.assertIn("value", first_type)
         self.assertIn("label", first_type)
         # Types should include color
@@ -581,23 +581,23 @@ class EventReadSerializerTests(TestCase):
     def test_read_includes_audiences(self) -> None:
         event = _create_event(self.user)
         response = self.client.get(f"/api/events/{event.id}/")
-        self.assertIn("audiences", response.data)
-        self.assertIsInstance(response.data["audiences"], list)
-        self.assertGreater(len(response.data["audiences"]), 0)
+        self.assertIn("audiences", response.data)  # type: ignore[attr-defined]
+        self.assertIsInstance(response.data["audiences"], list)  # type: ignore[attr-defined]
+        self.assertGreater(len(response.data["audiences"]), 0)  # type: ignore[attr-defined]
 
     def test_read_includes_participants_count(self) -> None:
         event = _create_event(self.user)
         response = self.client.get(f"/api/events/{event.id}/")
-        self.assertIn("participants_count", response.data)
-        self.assertEqual(response.data["participants_count"], 1)
+        self.assertIn("participants_count", response.data)  # type: ignore[attr-defined]
+        self.assertEqual(response.data["participants_count"], 1)  # type: ignore[attr-defined]
 
     def test_read_includes_type_color(self) -> None:
         event = _create_event(self.user)
         response = self.client.get(f"/api/events/{event.id}/")
-        self.assertIn("type_color", response.data)
-        self.assertEqual(response.data["type_color"], "#8E44AD")
+        self.assertIn("type_color", response.data)  # type: ignore[attr-defined]
+        self.assertEqual(response.data["type_color"], "#8E44AD")  # type: ignore[attr-defined]
 
     def test_read_includes_status(self) -> None:
         event = _create_event(self.user)
         response = self.client.get(f"/api/events/{event.id}/")
-        self.assertEqual(response.data["status"], EventStatus.SCHEDULED)
+        self.assertEqual(response.data["status"], EventStatus.SCHEDULED)  # type: ignore[attr-defined]

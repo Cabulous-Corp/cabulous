@@ -1,4 +1,6 @@
-from __future__ import annotations
+﻿from __future__ import annotations
+
+from typing import Any
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework import serializers
@@ -42,7 +44,7 @@ class EventCreateSerializer(serializers.Serializer):
     )
     location = EventLocationWriteSerializer(required=False, default=None)
 
-    def validate(self, data):
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         if data["end_at"] < data["start_at"]:
             raise serializers.ValidationError({"end_at": "End date must not be before start date."})
         return data
@@ -76,19 +78,19 @@ class EventReadSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_audiences(self, obj) -> list[str]:
+    def get_audiences(self, obj: Event) -> list[str]:
         return [a.audience for a in obj.audiences.all()]
 
-    def get_participants_count(self, obj) -> int:
+    def get_participants_count(self, obj: Event) -> int:
         return len(obj.participants.all())
 
-    def get_type_color(self, obj) -> str:
+    def get_type_color(self, obj: Event) -> str:
         try:
             return EVENT_TYPE_COLOR_MAP.get(EventType(obj.type), "#FFFFFF")
         except ValueError:
             return "#FFFFFF"
 
-    def get_thumbnail_url(self, obj) -> str | None:
+    def get_thumbnail_url(self, obj: Event) -> str | None:
         for p in obj.photos.all():
             if p.is_thumbnail:
                 return p.photo.object_key
@@ -108,7 +110,7 @@ class EventUpdateSerializer(serializers.Serializer):
     )
     location = EventLocationWriteSerializer(required=False)
 
-    def validate(self, data):
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         start = data.get("start_at") or getattr(self.instance, "start_at", None)
         end = data.get("end_at") or getattr(self.instance, "end_at", None)
         if start and end and end < start:

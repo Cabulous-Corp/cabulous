@@ -1,4 +1,6 @@
-from __future__ import annotations
+﻿from __future__ import annotations
+
+from typing import Any
 
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
@@ -10,7 +12,7 @@ from users.models import User
 @transaction.atomic
 def create_highlight(
     *,
-    event,
+    event: Any,
     author: User,
     text: str,
     photo_ids: list[str] | None = None,
@@ -24,7 +26,7 @@ def create_highlight(
                 "photo_id", flat=True
             )
         )
-        missing = set(photo_ids) - linked
+        missing = set(photo_ids) - linked  # type: ignore[operator]
         if missing:
             joined = ", ".join(str(p) for p in missing)
             raise ValidationError({"photo_ids": f"Photos not linked to this event: {joined}"})
@@ -55,7 +57,7 @@ def update_highlight(
                 "photo_id", flat=True
             )
         )
-        missing = set(photo_ids) - linked
+        missing = set(photo_ids) - linked  # type: ignore[operator]
         if missing:
             joined = ", ".join(str(p) for p in missing)
             raise ValidationError({"photo_ids": f"Photos not linked to this event: {joined}"})

@@ -1,4 +1,7 @@
+﻿from __future__ import annotations
+
 from datetime import timedelta
+from typing import Any
 
 from django.core.exceptions import ValidationError
 from django.test import TestCase
@@ -9,8 +12,8 @@ from events.enums import EventStatus, EventType
 from events.models import Event
 
 
-def _make_event(creator, **overrides) -> Event:
-    defaults = {
+def _make_event(creator: Any, **overrides: object) -> Event:
+    defaults: dict[str, object] = {
         "title": "Test Event",
         "description": "",
         "start_at": timezone.now() + timedelta(days=1),
@@ -23,6 +26,8 @@ def _make_event(creator, **overrides) -> Event:
 
 
 class CommentDomainTests(TestCase):
+    user: Any
+
     @classmethod
     def setUpTestData(cls) -> None:
         from users.models import User
@@ -116,7 +121,7 @@ class CommentDomainTests(TestCase):
         self.assertEqual(reply.parent_id, comment.id)
 
     def test_arbitrary_deep_chain(self) -> None:
-        """Reply-of-reply-of-reply — no nesting limit enforced."""
+        """Reply-of-reply-of-reply -- no nesting limit enforced."""
         c1 = create_comment(
             author=self.user,
             target_type="events.event",
@@ -142,7 +147,7 @@ class CommentDomainTests(TestCase):
         self.assertEqual(c1.object_id, self.event_a.id)
         self.assertEqual(c2.object_id, self.event_a.id)
         self.assertEqual(c3.object_id, self.event_a.id)
-        # Chain integrity: c3→c2→c1
+        # Chain integrity: c3->c2->c1
         self.assertEqual(c3.parent_id, c2.id)
         self.assertEqual(c2.parent_id, c1.id)
 

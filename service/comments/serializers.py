@@ -1,3 +1,7 @@
+﻿from __future__ import annotations
+
+from typing import Any
+
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
@@ -12,7 +16,7 @@ class CommentCreateSerializer(serializers.Serializer):
     body = serializers.CharField(max_length=5000)
     parent_id = serializers.UUIDField(required=False, allow_null=True, default=None)
 
-    def validate_parent_id(self, parent_id):
+    def validate_parent_id(self, parent_id: str | None) -> str | None:
         if parent_id is None:
             return None
         try:
@@ -21,7 +25,7 @@ class CommentCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError("Comment not found.") from None
         return parent_id
 
-    def validate(self, data):
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         target_type = data["target_type"]
         target_id = data["target_id"]
         parent_id = data.get("parent_id")
@@ -31,8 +35,8 @@ class CommentCreateSerializer(serializers.Serializer):
 
         # Validate target exists (and is not soft-deleted)
         try:
-            model_cls.objects.get(pk=target_id)
-        except model_cls.DoesNotExist:
+            model_cls.objects.get(pk=target_id)  # type: ignore[attr-defined]
+        except model_cls.DoesNotExist:  # type: ignore[attr-defined]
             raise NotFound("Target not found.") from None
 
         # Validate parent belongs to same target if provided
@@ -76,13 +80,13 @@ class CommentReadSerializer(serializers.ModelSerializer):
             "is_deleted",
         ]
 
-    def get_target_type(self, obj):
+    def get_target_type(self, obj: Comment) -> str:
         return f"{obj.content_type.app_label}.{obj.content_type.model}"
 
-    def get_is_deleted(self, obj):
+    def get_is_deleted(self, obj: Comment) -> bool:
         return obj.deleted_at is not None
 
-    def get_body(self, obj):
+    def get_body(self, obj: Comment) -> str | None:
         if obj.deleted_at is not None:
             return None
         return obj.body
@@ -93,7 +97,7 @@ class CommentUpdateSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ["body"]
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Comment, validated_data: dict[str, Any]) -> Comment:
         instance.body = validated_data["body"]
         instance.save(update_fields=["body", "updated_at"])
         return instance
