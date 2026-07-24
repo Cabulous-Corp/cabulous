@@ -14,7 +14,7 @@ def _create_user(username: str = "admin_user", **overrides: object) -> User:
         "onboarding_completed_at": timezone.now(),
     }
     defaults.update(overrides)
-    return User.objects.create_user(username=username, **defaults)
+    return User.objects.create_user(username=username, **defaults)  # type: ignore[arg-type]
 
 
 class MediaAdminRegistrationTests(TestCase):

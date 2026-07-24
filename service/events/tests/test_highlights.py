@@ -63,7 +63,12 @@ def _create_event_photo(event: Event, photo: Photo, **overrides: object) -> Even
     return EventPhoto.objects.create(**defaults)
 
 
-def _create_highlight(event: Event, author: User, text: str = "Test highlight", photos: list[Photo] | None = None) -> Highlight:
+def _create_highlight(
+    event: Event,
+    author: User,
+    text: str = "Test highlight",
+    photos: list[Photo] | None = None,
+) -> Highlight:
     hl = Highlight.objects.create(event=event, author=author, text=text)
     if photos:
         HighlightPhoto.objects.bulk_create([HighlightPhoto(highlight=hl, photo=p) for p in photos])

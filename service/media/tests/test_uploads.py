@@ -36,7 +36,7 @@ class PhotoUploadUrlsTests(TestCase):
         payload = [{"filename": f"{i}.jpg", "content_type": "image/jpeg"} for i in range(50)]
         response = self.client.post(self.url, {"files": payload}, format="json")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["photos"]), 50)
+        self.assertEqual(len(response.data["photos"]), 50)  # type: ignore[attr-defined]
 
     @patch("media.services.upload_signing._build_s3_client")
     def test_accepts_gif(self, client_builder: Mock) -> None:
@@ -47,7 +47,7 @@ class PhotoUploadUrlsTests(TestCase):
         payload = [{"filename": "anim.gif", "content_type": "image/gif"}]
         response = self.client.post(self.url, {"files": payload}, format="json")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["photos"][0]["headers"]["Content-Type"], "image/gif")
+        self.assertEqual(response.data["photos"][0]["headers"]["Content-Type"], "image/gif")  # type: ignore[attr-defined]
 
     def test_rejects_non_image(self) -> None:
         payload = [{"filename": "file.txt", "content_type": "text/plain"}]
@@ -64,7 +64,7 @@ class PhotoUploadUrlsTests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_requires_authentication(self) -> None:
-        self.client.force_authenticate(user=None)
+        self.client.force_authenticate(user=None)  # type: ignore[attr-defined]
         payload = [{"filename": "photo.jpg", "content_type": "image/jpeg"}]
         response = self.client.post(self.url, {"files": payload}, format="json")
         self.assertEqual(response.status_code, 401)
@@ -75,7 +75,7 @@ class PhotoUploadUrlsTests(TestCase):
             email="pending@example.com",
             password="secret",
         )
-        self.client.force_authenticate(pending_user)
+        self.client.force_authenticate(pending_user)  # type: ignore[attr-defined]
         payload = [{"filename": "photo.jpg", "content_type": "image/jpeg"}]
         response = self.client.post(self.url, {"files": payload}, format="json")
         self.assertEqual(response.status_code, 403)
@@ -215,9 +215,9 @@ class PhotoConfirmTests(TestCase):
         }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(len(response.data), 2)
-        self.assertEqual(response.data[0]["caption"], "First photo")
-        self.assertEqual(response.data[1]["caption"], "Second photo")
+        self.assertEqual(len(response.data), 2)  # type: ignore[attr-defined]
+        self.assertEqual(response.data[0]["caption"], "First photo")  # type: ignore[attr-defined]
+        self.assertEqual(response.data[1]["caption"], "Second photo")  # type: ignore[attr-defined]
         self.assertEqual(Photo.objects.count(), 2)
 
     @patch("media.services.upload_signing.default_storage")
@@ -254,7 +254,7 @@ class PhotoConfirmTests(TestCase):
         }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 201)
-        keys = [item["object_key"] for item in response.data]
+        keys = [item["object_key"] for item in response.data]  # type: ignore[attr-defined]
         self.assertEqual(
             keys,
             [
@@ -265,7 +265,7 @@ class PhotoConfirmTests(TestCase):
         )
 
     def test_requires_authentication(self) -> None:
-        self.client.force_authenticate(user=None)
+        self.client.force_authenticate(user=None)  # type: ignore[attr-defined]
         payload = {
             "files": [
                 {
@@ -285,7 +285,7 @@ class PhotoConfirmTests(TestCase):
             email="pending@example.com",
             password="secret",
         )
-        self.client.force_authenticate(pending_user)
+        self.client.force_authenticate(pending_user)  # type: ignore[attr-defined]
         payload = {
             "files": [
                 {

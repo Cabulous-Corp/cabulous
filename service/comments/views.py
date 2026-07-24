@@ -102,7 +102,9 @@ class CommentViewSet(
     def perform_destroy(self, instance: Comment) -> None:
         soft_delete_comment(comment=instance)
 
-    def get_serializer_class(self) -> type[CommentCreateSerializer] | type[CommentReadSerializer] | type[CommentUpdateSerializer]:
+    def get_serializer_class(self) -> (
+        type[CommentCreateSerializer] | type[CommentReadSerializer] | type[CommentUpdateSerializer]
+    ):
         if self.action == "create":
             return CommentCreateSerializer
         if self.action in ("update", "partial_update"):

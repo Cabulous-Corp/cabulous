@@ -70,7 +70,9 @@ class EventViewSet(
             qs = qs.exclude(status=EventStatus.CANCELLED)
         return qs
 
-    def get_serializer_class(self) -> type[EventCreateSerializer] | type[EventReadSerializer] | type[EventUpdateSerializer]:
+    def get_serializer_class(self) -> (
+        type[EventCreateSerializer] | type[EventReadSerializer] | type[EventUpdateSerializer]
+    ):
         if self.action == "create":
             return EventCreateSerializer
         if self.action in ("update", "partial_update"):
@@ -217,7 +219,9 @@ class EventViewSet(
         return Response(ParticipantReadSerializer(qs, many=True).data)
 
     @action(detail=True, methods=["delete"], url_path=r"participants/(?P<user_id>[^/.]+)")
-    def remove_participant(self, request: Any, pk: str | None = None, user_id: str | None = None) -> Response:
+    def remove_participant(
+        self, request: Any, pk: str | None = None, user_id: str | None = None
+    ) -> Response:
         event = self.get_object()
         user_id = str(user_id)
         # Creator/staff can remove any; participants can remove themselves
@@ -270,7 +274,9 @@ class EventViewSet(
         return Response(EventPhotoReadSerializer(qs, many=True).data)
 
     @action(detail=True, methods=["delete"], url_path=r"photos/(?P<photo_pk>[^/.]+)")
-    def unlink_photo_action(self, request: Any, pk: str | None = None, photo_pk: str | None = None) -> Response:
+    def unlink_photo_action(
+        self, request: Any, pk: str | None = None, photo_pk: str | None = None
+    ) -> Response:
         event = self.get_object()
         if not can_unlink(event=event, photo_id=photo_pk, user=request.user):  # type: ignore[arg-type]
             raise PermissionDenied({"detail": "You do not have permission to unlink this photo."})
@@ -298,13 +304,17 @@ class EventViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
         row = set_thumbnail(event=event, photo=photo)
-        return Response(EventPhotoReadSerializer(row).data, status=status.HTTP_200_OK)
+        return Response(
+            EventPhotoReadSerializer(row).data, status=status.HTTP_200_OK
+        )
 
     # -------------------------------------------------------------------
     # Highlights
     # -------------------------------------------------------------------
 
-    def _get_event_and_highlight(self, request: Any, pk: str | None, highlight_pk: str | None) -> tuple[Event, Highlight | None]:
+    def _get_event_and_highlight(
+        self, request: Any, pk: str | None, highlight_pk: str | None
+    ) -> tuple[Event, Highlight | None]:
         """Fetch event and highlight, scoped by event_id."""
         event = self.get_object()
         try:
@@ -360,7 +370,9 @@ class EventViewSet(
         methods=["get", "patch", "delete"],
         url_path=r"highlights/(?P<highlight_pk>[^/.]+)",
     )
-    def highlight_detail(self, request: Any, pk: str | None = None, highlight_pk: str | None = None) -> Response:
+    def highlight_detail(
+        self, request: Any, pk: str | None = None, highlight_pk: str | None = None
+    ) -> Response:
         event, highlight = self._get_event_and_highlight(request, pk, highlight_pk)
         if highlight is None:
             return Response(

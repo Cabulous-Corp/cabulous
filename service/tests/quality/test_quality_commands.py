@@ -1,5 +1,6 @@
 """Tests that verify backend quality Task targets are registered with correct commands."""
 
+import subprocess
 import tempfile
 from pathlib import Path
 

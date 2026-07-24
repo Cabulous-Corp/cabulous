@@ -1,6 +1,7 @@
 from typing import Any
 
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models.query import QuerySet
 from rest_framework import mixins, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
@@ -81,7 +82,7 @@ class PhotoViewSet(
     filterset_class = PhotoFilter
     search_fields = ["caption"]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Photo]:
         return Photo.objects.all()
 
     def perform_destroy(self, instance: Photo) -> None:

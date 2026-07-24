@@ -91,7 +91,7 @@ def confirm_upload(*, user: User, photos_data: list[dict]) -> list[Photo]:
         if not object_key.startswith(expected_prefix):
             raise ValidationError(f"Invalid object key prefix for {object_key}.")
 
-        head = storage.head(object_key)
+        head = storage.head(object_key)  # type: ignore[attr-defined]
         actual_content_type = head["content_type"]
         actual_size = head["content_length"]
 

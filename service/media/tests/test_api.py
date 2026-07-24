@@ -11,7 +11,7 @@ from media.models import Photo
 from users.models import User
 
 
-def _create_photo(user: User, **overrides) -> Photo:
+def _create_photo(user: User, **overrides: object) -> Photo:
     defaults = {
         "object_key": f"media/photos/{user.id}/{timezone.now().timestamp()}.jpg",
         "uploader": user,
@@ -36,7 +36,7 @@ class PhotoListPermissionTests(TestCase):
         pending_user = User.objects.create_user(
             username="pending", email="p@example.com", password="secret"
         )
-        self.client.force_authenticate(pending_user)
+        self.client.force_authenticate(pending_user)  # type: ignore[attr-defined]
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 403)
 
@@ -56,10 +56,10 @@ class PhotoListPermissionTests(TestCase):
         _create_photo(user, object_key="media/photos/user1/a.jpg")
         _create_photo(other, object_key="media/photos/user2/b.jpg")
 
-        self.client.force_authenticate(user)
+        self.client.force_authenticate(user)  # type: ignore[attr-defined]
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(response.data["count"], 2)  # type: ignore[attr-defined]
 
 
 class PhotoRetrievePermissionTests(TestCase):
@@ -80,17 +80,17 @@ class PhotoRetrievePermissionTests(TestCase):
 
     def test_retrieve_own_photo_succeeds(self) -> None:
         photo = _create_photo(self.user, object_key="media/photos/user1/own.jpg")
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         response = self.client.get(f"/api/media/photos/{photo.id}/")
         self.assertEqual(response.status_code, 200)
 
     def test_retrieve_other_photo_succeeds_global_gallery(self) -> None:
         """Any onboarded user can read any photo."""
         photo = _create_photo(self.other, object_key="media/photos/user2/other.jpg")
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         response = self.client.get(f"/api/media/photos/{photo.id}/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["object_key"], "media/photos/user2/other.jpg")
+        self.assertEqual(response.data["object_key"], "media/photos/user2/other.jpg")  # type: ignore[attr-defined]
 
 
 class PhotoUpdatePermissionTests(TestCase):
@@ -111,7 +111,7 @@ class PhotoUpdatePermissionTests(TestCase):
 
     def test_partial_update_own_photo_succeeds(self) -> None:
         photo = _create_photo(self.user, object_key="media/photos/user1/own.jpg")
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         response = self.client.patch(
             f"/api/media/photos/{photo.id}/", {"caption": "Updated"}, format="json"
         )
@@ -121,7 +121,7 @@ class PhotoUpdatePermissionTests(TestCase):
 
     def test_partial_update_other_photo_returns_403(self) -> None:
         photo = _create_photo(self.other, object_key="media/photos/user2/other.jpg")
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         response = self.client.patch(
             f"/api/media/photos/{photo.id}/", {"caption": "Hacked"}, format="json"
         )
@@ -148,14 +148,14 @@ class PhotoDestroyPermissionTests(TestCase):
     def test_destroy_own_photo_succeeds(self, mock_storage: Mock) -> None:
         mock_storage.delete.return_value = True
         photo = _create_photo(self.user, object_key="media/photos/user1/own.jpg")
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         response = self.client.delete(f"/api/media/photos/{photo.id}/")
         self.assertEqual(response.status_code, 204)
         self.assertFalse(Photo.objects.filter(id=photo.id).exists())
 
     def test_destroy_other_photo_returns_403(self) -> None:
         photo = _create_photo(self.other, object_key="media/photos/user2/other.jpg")
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.user)  # type: ignore[attr-defined]
         response = self.client.delete(f"/api/media/photos/{photo.id}/")
         self.assertEqual(response.status_code, 403)
         self.assertTrue(Photo.objects.filter(id=photo.id).exists())
@@ -180,13 +180,13 @@ class PhotoStaffOverrideTests(TestCase):
 
     def test_staff_can_retrieve_any_photo(self) -> None:
         photo = _create_photo(self.owner, object_key="media/photos/owner/a.jpg")
-        self.client.force_authenticate(self.staff)
+        self.client.force_authenticate(self.staff)  # type: ignore[attr-defined]
         response = self.client.get(f"/api/media/photos/{photo.id}/")
         self.assertEqual(response.status_code, 200)
 
     def test_staff_can_update_any_photo(self) -> None:
         photo = _create_photo(self.owner, object_key="media/photos/owner/b.jpg")
-        self.client.force_authenticate(self.staff)
+        self.client.force_authenticate(self.staff)  # type: ignore[attr-defined]
         response = self.client.patch(
             f"/api/media/photos/{photo.id}/", {"caption": "Staff edit"}, format="json"
         )
@@ -198,7 +198,7 @@ class PhotoStaffOverrideTests(TestCase):
     def test_staff_can_delete_any_photo(self, mock_storage: Mock) -> None:
         mock_storage.delete.return_value = True
         photo = _create_photo(self.owner, object_key="media/photos/owner/c.jpg")
-        self.client.force_authenticate(self.staff)
+        self.client.force_authenticate(self.staff)  # type: ignore[attr-defined]
         response = self.client.delete(f"/api/media/photos/{photo.id}/")
         self.assertEqual(response.status_code, 204)
         self.assertFalse(Photo.objects.filter(id=photo.id).exists())
@@ -224,13 +224,13 @@ class PhotoPaginationTests(TestCase):
             )
         response = self.client.get("/api/media/photos/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 25)
-        self.assertEqual(len(response.data["results"]), 20)
-        self.assertIsNotNone(response.data["next"])
+        self.assertEqual(response.data["count"], 25)  # type: ignore[attr-defined]
+        self.assertEqual(len(response.data["results"]), 20)  # type: ignore[attr-defined]
+        self.assertIsNotNone(response.data["next"])  # type: ignore[attr-defined]
 
-        response2 = self.client.get(response.data["next"])
-        self.assertEqual(len(response2.data["results"]), 5)
-        self.assertIsNone(response2.data["next"])
+        response2 = self.client.get(response.data["next"])  # type: ignore[attr-defined]
+        self.assertEqual(len(response2.data["results"]), 5)  # type: ignore[attr-defined]
+        self.assertIsNone(response2.data["next"])  # type: ignore[attr-defined]
 
 
 class PhotoOrderingTests(TestCase):
@@ -250,7 +250,7 @@ class PhotoOrderingTests(TestCase):
         _create_photo(self.user, object_key="m/p/3.jpg", taken_on=date(2026, 7, 5))
 
         response = self.client.get("/api/media/photos/")
-        dates = [item["taken_on"] for item in response.data["results"]]
+        dates = [item["taken_on"] for item in response.data["results"]]  # type: ignore[attr-defined]
         self.assertEqual(dates, ["2026-07-10", "2026-07-05", "2026-07-01"])
 
 
@@ -292,13 +292,13 @@ class PhotoFilterTests(TestCase):
 
     def test_filter_taken_from(self) -> None:
         response = self.client.get("/api/media/photos/", {"taken_from": "2026-07-10"})
-        ids = {item["id"] for item in response.data["results"]}
+        ids = {item["id"] for item in response.data["results"]}  # type: ignore[attr-defined]
         self.assertIn(str(self.p2.id), ids)
         self.assertNotIn(str(self.p1.id), ids)
 
     def test_filter_taken_until(self) -> None:
         response = self.client.get("/api/media/photos/", {"taken_until": "2026-07-05"})
-        ids = {item["id"] for item in response.data["results"]}
+        ids = {item["id"] for item in response.data["results"]}  # type: ignore[attr-defined]
         self.assertIn(str(self.p1.id), ids)
         self.assertNotIn(str(self.p2.id), ids)
 
@@ -306,8 +306,8 @@ class PhotoFilterTests(TestCase):
         """Verify uploader filter narrows within the user's own photos."""
         p1 = _create_photo(self.user, caption="Mine 1", object_key="media/photos/uid/a.jpg")
         p2 = _create_photo(self.user, caption="Mine 2", object_key="media/photos/uid/b.jpg")
-        response = self.client.get("/api/media/photos/", {"uploader": self.user.id})
-        ids = {p["id"] for p in response.data["results"]}
+        response = self.client.get("/api/media/photos/", {"uploader": self.user.id})  # type: ignore[arg-type]
+        ids = {p["id"] for p in response.data["results"]}  # type: ignore[attr-defined]
         self.assertIn(str(p1.id), ids)
         self.assertIn(str(p2.id), ids)
 
@@ -322,13 +322,13 @@ class PhotoFilterTests(TestCase):
         )
         EventPhoto.objects.create(event=event, photo=self.p1)
         response = self.client.get("/api/media/photos/", {"event": str(event.id)})
-        ids = {item["id"] for item in response.data["results"]}
+        ids = {item["id"] for item in response.data["results"]}  # type: ignore[attr-defined]
         self.assertIn(str(self.p1.id), ids)
         self.assertNotIn(str(self.p2.id), ids)
 
     def test_filter_search_caption(self) -> None:
         response = self.client.get("/api/media/photos/", {"search": "Beach"})
-        ids = {item["id"] for item in response.data["results"]}
+        ids = {item["id"] for item in response.data["results"]}  # type: ignore[attr-defined]
         self.assertIn(str(self.p1.id), ids)
         self.assertNotIn(str(self.p2.id), ids)
 
