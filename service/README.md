@@ -65,115 +65,31 @@ No modo de desenvolvimento:
 
 ### Subida do ambiente
 
-Comandos minimos para subir o backend em desenvolvimento:
+## Cabulous Events API
 
-1. Rodar o setup completo:
+Three Django apps support the events feature:
 
-```bash
-make setup
-```
+| App | Prefix | Responsibility |
+|---|---|---|
+| `media` | `/api/media/` | Photo upload (signed URL), CRUD, deletion from S3 |
+| `events` | `/api/events/` | Event lifecycle (create/cancel/reactivate/restore), audiences, participants, photos, highlights |
+| `comments` | `/api/comments/` | Threaded comments via GenericForeignKey on any target model |
 
-Esse comando irá:
+### Upload flow (signed URL)
 
-- criar `.env` automaticamente (se ainda nao existir)
-- criar o ambiente virtual `.venv`
-- instalar todas as dependências Python do projeto
-- instalar o hook de `pre-push`
+1. `POST /api/media/photos/upload-urls/` -- server returns presigned PUT URLs
+2. Client uploads each file directly to S3 with `PUT`
+3. `POST /api/media/photos/confirm/` -- server validates MIME, size, and prefix, then creates `Photo` rows
 
-2. Subir a stack:
+**Limits:** 25 MB per file, 50 files per request, image types only (`image/jpeg`, `image/png`, `image/gif`).
 
-```bash
-make up-dev
-```
+### Pagination
 
-Ambiente de desenvolvimento de pé!
+All list endpoints paginate at 20 items per page (DRF `PageNumberPagination`).
 
-### VS Code (recomendado)
+### Admin
 
-Antes de selecionar o interpretador Python, é necessário criar o ambiente virtual do projeto utilizando o `uv`.
-
-Dentro do diretório `service`, execute caso não tenha executado:
-
-```bash
-make setup
-```
-
-Após isso, para completar o setup de desenvolvimento no VS Code:
-
-- selecione o interpretador Python da venv do projeto (`service/.venv`)
-- instale as extensoes recomendadas do workspace (`.vscode/extensions.json`)
-- mantenha `BasedPyright` (`detachhead.basedpyright`) habilitado para experiencia de IDE
-- mantenha `Mypy Type Checker` (`ms-python.mypy-type-checker`) habilitado para analise de tipos do projeto
-
-Com isso, lint, formatacao e analise de codigo ficam padronizados no projeto.
-
-### Hooks Git (pre-push)
-
-Este repositorio usa `pre-push` no push:
-
-- `pre-push`: roda `make lint` somente quando houver mudancas em `service/`
-
-O check completo (`make check`) roda no workflow de CI.
-
-### Workflow
-
-Este projeto utiliza o Git Flow como estratégia de workflow
-
-Inicie com:
-
-```bash
-git flow init
-```
-
-## Servicos disponiveis
-
-Ao subir o ambiente de desenvolvimento, os principais servicos ficam disponiveis assim:
-
-- aplicacao Django: [http://localhost:8000](http://localhost:8000)
-- Django Admin: [http://localhost:8000/admin/](http://localhost:8000/admin/)
-- healthcheck da API: [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
-- Flower: [http://localhost:5555](http://localhost:5555)
-- MinIO API: [http://localhost:9000](http://localhost:9000)
-- MinIO Console: [http://localhost:9001](http://localhost:9001)
-- Postgres exposto localmente na porta `5433`
-- Redis exposto localmente na porta `6380`
-
-## Estrutura da stack
-
-Os servicos principais da stack sao:
-
-- `web`: aplicacao Django
-- `worker`: processamento de tarefas assíncronas
-- `beat`: agendador do Celery
-- `flower`: painel de monitoramento do Celery
-- `minio`: armazenamento de arquivos S3 self-hosted
-- `minio-init`: bootstrap do bucket inicial
-- `db`: banco Postgres
-- `redis`: cache e broker
-
-## Configuracao
-
-As configuracoes da aplicacao sao centralizadas com `pydantic-settings`.
-
-O arquivo `.env.example` mostra os valores esperados para:
-
-- aplicacao Django
-- banco de dados
-- Redis
-- Celery
-- Flower
-
-## Dependencias Python
-
-As dependencias Python sao gerenciadas com `uv`.
-
-Para criar o ambiente virtual `.venv` e instalar as dependencias do projeto, execute:
-
-```bash
-uv sync
-```
-
-Esse comando deve ser executado sempre que o ambiente Python ainda nao existir ou quando houver alteracoes nas dependencias do projeto.
+All three apps register their models in Django Admin. The `events` admin includes an inline for photos, audiences, participants, location, and highlights, plus a "Restore selected events" bulk action that calls the `restore_event` lifecycle service.
 
 ## Comandos do projeto
 

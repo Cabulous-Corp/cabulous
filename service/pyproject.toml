@@ -19,6 +19,7 @@ dependencies = [
     "pydantic-settings>=2.13.1",
     "watchfiles>=1.1.1",
     "requests>=2.33.0",
+    "django-filter>=26.1",
 ]
 
 [dependency-groups]
@@ -38,6 +39,7 @@ dev = [
     "inflection>=0.5.1",
     "uritemplate>=4.2.0",
     "pyyaml>=6.0",
+    "types-django-filter>=26.1.0.20260713",
 ]
 
 [tool.ruff]
@@ -68,8 +70,17 @@ disable_error_code = ["var-annotated"]
 module = [
     "celery",
     "celery.*",
+    "django_filters",
+    "django_filters.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "events.migrations.*",
+    "comments.migrations.*",
+]
+ignore_errors = true
 
 [tool.django-stubs]
 django_settings_module = "cabulous.settings"

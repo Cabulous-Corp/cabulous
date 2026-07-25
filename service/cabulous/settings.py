@@ -28,14 +28,17 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
+    "django_filters",
     "authentication",
     "users",
     "common",
+    "media",
     "monitoring",
     "analytics",
     "communication",
     "events",
     "integrations",
+    "comments",
 ]
 
 if settings.minio.enabled:
@@ -181,6 +184,10 @@ CELERY_BEAT_SCHEDULE = {
     "users_cleanup_magic_links_monthly": {
         "task": "users.tasks.cleanup_magic_links",
         "schedule": crontab(minute=0, hour=4, day_of_month=1),
+    },
+    "events_reconcile_statuses_every_minute": {
+        "task": "events.tasks.reconcile_event_statuses",
+        "schedule": crontab(minute="*"),
     },
 }
 

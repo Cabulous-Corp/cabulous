@@ -1,5 +1,6 @@
 """Tests that verify backend quality Task targets are registered with correct commands."""
 
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -95,7 +96,6 @@ def test_coverage_enables_branch() -> None:
 
 def test_ruff_lints_clean_python_file() -> None:
     """Integration test: ruff lint actually runs on a valid Python file."""
-    import subprocess
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
