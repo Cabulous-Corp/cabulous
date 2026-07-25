@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from typing import Any
 
@@ -102,7 +102,9 @@ class CommentViewSet(
     def perform_destroy(self, instance: Comment) -> None:
         soft_delete_comment(comment=instance)
 
-    def get_serializer_class(self) -> (
+    def get_serializer_class(
+        self,
+    ) -> (
         type[CommentCreateSerializer] | type[CommentReadSerializer] | type[CommentUpdateSerializer]
     ):
         if self.action == "create":

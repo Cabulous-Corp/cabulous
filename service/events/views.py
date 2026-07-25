@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from typing import Any
 
@@ -70,9 +70,9 @@ class EventViewSet(
             qs = qs.exclude(status=EventStatus.CANCELLED)
         return qs
 
-    def get_serializer_class(self) -> (
-        type[EventCreateSerializer] | type[EventReadSerializer] | type[EventUpdateSerializer]
-    ):
+    def get_serializer_class(
+        self,
+    ) -> type[EventCreateSerializer] | type[EventReadSerializer] | type[EventUpdateSerializer]:
         if self.action == "create":
             return EventCreateSerializer
         if self.action in ("update", "partial_update"):
@@ -304,9 +304,7 @@ class EventViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
         row = set_thumbnail(event=event, photo=photo)
-        return Response(
-            EventPhotoReadSerializer(row).data, status=status.HTTP_200_OK
-        )
+        return Response(EventPhotoReadSerializer(row).data, status=status.HTTP_200_OK)
 
     # -------------------------------------------------------------------
     # Highlights
@@ -417,4 +415,3 @@ class EventViewSet(
 
         highlight.refresh_from_db()
         return Response(HighlightReadSerializer(highlight).data)
-
