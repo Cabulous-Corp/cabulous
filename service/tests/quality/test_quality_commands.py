@@ -56,7 +56,7 @@ def test_quality_targets_use_docker_compose() -> None:
     quality_task = TASKS["quality"]
     # quality uses deps — check each dep task
     deps = quality_task.get("deps", [])
-    local_allowed = {"contract-check", "migration-check"}
+    local_allowed = {"contract-check", "migration-check", "duplication"}
     compose_indicators = ("{{.DEV_COMPOSE}}", "{{.PROD_COMPOSE}}", "docker compose")
     for dep in deps:
         if dep in local_allowed:

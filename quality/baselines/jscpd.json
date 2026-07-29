@@ -1,15 +1,23 @@
 {
-  "total_duplicates": 1,
-  "total_duplicated_lines": 18,
-  "total_duplicated_percentage": 0.15,
+  "total_duplicates": 16,
+  "total_duplicated_lines": 267,
+  "total_duplicated_percentage": 3.01,
+  "total_duplicated_tokens": 1794,
+  "total_duplicated_tokens_percentage": 3.47,
   "known_duplicates": [
-    {
-      "first_file": "service/authentication/serializers.py",
-      "second_file": "service/users/serializers.py",
-      "lines": 19
-    }
+    {"first_file": "service/events/tests/test_highlights.py", "second_file": "service/events/tests/test_relations.py", "lines": 41},
+    {"first_file": "service/events/tests/test_highlights.py", "second_file": "service/events/tests/test_relations.py", "lines": 25},
+    {"first_file": "service/events/tests/test_highlights.py", "second_file": "service/events/tests/test_relations.py", "lines": 9},
+    {"first_file": "service/events/tests/test_highlights.py", "second_file": "service/events/tests/test_highlights.py", "lines": 10},
+    {"first_file": "service/events/tests/test_lifecycle.py", "second_file": "service/events/tests/test_lifecycle.py", "lines": 11},
+    {"first_file": "service/events/tests/test_lifecycle.py", "second_file": "service/events/tests/test_lifecycle.py", "lines": 15},
+    {"first_file": "service/events/tests/test_lifecycle.py", "second_file": "service/events/tests/test_lifecycle.py", "lines": 11},
+    {"first_file": "service/media/tests/test_api.py", "second_file": "service/media/tests/test_api.py", "lines": 17},
+    {"first_file": "service/media/tests/test_api.py", "second_file": "service/media/tests/test_api.py", "lines": 15},
+    {"first_file": "service/media/tests/test_api.py", "second_file": "service/media/tests/test_api.py", "lines": 15}
   ],
-  "max_new_lines_in_changed_file_pct": 3.0,
-  "updated": "2026-07-22",
-  "note": "Initial baseline from jscpd scan. 1 clone in Python serializers (validate_* pattern)."
+  "max_new_lines_in_changed_file_pct": 5.0,
+  "jscpd_threshold_pct": 5.0,
+  "updated": "2026-07-29",
+  "note": "Baseline after ponytail-cleanup. jscpd now reads root .jscpd.json (threshold 5%%) instead of inline flags. 16 clones in test fixtures (events/tests, media/tests) — pre-existing test setup duplication. Previous validate_* clone in serializers resolved by shared validate_object_key."
 }

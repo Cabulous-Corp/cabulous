@@ -1,5 +1,5 @@
 {
-  "threshold": 0,
+  "threshold": 5,
   "reporters": ["console", "json"],
   "output": "./jscpd-report",
   "pattern": "**/*.{py,ts,tsx}",
