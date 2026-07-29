@@ -42,6 +42,12 @@ class EventCreateSerializer(serializers.Serializer):
         child=serializers.ChoiceField(choices=Audience.choices),
         min_length=1,
     )
+    host_ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        required=False,
+        default=list,
+        write_only=True,
+    )
     location = EventLocationWriteSerializer(required=False, default=None)
 
     def validate(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -56,6 +62,7 @@ class EventReadSerializer(serializers.ModelSerializer):
     type_color = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
     location = EventLocationReadSerializer(read_only=True)
+    hosts = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -70,6 +77,7 @@ class EventReadSerializer(serializers.ModelSerializer):
             "status",
             "cancelled_at",
             "audiences",
+            "hosts",
             "participants_count",
             "location",
             "thumbnail_url",
@@ -96,6 +104,9 @@ class EventReadSerializer(serializers.ModelSerializer):
                 return p.photo.object_key
         return None
 
+    def get_hosts(self, obj: Event) -> list[dict[str, str]]:
+        return [{"id": str(u.id), "username": u.username} for u in obj.hosts.all()]
+
 
 class EventUpdateSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255, required=False)
@@ -107,6 +118,11 @@ class EventUpdateSerializer(serializers.Serializer):
         child=serializers.ChoiceField(choices=Audience.choices),
         min_length=1,
         required=False,
+    )
+    host_ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        required=False,
+        write_only=True,
     )
     location = EventLocationWriteSerializer(required=False)
 
