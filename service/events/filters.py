@@ -16,6 +16,7 @@ class EventFilter(django_filters.FilterSet):
     audience = django_filters.ChoiceFilter(choices=[], method="filter_by_audience")
     participant = django_filters.UUIDFilter(method="filter_by_participant")
     creator = django_filters.UUIDFilter(field_name="creator_id")
+    host = django_filters.UUIDFilter(method="filter_by_host")
 
     class Meta:
         model = Event
@@ -27,6 +28,7 @@ class EventFilter(django_filters.FilterSet):
             "audience",
             "participant",
             "creator",
+            "host",
         ]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -42,3 +44,6 @@ class EventFilter(django_filters.FilterSet):
 
     def filter_by_participant(self, queryset: QuerySet, _name: str, value: str) -> QuerySet:
         return queryset.filter(participants__user_id=value).distinct()
+
+    def filter_by_host(self, queryset: QuerySet, _name: str, value: str) -> QuerySet:
+        return queryset.filter(hosts__id=value).distinct()

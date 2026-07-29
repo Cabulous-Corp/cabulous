@@ -92,6 +92,7 @@ class EventViewSet(
             event_type=data["type"],
             audiences=data["audiences"],
             location=data.get("location"),
+            host_ids=data.get("host_ids", []),
         )
         read_serializer = EventReadSerializer(event)
         return Response(read_serializer.data, status=status.HTTP_201_CREATED)
@@ -116,6 +117,7 @@ class EventViewSet(
             event_type=data.get("type"),
             audiences=data.get("audiences"),
             location=location_payload,
+            host_ids=data.get("host_ids"),
         )
         event.refresh_from_db()
         read_serializer = EventReadSerializer(event)

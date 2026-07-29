@@ -7,6 +7,7 @@ from django.db import transaction
 from events.enums import EventStatus
 from events.models import Event, EventAudience, EventLocation, EventParticipant
 from events.services.lifecycle import reconcile_event_status
+from events.services.relations import add_participants
 
 if TYPE_CHECKING:
     from users.models import User
@@ -35,6 +36,7 @@ def create_event(
     event_type: str,
     audiences: list[str],
     location: dict[str, object] | None = None,
+    host_ids: list[str] | None = None,
 ) -> Event:
     event = Event.objects.create(  # type: ignore[misc]
         creator=creator,
@@ -49,6 +51,9 @@ def create_event(
     if location is not None:
         _build_location(event, location)
     EventParticipant.objects.create(event=event, user=creator)
+    if host_ids:
+        event.hosts.set(host_ids)
+        add_participants(event=event, user_ids=host_ids)
     return event
 
 
@@ -63,6 +68,7 @@ def update_event(
     event_type: str | None = None,
     audiences: list[str] | None = None,
     location: object = _UNSET,
+    host_ids: list[str] | None = None,
 ) -> Event:
     update_fields: list[str] = []
     if title is not None:
@@ -95,6 +101,10 @@ def update_event(
         EventLocation.objects.filter(event=event).delete()
         if location is not None:
             _build_location(event, location)  # type: ignore[arg-type]
+
+    if host_ids is not None:
+        event.hosts.set(host_ids)
+        add_participants(event=event, user_ids=host_ids)
 
     event = reconcile_event_status(event=event)
     return event
