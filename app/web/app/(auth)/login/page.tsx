@@ -38,7 +38,7 @@ export default function LoginPage() {
     setIsSubmitting(true)
 
     try {
-      const result = await loginAction({ email: values.identifier, password: values.password })
+      const result = await loginAction({ identifier: values.identifier, password: values.password })
       if (!result.error) {
         router.push('/')
       } else {

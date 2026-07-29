@@ -22,7 +22,7 @@ const _beforeRequestHooks: BeforeRequestHook[] = [
     const sessionToken = cookieStore.get(cookieName)
 
     if (sessionToken?.value) {
-      request.headers.set('Cookie', `${cookieName}=${sessionToken.value}`)
+      request.headers.set('Authorization', `Bearer ${sessionToken.value}`)
     }
 
     const reqHeaders = await headers()

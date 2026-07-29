@@ -6,8 +6,8 @@ import { redirect } from 'next/navigation'
 import { cookieName } from '@/lib/config'
 import { loginRequest, fetchSession } from '@/lib/api/auth'
 
-type LoginRequest = { email: string; password: string }
-type SessionUser = { id: string; email: string; username: string }
+type LoginRequest = { identifier: string; password: string }
+type SessionUser = { id: string; email: string; username: string; is_staff: boolean }
 
 export async function loginAction(data: LoginRequest): Promise<{ error?: string }> {
   try {

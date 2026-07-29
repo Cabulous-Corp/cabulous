@@ -5,29 +5,23 @@ import { api } from '@/lib/api'
 import { cookieName } from '@/lib/config'
 import { cookies } from 'next/headers'
 
-type LoginRequest = { email: string; password: string }
-type LoginResponse = { access: string; refresh: string }
-type SessionUser = { id: string; email: string; username: string }
+type LoginRequest = { identifier: string; password: string }
+type LoginResponse = { access: string; refresh: string; user: SessionUser }
+type SessionUser = { id: string; email: string; username: string; is_staff: boolean }
 
 export async function loginRequest(data: LoginRequest): Promise<LoginResponse> {
-  const response = await api.post('api/auth/login/', { json: data })
+  const result = await api.post('api/auth/login/', { json: data }).json<LoginResponse>()
 
-  const setCookieHeader = response.headers.get('set-cookie')
-  if (setCookieHeader) {
-    const cookieStore = await cookies()
-    const match = setCookieHeader.match(new RegExp(`${cookieName}=([^;]+)`))
-    if (match) {
-      cookieStore.set(cookieName, match[1], {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 30,
-      })
-    }
-  }
+  const cookieStore = await cookies()
+  cookieStore.set(cookieName, result.access, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 30,
+  })
 
-  return response.json() as Promise<LoginResponse>
+  return result
 }
 
 export async function fetchSession(): Promise<SessionUser | null> {
