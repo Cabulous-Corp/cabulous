@@ -2,7 +2,6 @@ import { getUser, getUserEvents } from '@/lib/api/users'
 import { verifySessionWithoutRedirect } from '@/actions/session'
 import { ProfileClient } from './_components/ProfileClient'
 import { notFound } from 'next/navigation'
-import type { PaginatedResponse, EventRead } from '@/lib/api/events'
 
 interface Props {
   params: Promise<{ id: string }>
