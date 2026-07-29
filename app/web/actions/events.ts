@@ -13,6 +13,7 @@ export interface CreateEventInput {
   end_at: string
   type: string
   audiences: string[]
+  host_ids?: string[]
   location?: {
     name?: string
     address: string
@@ -30,6 +31,9 @@ export async function createEvent(data: CreateEventInput) {
     end_at: data.end_at,
     type: data.type,
     audiences: data.audiences,
+  }
+  if (data.host_ids && data.host_ids.length > 0) {
+    body.host_ids = data.host_ids
   }
   if (data.location) {
     body.location = data.location

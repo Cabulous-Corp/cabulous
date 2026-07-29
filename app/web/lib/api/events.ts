@@ -18,6 +18,11 @@ export interface EventLocationRead {
   longitude: number
 }
 
+export interface HostRead {
+  id: string
+  username: string
+}
+
 export interface EventRead {
   id: string
   title: string
@@ -32,6 +37,7 @@ export interface EventRead {
   participants_count: number
   location: EventLocationRead | null
   thumbnail_url: string | null
+  hosts: HostRead[]
   created_at: string
   updated_at: string
 }

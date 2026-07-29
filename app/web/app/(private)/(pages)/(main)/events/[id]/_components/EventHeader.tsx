@@ -127,6 +127,20 @@ export function EventHeader({ event, canManage }: Props) {
           </Badge>
         </div>
 
+        {event.hosts && event.hosts.length > 0 && (
+          <p className="text-sm text-muted-foreground mt-1">
+            Anfitriao:{' '}
+            {event.hosts.map((h, i) => (
+              <span key={h.id}>
+                <a href={`/users/${h.id}`} className="hover:underline">
+                  {h.username}
+                </a>
+                {i < event.hosts.length - 1 ? ', ' : ''}
+              </span>
+            ))}
+          </p>
+        )}
+
         <div className="mt-3 space-y-1 text-sm text-muted-foreground">
           <p>
             {format(new Date(event.start_at), "d 'de' MMMM 'de' yyyy 'as' HH:mm", {

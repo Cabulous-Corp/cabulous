@@ -24,12 +24,13 @@ const _editSchema = z
     audiences: z.array(z.string()),
     start_at: z.string(),
     end_at: z.string(),
-    location_name: z.string(),
-    location_address: z.string(),
-    location_latitude: z.number().nullable(),
-    location_longitude: z.number().nullable(),
-  })
-  .partial()
+  location_name: z.string(),
+  location_address: z.string(),
+  location_latitude: z.number().nullable(),
+  location_longitude: z.number().nullable(),
+  host_ids: z.string(),
+})
+.partial()
   .refine(
     (data) => {
       if (data.start_at && data.end_at && new Date(data.end_at) < new Date(data.start_at)) {
@@ -65,6 +66,7 @@ export function EventEditForm({ event, options }: Props) {
       location_address: event.location?.address ?? '',
       location_latitude: event.location?.latitude ?? null,
       location_longitude: event.location?.longitude ?? null,
+      host_ids: event.hosts?.map((h) => h.id).join(', ') ?? '',
     },
   })
 
@@ -89,6 +91,13 @@ export function EventEditForm({ event, options }: Props) {
           latitude: values.location_latitude ?? 0,
           longitude: values.location_longitude ?? 0,
         }
+      }
+
+      const originalHostIds = event.hosts?.map((h) => h.id).join(', ') ?? ''
+      if (values.host_ids !== originalHostIds) {
+        payload.host_ids = values.host_ids
+          ? values.host_ids.split(',').map((s) => s.trim()).filter(Boolean)
+          : []
       }
 
       await updateEvent(event.id, payload)
@@ -184,6 +193,19 @@ export function EventEditForm({ event, options }: Props) {
               ))}
             </div>
           </div>
+
+          <FormField
+            control={form.control}
+            name="host_ids"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Anfitrioes (UUIDs, separados por virgula)</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ''} placeholder="uuid1, uuid2, ..." />
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <FormField

@@ -73,7 +73,9 @@ export function ParticipantsList({ eventId, data, loading, canManage, userId, on
                 {(p.username ?? '?')[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <span className="flex-1 text-sm">{p.username ?? 'Usuario'}</span>
+            <a href={`/users/${p.user}`} className="flex-1 text-sm hover:underline">
+              {p.username ?? 'Usuario'}
+            </a>
             {canManage && p.user !== userId && (
               <Button
                 variant="ghost"

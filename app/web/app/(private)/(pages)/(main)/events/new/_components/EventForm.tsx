@@ -27,6 +27,7 @@ const eventSchema = z.object({
   location_address: z.string(),
   location_latitude: z.number().nullable(),
   location_longitude: z.number().nullable(),
+  host_ids: z.string(),
 }).refine((data) => new Date(data.end_at) >= new Date(data.start_at), {
   message: 'Fim deve ser posterior ao inicio.',
   path: ['end_at'],
@@ -60,6 +61,7 @@ export function EventForm({ options, prefilledDate }: Props) {
       location_address: '',
       location_latitude: null,
       location_longitude: null,
+      host_ids: '',
     },
   })
 
@@ -83,6 +85,9 @@ export function EventForm({ options, prefilledDate }: Props) {
               longitude: values.location_longitude!,
             }
           : null,
+        host_ids: values.host_ids
+          ? values.host_ids.split(',').map((s) => s.trim()).filter(Boolean)
+          : undefined,
       })
     } catch (e: unknown) {
       const err = e as { message?: string }
@@ -210,6 +215,19 @@ export function EventForm({ options, prefilledDate }: Props) {
               )}
             />
           </div>
+
+          <FormField
+            control={form.control}
+            name="host_ids"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Anfitrioes (UUIDs, separados por virgula)</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="uuid1, uuid2, ..." />
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
           <div className="border-t pt-6">
             <h3 className="text-lg font-medium mb-4">Local (opcional)</h3>

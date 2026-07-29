@@ -60,7 +60,7 @@ export function UserMenu() {
         
         {/* System Section */}
         <DropdownMenuLabel className="text-xs text-muted-foreground">Conta</DropdownMenuLabel>
-        <DropdownMenuItem className="gap-2 p-2 cursor-pointer" onClick={() => router.push('/settings/account')}>
+        <DropdownMenuItem className="gap-2 p-2 cursor-pointer" onClick={() => router.push(`/users/${user?.id}`)}>
           <div className="flex size-6 items-center justify-center rounded-md border bg-background">
             <User className="size-4" />
           </div>
