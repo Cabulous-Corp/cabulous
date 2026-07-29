@@ -1,8 +1,11 @@
-export default function OnboardingPage() {
-  // TODO: Implementar a página de Onboarding do zero
-  return (
-    <div className="text-center space-y-4">
-      <h1 className="text-2xl font-bold">Onboarding Page</h1>
-    </div>
-  )
+import { verifySessionWithoutRedirect } from '@/actions/session'
+import { redirect } from 'next/navigation'
+import { OnboardingWizard } from './_components/OnboardingWizard'
+
+export default async function OnboardingPage() {
+  const user = await verifySessionWithoutRedirect()
+  if (user?.onboarding_completed_at) {
+    redirect('/')
+  }
+  return <OnboardingWizard />
 }

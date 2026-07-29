@@ -7,7 +7,13 @@ import { cookies } from 'next/headers'
 
 type LoginRequest = { identifier: string; password: string }
 type LoginResponse = { access: string; refresh: string; user: SessionUser }
-type SessionUser = { id: string; email: string; username: string; is_staff: boolean }
+type SessionUser = {
+  id: string
+  email: string
+  username: string
+  is_staff: boolean
+  onboarding_completed_at: string | null
+}
 
 export async function loginRequest(data: LoginRequest): Promise<LoginResponse> {
   const result = await api.post('api/auth/login/', { json: data }).json<LoginResponse>()

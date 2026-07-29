@@ -7,7 +7,13 @@ import { cookieName } from '@/lib/config'
 import { loginRequest, fetchSession } from '@/lib/api/auth'
 
 type LoginRequest = { identifier: string; password: string }
-type SessionUser = { id: string; email: string; username: string; is_staff: boolean }
+type SessionUser = {
+  id: string
+  email: string
+  username: string
+  is_staff: boolean
+  onboarding_completed_at: string | null
+}
 
 export async function loginAction(data: LoginRequest): Promise<{ error?: string }> {
   try {
@@ -32,6 +38,9 @@ export async function verifySession(): Promise<SessionUser> {
   const user = await fetchSession()
   if (!user) {
     redirect('/login')
+  }
+  if (!user.onboarding_completed_at) {
+    redirect('/onboarding')
   }
   return user
 }
