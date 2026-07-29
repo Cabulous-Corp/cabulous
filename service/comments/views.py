@@ -10,7 +10,6 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from authentication.permissions import IsAuthenticatedWithOnboardingGuard
-from common.pagination import StandardPageNumberPagination
 from events.models import Event
 
 from .models import Comment
@@ -34,7 +33,6 @@ class CommentViewSet(
 ):
     serializer_class = CommentReadSerializer
     permission_classes = [IsAuthenticatedWithOnboardingGuard, CommentPermission]
-    pagination_class = StandardPageNumberPagination
 
     def get_queryset(self) -> Any:
         return Comment.objects.select_related("author", "content_type").order_by("created_at", "id")
@@ -87,8 +85,7 @@ class CommentViewSet(
         serializer = CommentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        parent_id = data.get("parent_id")
-        parent = Comment.objects.get(id=parent_id) if parent_id else None
+        parent = getattr(serializer, "parent_comment", None)
         comment = create_comment(
             author=request.user,
             target_type=data["target_type"],

@@ -1,12 +1,11 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { Layout } from '@/components/layout/Layout'
 import { SidebarSection } from '@/components/layout/types'
-import { MdHome } from 'react-icons/md'
+import { Home } from 'lucide-react'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
   const pathname = usePathname()
 
   // TODO: Implementar links dinâmicos e sessões da sidebar conforme necessário
@@ -16,7 +15,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         {
           label: 'Home',
           href: '/',
-          icon: MdHome,
+          icon: Home,
           end: true,
           active: pathname === '/',
         },
@@ -25,7 +24,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   ]
 
   return (
-    <Layout sidebarSections={sidebarSections} showBackButton={false}>
+    <Layout sidebarSections={sidebarSections}>
       {children}
     </Layout>
   )

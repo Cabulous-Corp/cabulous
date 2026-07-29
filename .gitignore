@@ -2,3 +2,4 @@
 jscpd-report/
 .claude/
 **/__pycache__/
+.superpowers/

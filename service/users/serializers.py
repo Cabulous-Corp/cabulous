@@ -4,7 +4,6 @@ from datetime import timedelta
 from typing import Any
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.files.storage import default_storage
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
@@ -12,7 +11,12 @@ from rest_framework.exceptions import PermissionDenied
 from cabulous.config import get_settings
 from users.models import User, UserMagicLinkToken
 from users.services.upload_signing import UPLOAD_FILE_TYPES
-from users.validators import clean_discord_username, clean_phone_number, clean_username
+from users.validators import (
+    clean_discord_username,
+    clean_phone_number,
+    clean_username,
+    validate_object_key,
+)
 
 SELF_EDITABLE_FIELDS = {
     "username",
@@ -135,38 +139,16 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(exc.messages) from exc
 
     def validate_avatar_key(self, value: str) -> str:
-        if not value:
-            return ""
-
-        target_user = self.instance
-        if target_user is None:
-            raise serializers.ValidationError(
-                "Avatar upload is not supported during user creation."
-            )
-
-        expected_prefix = f"users/{target_user.id}/avatar"
-        if not value.startswith(expected_prefix):
-            raise serializers.ValidationError("Invalid avatar object key for this user.")
-        if not default_storage.exists(value):
-            raise serializers.ValidationError("Uploaded avatar object was not found.")
-        return value
+        try:
+            return validate_object_key(value, self.instance, "avatar")
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages) from exc
 
     def validate_banner_key(self, value: str) -> str:
-        if not value:
-            return ""
-
-        target_user = self.instance
-        if target_user is None:
-            raise serializers.ValidationError(
-                "Banner upload is not supported during user creation."
-            )
-
-        expected_prefix = f"users/{target_user.id}/banner"
-        if not value.startswith(expected_prefix):
-            raise serializers.ValidationError("Invalid banner object key for this user.")
-        if not default_storage.exists(value):
-            raise serializers.ValidationError("Uploaded banner object was not found.")
-        return value
+        try:
+            return validate_object_key(value, self.instance, "banner")
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages) from exc
 
     def create(self, validated_data: dict) -> User:
         request = self.context.get("request")

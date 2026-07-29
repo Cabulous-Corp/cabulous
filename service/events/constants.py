@@ -1,4 +1,4 @@
-from .enums import EventType, Public
+from .enums import EventType
 
 EVENT_TYPE_COLOR_MAP = {
     EventType.UNIVERSITY_PARTY: "#FF5733",
@@ -14,11 +14,4 @@ EVENT_TYPE_COLOR_MAP = {
     EventType.TRIP: "#16A085",
     EventType.CABULOUS: "#8E44AD",
     EventType.CINEMA: "#2E86C1",
-}
-
-PUBLIC_COLOR_MAP = {
-    Public.ILUMINADOS: "#F1C40F",
-    Public.VOYEURS: "#9B59B6",
-    Public.ELETRONICOS: "#1ABC9C",
-    Public.OTHERS: "#BDC3C7",
 }

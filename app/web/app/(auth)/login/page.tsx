@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
-import { BiSolidLockAlt } from 'react-icons/bi'
-import { MdEmail } from 'react-icons/md'
+import { Lock, Mail } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
@@ -79,7 +78,7 @@ export default function LoginPage() {
                       id="identifier"
                       type="text"
                       placeholder="Email/User"
-                      startAdornment={<MdEmail />}
+                      startAdornment={<Mail />}
                       error={fieldState.error?.message}
                     />
                   </FormControl>
@@ -102,7 +101,7 @@ export default function LoginPage() {
                       id="password"
                       type="password"
                       placeholder="Password"
-                      startAdornment={<BiSolidLockAlt />}
+                      startAdornment={<Lock />}
                       error={fieldState.error?.message}
                     />
                   </FormControl>

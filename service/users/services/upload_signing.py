@@ -1,28 +1,20 @@
 from pathlib import Path
 from typing import Final
 
-import boto3
 from django.core.exceptions import ValidationError
-from django.core.files.storage import default_storage
-from mypy_boto3_s3.client import S3Client
 
 from cabulous.config import get_settings
+from media.services.presign import (
+    build_s3_client as _build_s3_client,
+)
+from media.services.presign import (
+    presigned_put_url,
+    signed_upload_response,
+)
 from users.models import User, user_avatar_upload_to, user_banner_upload_to
 
-SIGNED_URL_EXPIRES_IN_SECONDS: Final[int] = 300
 AVATAR_ALLOWED_EXTENSIONS: Final[set[str]] = {".jpg", ".jpeg", ".png", ".webp"}
 UPLOAD_FILE_TYPES: Final[set[str]] = {"avatar", "banner"}
-
-
-def _build_s3_client(endpoint_url: str) -> S3Client:
-    settings = get_settings()
-    return boto3.client(
-        "s3",
-        endpoint_url=endpoint_url,
-        aws_access_key_id=settings.minio.access_key,
-        aws_secret_access_key=settings.minio.secret_key,
-        region_name=settings.minio.region_name,
-    )
 
 
 def _validate_upload_type(file_type: str) -> str:
@@ -52,14 +44,6 @@ def build_user_upload_key(user: User, file_type: str, filename: str, content_typ
     raise ValidationError("Unsupported upload file type.")
 
 
-def _build_storage_object_key(object_key: str) -> str:
-    storage_location = str(getattr(default_storage, "location", "") or "").strip("/")
-    normalized_key = object_key.strip("/")
-    if storage_location:
-        return f"{storage_location}/{normalized_key}"
-    return normalized_key
-
-
 def generate_upload_signed_url(
     *,
     user: User,
@@ -79,20 +63,14 @@ def generate_upload_signed_url(
     )
     # Signed URLs must use the public endpoint so the frontend/browser can reach MinIO.
     s3_client = _build_s3_client(settings.minio.public_endpoint)
-    storage_object_key = _build_storage_object_key(object_key)
-    upload_url = s3_client.generate_presigned_url(
-        ClientMethod="put_object",
-        Params={
-            "Bucket": settings.minio.bucket_name,
-            "Key": storage_object_key,
-            "ContentType": content_type,
-        },
-        ExpiresIn=SIGNED_URL_EXPIRES_IN_SECONDS,
+    upload_url = presigned_put_url(
+        s3_client=s3_client,
+        bucket_name=settings.minio.bucket_name,
+        object_key=object_key,
+        content_type=content_type,
     )
-    return {
-        "upload_url": upload_url,
-        "method": "PUT",
-        "headers": {"Content-Type": content_type},
-        "object_key": object_key,
-        "expires_in": SIGNED_URL_EXPIRES_IN_SECONDS,
-    }
+    return signed_upload_response(
+        object_key=object_key,
+        content_type=content_type,
+        upload_url=upload_url,
+    )

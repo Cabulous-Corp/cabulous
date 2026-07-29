@@ -11,7 +11,6 @@ from rest_framework.viewsets import GenericViewSet
 
 from authentication.permissions import IsAuthenticatedWithOnboardingGuard
 from common.filter_backends import DjangoFilterBackend
-from common.pagination import StandardPageNumberPagination
 from events.enums import Audience, EventStatus, EventType
 from events.filters import EventFilter
 from events.models import Event, EventParticipant, EventPhoto, Highlight
@@ -42,6 +41,10 @@ from events.services.relations import (
 from media.models import Photo
 
 
+def _can_edit_highlight(user: Any, event: Event, highlight: Highlight) -> bool:
+    return user.is_staff or event.creator_id == user.id or highlight.author_id == user.id
+
+
 class EventViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -52,7 +55,6 @@ class EventViewSet(
 ):
     serializer_class = EventReadSerializer
     permission_classes = [IsAuthenticatedWithOnboardingGuard]
-    pagination_class = StandardPageNumberPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = EventFilter
     search_fields = ["title", "description"]
@@ -383,11 +385,7 @@ class EventViewSet(
 
         if request.method == "DELETE":
             # creator/staff can delete any; author can delete own
-            if not (
-                request.user.is_staff
-                or event.creator_id == request.user.id
-                or highlight.author_id == request.user.id
-            ):
+            if not _can_edit_highlight(request.user, event, highlight):
                 raise PermissionDenied(
                     {"detail": "You do not have permission to delete this highlight."}
                 )
@@ -396,11 +394,7 @@ class EventViewSet(
 
         # PATCH
         # creator/staff can edit any; author can edit own
-        if not (
-            request.user.is_staff
-            or event.creator_id == request.user.id
-            or highlight.author_id == request.user.id
-        ):
+        if not _can_edit_highlight(request.user, event, highlight):
             raise PermissionDenied({"detail": "You do not have permission to edit this highlight."})
 
         serializer = HighlightWriteSerializer(data=request.data, partial=True)

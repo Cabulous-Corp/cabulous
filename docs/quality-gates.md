@@ -10,51 +10,29 @@ O Cabulous possui um sistema de quality gates que garante que violacoes de quali
 
 ```bash
 # Todos os checks de qualidade de uma vez
-make service quality
+task service:quality
 
 # Individualmente:
-make service lint          # Ruff check + format check
-make service typecheck     # Mypy
-make service test-ci       # Pytest
-make service coverage      # Cobertura com pytest-cov
-make service function-length  # Flake8 C901/MFL000 (max 50 linhas)
-make service duplication      # jscpd (duplicacao de codigo)
-make service contract-check   # Comparacao OpenAPI vs baseline
+task service:lint            # Ruff check + format check
+task service:typecheck       # Mypy
+task service:test-ci         # Pytest
+task service:coverage        # Cobertura com pytest-cov
+task service:function-length # Flake8 C901/MFL000 (max 50 linhas)
+task service:duplication     # jscpd (duplicacao de codigo)
+task service:contract-check  # Comparacao OpenAPI vs baseline
 ```
 
 ### Frontend (app/web/)
 
 ```bash
 # Todos os checks de qualidade de uma vez
-make app quality
+task app:quality
 
 # Individualmente:
-make app lint        # ESLint
-make app typecheck   # tsc --noEmit
-make app test        # Vitest
-make app test:coverage  # Vitest com cobertura
-```
-
-### Scripts de Qualidade (repo root)
-
-```bash
-# Comparar baseline de duplicacao com relatorio atual
-python3 scripts/quality/compare-baseline.py \
-    quality/baselines/jscpd.json \
-    report.json
-
-# Validar waivers de seguranca e OpenAPI
-python3 scripts/quality/compare-baseline.py \
-    quality/baselines/jscpd.json \
-    report.json \
-    --security-suppressions quality/exceptions/security-suppressions.yaml \
-    --openapi-waivers quality/exceptions/openapi-waivers.yaml
-
-# Executar testes dos gates (aceitacao)
-bash scripts/quality/tests/test_gate_fixtures.sh
-
-# Executar testes unitarios dos scripts de qualidade
-python3 -m pytest scripts/quality/tests/ -v
+task app:lint        # ESLint
+task app:typecheck   # tsc --noEmit
+task app:test        # Vitest
+task app:coverage    # Vitest com cobertura
 ```
 
 ## Interpretacao de Artefatos
@@ -64,9 +42,10 @@ python3 -m pytest scripts/quality/tests/ -v
 | Arquivo | O que controla |
 |---------|---------------|
 | `jscpd.json` | Total de clones, linhas duplicadas, percentual, e lista de duplicatas conhecidas |
-| `python-function-length.json` | Max 50 linhas por funcao, complexidade McCabe max 10 |
-| `python-coverage.json` | Cobertura minima branch 35% (atual: ~26%) |
-| `frontend-coverage.json` | Cobertura minima 20% |
+
+Os limites reais de cobertura e tamanho de funcao vivem em `service/pyproject.toml`
+(`[tool.coverage.report]` e `[tool.flake8]`) e na configuracao do Vitest em `app/web/`,
+nao em arquivos de baseline separados.
 
 ### Excecoes (`quality/exceptions/`)
 
@@ -85,7 +64,7 @@ python3 -m pytest scripts/quality/tests/ -v
 
 | Artefato | Job CI |
 |----------|--------|
-| `report.json` (jscpd) | backend-duplication |
+| `jscpd-report/` (jscpd) | backend-duplication |
 | `coverage.json` (pytest) | backend-test |
 | `semgrep.sarif` | semgrep |
 | `migration-check.txt` | backend-migration |
@@ -107,11 +86,11 @@ O baseline em `quality/baselines/jscpd.json` define:
 - `known_duplicates`: lista de duplicatas ja conhecidas (aceitas)
 - `max_new_lines_in_changed_file_pct`: maximo de novas linhas duplicadas em um arquivo alterado (3%)
 
-Se um PR introduce novas duplicatas ou amplia duplicatas existentes, o gate falha.
+Se um PR introduz novas duplicatas ou amplia duplicatas existentes, o gate falha.
 
 ### Para atualizar o baseline
 
-1. Execute a verificacao local: `make service duplication`
+1. Execute a verificacao local: `task service:duplication`
 2. Analise se as novas violacoes sao aceitaveis
 3. Atualize o JSON em `quality/baselines/jscpd.json`
 4. Commit o baseline junto com a mudanca de codigo
@@ -150,14 +129,16 @@ Para suprimir um finding de seguranca (ex: gitleaks):
 ```
 
 2. **Limite rigido**: expiracao maxima de 90 dias a partir da data de criacao
-3. Expiracoes sao validadas pelo script `compare-baseline.py`
+3. Expiracoes de waivers OpenAPI sao validadas por `scripts/quality/check-openapi.sh`
+   durante o `backend-contract`; supressoes de seguranca sao revisadas manualmente
+   (os gates de seguranca gitleaks/semgrep sao observacionais).
 
 ### Regras de Expiracao
 
 | Tipo | Limite | Validacao |
 |------|--------|-----------|
-| Waiver OpenAPI | Sem limite fixo | Deve ter data futura |
-| Supressao Seguranca | Max 90 dias | Validado por `compare-baseline.py` |
+| Waiver OpenAPI | Sem limite fixo | `check-openapi.sh` (data futura) |
+| Supressao Seguranca | Max 90 dias | Revisao manual |
 | Ambos | Obrigatorio ter `expires` | Campo nao pode ser vazio |
 
 ## Promocao: Semgrep e E2E
@@ -194,29 +175,7 @@ Jobs bloqueantes (falham o PR):
 Jobs observacionais (nao falham o PR):
 - `semgrep`
 
-### quality-scheduled.yml (Semanal)
-
-- `mutation-backend`: testes de mutacao (Domingo 06:00 UTC)
-
 ### codeql.yml e scorecard.yml
 
 - Executados apenas via schedule + workflow_dispatch
 - Pesados: nao devem rodar em cada PR
-
-## Fixtures de Teste
-
-Os fixtures em `quality/fixtures/` sao usados para testar que os gates funcionam corretamente:
-
-| Fixture | Gate testado | O que verifica |
-|---------|-------------|----------------|
-| `over-limit.py` | function-length | Funcao de 51 linhas (limite: 50) |
-| `duplicate-a.ts` + `duplicate-b.ts` | duplication | Codigo clonado entre arquivos |
-
-**Importante**: fixtures sao excluidos da varredura de producao:
-- `.jscpd.json`: `**/fixtures/**` no ignore
-- `pyproject.toml`: `*/fixtures/*` no extend-exclude do ruff
-
-Para executar os testes de aceitacao:
-```bash
-bash scripts/quality/tests/test_gate_fixtures.sh
-```

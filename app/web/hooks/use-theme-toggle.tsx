@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
-import { MdDarkMode, MdLightMode } from 'react-icons/md'
+import { Moon, Sun } from 'lucide-react'
 
 const INPUTABLE_TAGS = ['INPUT', 'TEXTAREA', 'SELECT']
 
@@ -30,7 +30,7 @@ export function useThemeToggle() {
 
         toast(`Tema alterado para ${next === 'dark' ? 'escuro' : 'claro'}`, {
           duration: 2000,
-          icon: next === 'dark' ? <MdDarkMode /> : <MdLightMode />,
+          icon: next === 'dark' ? <Moon /> : <Sun />,
         })
       }
     }
