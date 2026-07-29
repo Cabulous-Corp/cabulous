@@ -537,7 +537,7 @@ class EventQueryCountTests(TestCase):
                 start_at=timezone.now() + timedelta(days=i),
                 end_at=timezone.now() + timedelta(days=i, hours=1),
             )
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             response = self.client.get("/api/events/")
         self.assertEqual(len(response.data["results"]), 10)  # type: ignore[attr-defined]
 

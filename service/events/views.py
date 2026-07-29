@@ -62,7 +62,7 @@ class EventViewSet(
     def get_queryset(self) -> Any:
         qs = (
             Event.objects.select_related("creator", "location")
-            .prefetch_related("audiences", "participants", "photos__photo")
+            .prefetch_related("audiences", "participants", "photos__photo", "hosts")
             .distinct()
         )
         # Hide cancelled events from default list; status filter can still surface them

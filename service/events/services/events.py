@@ -52,7 +52,7 @@ def create_event(
         _build_location(event, location)
     EventParticipant.objects.create(event=event, user=creator)
     if host_ids:
-        event.hosts.set(host_ids)
+        event.hosts.set(host_ids)  # type: ignore[arg-type]
         add_participants(event=event, user_ids=host_ids)
     return event
 
@@ -103,7 +103,7 @@ def update_event(
             _build_location(event, location)  # type: ignore[arg-type]
 
     if host_ids is not None:
-        event.hosts.set(host_ids)
+        event.hosts.set(host_ids)  # type: ignore[arg-type]
         add_participants(event=event, user_ids=host_ids)
 
     event = reconcile_event_status(event=event)
