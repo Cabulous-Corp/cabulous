@@ -28,13 +28,32 @@ export function StepPreview({ onBack, onComplete, submitting, error }: Props) {
       <Card className="p-6 space-y-4">
         <div className="flex items-center gap-4">
           <Avatar className="size-16">
-            <AvatarFallback className="text-lg">{initials || '?'}</AvatarFallback>
+            {values.avatar_key ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`${process.env.NEXT_PUBLIC_MEDIA_URL ?? ''}${values.avatar_key}`}
+                alt=""
+                className="size-full object-cover rounded-full"
+              />
+            ) : (
+              <AvatarFallback className="text-lg">{initials || '?'}</AvatarFallback>
+            )}
           </Avatar>
           <div>
             <h3 className="font-semibold text-lg">{values.first_name} {values.last_name}</h3>
             <p className="text-sm text-muted-foreground">@{values.username}</p>
           </div>
         </div>
+        {values.banner_key && (
+          <div className="h-24 rounded-lg overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${process.env.NEXT_PUBLIC_MEDIA_URL ?? ''}${values.banner_key}`}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
         {values.bio && <p className="text-sm">{values.bio}</p>}
         <div className="text-xs text-muted-foreground space-y-0.5">
           <p>{values.email}</p>
