@@ -27,6 +27,8 @@ export function StepProfile({ onNext }: Props) {
 
   const uploadFile = useCallback(
     async (file: File, type: 'avatar' | 'banner', setPreview: (s: string) => void, setLoading: (b: boolean) => void) => {
+      // Show preview immediately before upload
+      setPreview(URL.createObjectURL(file))
       setLoading(true)
       try {
         const signed = await getSignedUploadUrl(type, file.name, file.type)
@@ -36,10 +38,8 @@ export function StepProfile({ onNext }: Props) {
         const res = await fetch(signed.url, { method: 'POST', body: fd })
         if (!res.ok) throw new Error('Upload failed')
         setValue(type === 'avatar' ? 'avatar_key' : 'banner_key', signed.object_key)
-        const url = URL.createObjectURL(file)
-        setPreview(url)
       } catch {
-        // ponytail: add toast
+        // ponytail: add toast error
       } finally {
         setLoading(false)
       }
