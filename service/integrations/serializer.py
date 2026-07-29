@@ -19,22 +19,14 @@ def extract_issue_references(text: str | None) -> list[int]:
     return [int(number) for number in re.findall(r"#(\d+)", text)]
 
 
-class GithubUserSerializer(serializers.Serializer):
-    login = serializers.CharField()
-
-
-class GithubLabelSerializer(serializers.Serializer):
-    name = serializers.CharField()
-
-
 class GithubIssueSerializer(serializers.Serializer):
     number = serializers.IntegerField()
     title = serializers.CharField(allow_blank=True, allow_null=True, required=False)
-    assignees = GithubUserSerializer(many=True, required=False, default=list)
-    labels = GithubLabelSerializer(many=True, required=False, default=list)
+    assignees = serializers.ListField(child=serializers.DictField(), required=False, default=list)
+    labels = serializers.ListField(child=serializers.DictField(), required=False, default=list)
     type = serializers.DictField(required=False, allow_null=True)
     parent_issue_url = serializers.URLField(required=False, allow_null=True)
-    user = GithubUserSerializer()
+    user = serializers.DictField()
     html_url = serializers.URLField(required=False, allow_null=True)
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -54,8 +46,8 @@ class GithubIssueSerializer(serializers.Serializer):
 class GithubPullRequestSerializer(serializers.Serializer):
     number = serializers.IntegerField()
     title = serializers.CharField(allow_blank=True, allow_null=True, required=False)
-    user = GithubUserSerializer()
-    assignees = GithubUserSerializer(many=True, required=False, default=list)
+    user = serializers.DictField()
+    assignees = serializers.ListField(child=serializers.DictField(), required=False, default=list)
     merged = serializers.BooleanField(required=False, default=False)
     body = serializers.CharField(allow_blank=True, allow_null=True, required=False)
     head = serializers.DictField()
@@ -80,6 +72,113 @@ class GithubPullRequestSerializer(serializers.Serializer):
         }
 
 
+def _build_issues(payload: dict[str, Any]) -> dict[str, Any]:
+    if "action" not in payload or "issue" not in payload:
+        raise serializers.ValidationError(
+            {"payload": "For issues event, payload must contain 'action' and 'issue'."}
+        )
+
+    action = payload["action"]
+    if action not in {"assigned", "unassigned", "closed", "opened", "edited"}:
+        return {"event_name": "ignored"}
+
+    parser = GithubIssueSerializer(data=payload["issue"])
+    parser.is_valid(raise_exception=True)
+    parsed = cast(dict[str, Any], parser.validated_data)
+
+    base = {
+        "issue_number": parsed.get("number"),
+        "title": parsed.get("title"),
+        "url": parsed.get("url"),
+        "labels": parsed.get("labels", []),
+        "issue_type": parsed.get("issue_type"),
+        "parent_issue_url": parsed.get("parent_issue_url"),
+    }
+
+    if action in {"assigned", "unassigned"}:
+        return {
+            "event_name": f"issue_{action}",
+            "assignee": payload.get("assignee", {}).get("login"),
+            **base,
+        }
+    if action == "closed":
+        return {"event_name": "issue_closed", **base}
+    return {
+        "event_name": f"issue_{'created' if action == 'opened' else 'updated'}",
+        "assignees": parsed.get("assignees", []),
+        **base,
+    }
+
+
+def _build_pull_request(payload: dict[str, Any]) -> dict[str, Any]:
+    if "action" not in payload or "pull_request" not in payload:
+        raise serializers.ValidationError(
+            {
+                "payload": (
+                    "For pull_request event, payload must contain 'action' and 'pull_request'."
+                )
+            }
+        )
+
+    action = payload["action"]
+    if action not in {"assigned", "unassigned", "opened", "edited", "closed"}:
+        return {"event_name": "ignored"}
+
+    pr_data = payload["pull_request"]
+    if action in {"assigned", "unassigned"}:
+        return {
+            "event_name": f"pr_{action}",
+            "pr_number": pr_data.get("number"),
+            "assignee": payload.get("assignee", {}).get("login"),
+        }
+
+    parser = GithubPullRequestSerializer(data=pr_data)
+    parser.is_valid(raise_exception=True)
+    parsed = cast(dict[str, Any], parser.validated_data)
+    parsed["url"] = pr_data.get("html_url")
+
+    if action == "closed":
+        event_name = "pr_merged" if parsed.get("merged") else "pr_closed"
+    else:
+        event_name = "pr_created" if action == "opened" else "pr_updated"
+
+    return {"event_name": event_name, "pull_request": parsed}
+
+
+def _build_projects_v2_item(payload: dict[str, Any]) -> dict[str, Any]:
+    if "action" not in payload or "projects_v2_item" not in payload:
+        raise serializers.ValidationError(
+            {
+                "payload": (
+                    "For projects_v2_item event, payload must contain "
+                    "'action' and 'projects_v2_item'."
+                )
+            }
+        )
+
+    action = payload["action"]
+    item = payload["projects_v2_item"]
+    if action != "edited" or item.get("content_type") != "Issue":
+        return {"event_name": "ignored"}
+
+    changes = payload.get("changes", {}).get("field_value", {})
+    return {
+        "event_name": "project_item_edited",
+        "content_node_id": item.get("content_node_id"),
+        "from_status": changes.get("from", {}).get("name"),
+        "from_color": changes.get("from", {}).get("color"),
+        "to_status": changes.get("to", {}).get("name"),
+        "to_color": changes.get("to", {}).get("color"),
+    }
+
+
+ACTION_BUILDERS = {
+    "issues": _build_issues,
+    "pull_request": _build_pull_request,
+    "projects_v2_item": _build_projects_v2_item,
+}
+
+
 class GithubWebhookSerializer(serializers.Serializer):
     """Validate and normalize incoming GitHub webhook payloads."""
 
@@ -95,135 +194,9 @@ class GithubWebhookSerializer(serializers.Serializer):
         event = attrs["event"]
         payload = cast(dict[str, Any], attrs["payload"])
 
-        # Enforce a minimal shape per event before parsing.
-        if event == "issues":
-            if "action" not in payload or "issue" not in payload:
-                raise serializers.ValidationError(
-                    {"payload": "For issues event, payload must contain 'action' and 'issue'."}
-                )
-
-            action = payload["action"]
-            issue_data = payload["issue"]
-
-            if action in ("assigned", "unassigned"):
-                assignee_login = payload.get("assignee", {}).get("login")
-
-                issue_serializer = GithubIssueSerializer(data=issue_data)
-                issue_serializer.is_valid(raise_exception=True)
-                parsed_issue = cast(dict[str, Any], issue_serializer.validated_data)
-
-                attrs["normalized"] = {
-                    "event_name": f"issue_{action}",
-                    "issue_number": parsed_issue.get("number"),
-                    "assignee": assignee_login,
-                    "title": parsed_issue.get("title"),
-                    "url": parsed_issue.get("url"),
-                    "labels": parsed_issue.get("labels", []),
-                    "issue_type": parsed_issue.get("issue_type"),
-                    "parent_issue_url": parsed_issue.get("parent_issue_url"),
-                }
-            elif action == "closed":
-                issue_serializer = GithubIssueSerializer(data=issue_data)
-                issue_serializer.is_valid(raise_exception=True)
-                parsed_issue = cast(dict[str, Any], issue_serializer.validated_data)
-
-                attrs["normalized"] = {
-                    "event_name": "issue_closed",
-                    "issue_number": parsed_issue.get("number"),
-                    "title": parsed_issue.get("title"),
-                    "url": parsed_issue.get("url"),
-                    "labels": parsed_issue.get("labels", []),
-                    "issue_type": parsed_issue.get("issue_type"),
-                    "parent_issue_url": parsed_issue.get("parent_issue_url"),
-                }
-            elif action in ("opened", "edited"):
-                issue_serializer = GithubIssueSerializer(data=issue_data)
-                issue_serializer.is_valid(raise_exception=True)
-                parsed_issue = cast(dict[str, Any], issue_serializer.validated_data)
-
-                attrs["normalized"] = {
-                    "event_name": f"issue_{'created' if action == 'opened' else 'updated'}",
-                    "issue_number": parsed_issue.get("number"),
-                    "title": parsed_issue.get("title"),
-                    "url": parsed_issue.get("url"),
-                    "labels": parsed_issue.get("labels", []),
-                    "issue_type": parsed_issue.get("issue_type"),
-                    "parent_issue_url": parsed_issue.get("parent_issue_url"),
-                    "assignees": parsed_issue.get("assignees", []),
-                }
-            else:
-                attrs["normalized"] = {"event_name": "ignored"}
-
-        elif event == "pull_request":
-            if "action" not in payload or "pull_request" not in payload:
-                raise serializers.ValidationError(
-                    {
-                        "payload": (
-                            "For pull_request event, payload must contain "
-                            "'action' and 'pull_request'."
-                        )
-                    }
-                )
-
-            action = payload["action"]
-            pr_data = payload["pull_request"]
-
-            if action in ("assigned", "unassigned"):
-                assignee_login = payload.get("assignee", {}).get("login")
-                attrs["normalized"] = {
-                    "event_name": f"pr_{action}",
-                    "pr_number": pr_data.get("number"),
-                    "assignee": assignee_login,
-                }
-            elif action in ("opened", "edited", "closed"):
-                pr_serializer = GithubPullRequestSerializer(data=pr_data)
-                pr_serializer.is_valid(raise_exception=True)
-                parsed_pr = cast(dict[str, Any], pr_serializer.validated_data)
-
-                parsed_pr["url"] = pr_data.get("html_url")
-
-                if action == "closed":
-                    event_name = "pr_merged" if parsed_pr.get("merged") else "pr_closed"
-                    attrs["normalized"] = {"event_name": event_name, "pull_request": parsed_pr}
-                else:
-                    event_name = "pr_created" if action == "opened" else "pr_updated"
-                    attrs["normalized"] = {"event_name": event_name, "pull_request": parsed_pr}
-            else:
-                attrs["normalized"] = {"event_name": "ignored"}
-
-        elif event == "projects_v2_item":
-            if "action" not in payload or "projects_v2_item" not in payload:
-                raise serializers.ValidationError(
-                    {
-                        "payload": (
-                            "For projects_v2_item event, payload must contain "
-                            "'action' and 'projects_v2_item'."
-                        )
-                    }
-                )
-
-            action = payload["action"]
-            item_data = payload["projects_v2_item"]
-
-            if action == "edited" and item_data.get("content_type") == "Issue":
-                content_node_id = item_data.get("content_node_id")
-
-                changes_field = payload.get("changes", {}).get("field_value", {})
-                from_status = changes_field.get("from", {}).get("name")
-                from_color = changes_field.get("from", {}).get("color")
-                to_status = changes_field.get("to", {}).get("name")
-                to_color = changes_field.get("to", {}).get("color")
-
-                attrs["normalized"] = {
-                    "event_name": "project_item_edited",
-                    "content_node_id": content_node_id,
-                    "from_status": from_status,
-                    "from_color": from_color,
-                    "to_status": to_status,
-                    "to_color": to_color,
-                }
-            else:
-                attrs["normalized"] = {"event_name": "ignored"}
+        builder = ACTION_BUILDERS.get(event)
+        if builder is not None:
+            attrs["normalized"] = builder(payload)
 
         normalized = attrs.get("normalized", {})
         if normalized and normalized.get("event_name") != "ignored":

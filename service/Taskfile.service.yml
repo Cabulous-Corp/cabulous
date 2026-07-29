@@ -200,7 +200,7 @@ tasks:
     cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} flake8 --select=C901,MFL000 --max-complexity=10 --max-function-length=50 --exclude=''*/migrations/*,*/tests/*,*/.venv/*,*/__pycache__/*,*/site-packages/*'' .'
   duplication:
     desc: "Run jscpd duplication check"
-    cmd: '{{.DEV_COMPOSE}} run --rm web {{.UV_RUN}} jscpd --min-lines 5 --min-tokens 50 --reporters console .'
+    cmd: 'npx jscpd --config ../.jscpd.json .'
   migration-check:
     desc: "Check pending migrations (skipped locally, runs in CI)"
     cmd: 'echo "migration-check: skipped locally (requires PostgreSQL); runs in CI"'

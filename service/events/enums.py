@@ -17,13 +17,6 @@ class EventType(models.TextChoices):
     CINEMA = "CINEMA", "Cinema"
 
 
-class Public(models.TextChoices):
-    ILUMINADOS = "ILUMINADOS", "Iluminados"
-    VOYEURS = "VOYEURS", "Voyeurs"
-    ELETRONICOS = "ELETRONICOS", "Eletrônicos"
-    OTHERS = "OTHERS", "Outros"
-
-
 class Audience(models.TextChoices):
     ILUMINADOS = "ILUMINADOS", "Iluminados"
     VOYEURS = "VOYEURS", "Voyeurs"

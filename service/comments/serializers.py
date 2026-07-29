@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 
@@ -15,20 +14,22 @@ class CommentCreateSerializer(serializers.Serializer):
     target_id = serializers.UUIDField()
     body = serializers.CharField(max_length=5000)
     parent_id = serializers.UUIDField(required=False, allow_null=True, default=None)
+    parent_comment: Comment | None
 
     def validate_parent_id(self, parent_id: str | None) -> str | None:
+        self.parent_comment = None
         if parent_id is None:
             return None
         try:
-            Comment.objects.get(id=parent_id)
+            comment = Comment.objects.get(id=parent_id)
         except Comment.DoesNotExist:
             raise serializers.ValidationError("Comment not found.") from None
+        self.parent_comment = comment
         return parent_id
 
     def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         target_type = data["target_type"]
         target_id = data["target_id"]
-        parent_id = data.get("parent_id")
 
         # Validate target_type is allowed
         model_cls = resolve_target_model(target_type)
@@ -39,20 +40,7 @@ class CommentCreateSerializer(serializers.Serializer):
         except model_cls.DoesNotExist:  # type: ignore[attr-defined]
             raise NotFound("Target not found.") from None
 
-        # Validate parent belongs to same target if provided
-        if parent_id is not None:
-            target_ct = ContentType.objects.get_for_model(model_cls)
-            try:
-                parent = Comment.objects.get(id=parent_id)
-            except Comment.DoesNotExist:
-                raise serializers.ValidationError(  # noqa: B904
-                    {"parent_id": "Comment not found."}
-                ) from None
-            if parent.content_type_id != target_ct.id or parent.object_id != target_id:
-                raise serializers.ValidationError(
-                    {"parent_id": "Parent comment must share the same target."}
-                )
-
+        # Parent target-match check is enforced by the service layer (create_comment).
         return data
 
 

@@ -1,198 +1,199 @@
 import datetime
 import os
+from collections.abc import Callable
 from typing import Any
 
 import requests
 
 from communication.models.discord_message import DiscordEmbed, DiscordEmbedAuthor, DiscordEmbedField
-from communication.services import DiscordService
+
+_COLOR_EMOJIS = {
+    "RED": "🔴",
+    "BLUE": "🔵",
+    "GREEN": "🟢",
+    "YELLOW": "🟡",
+    "PURPLE": "🟣",
+    "ORANGE": "🟠",
+    "BROWN": "🟤",
+    "PINK": "🌸",
+    "GRAY": "⚪",
+    "BLACK": "⚫",
+    "WHITE": "⚪",
+    "MINT": "🍃",
+}
+
+_COLOR_ANSI = {
+    "RED": "31",
+    "BLUE": "34",
+    "GREEN": "32",
+    "YELLOW": "33",
+    "PURPLE": "35",
+    "ORANGE": "33",
+    "BROWN": "30",
+    "PINK": "35",
+    "GRAY": "30",
+    "BLACK": "30",
+    "WHITE": "37",
+    "MINT": "32",
+}
 
 
-def _is_http_url_candidate(value: str) -> bool:
-    return value.startswith("http://") or value.startswith("https://")
+def _issue_ctx(data: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "issue_number": data.get("issue_number"),
+        "title": data.get("title"),
+        "url": data.get("url"),
+    }
+
+
+def _issue_assigned_ctx(data: dict[str, Any]) -> dict[str, Any]:
+    return {**_issue_ctx(data), "assignee": data.get("assignee")}
+
+
+def _pr_ctx(data: dict[str, Any]) -> dict[str, Any]:
+    pr = data.get("pull_request", {})
+    number = pr.get("number") or data.get("pr_number")
+    title = pr.get("title", "")
+    url = pr.get("url", "")
+    return {"pr_number": number, "linked_title": f"[{title}]({url})" if url else title}
+
+
+def _pr_assigned_ctx(data: dict[str, Any]) -> dict[str, Any]:
+    return {**_pr_ctx(data), "assignee": data.get("assignee")}
+
+
+# ponytail: per-event formatter table replaces the per-event if/return switch.
+EVENT_FORMATTERS: dict[str, tuple[str, str, int, Callable[[dict[str, Any]], dict[str, Any]]]] = {
+    "issue_created": (
+        "🆕 New Issue: #{issue_number}",
+        "[{title}]({url})",
+        5763719,
+        _issue_ctx,
+    ),
+    "issue_updated": (
+        "✏️ Issue #{issue_number} Updated",
+        "[{title}]({url})",
+        16776960,
+        _issue_ctx,
+    ),
+    "issue_closed": (
+        "✅ Issue #{issue_number} Closed",
+        "[{title}]({url})",
+        15548997,
+        _issue_ctx,
+    ),
+    "issue_assigned": (
+        "👤 Issue #{issue_number} Assigned to {assignee}",
+        "Open issue: [{title}]({url})",
+        3447003,
+        _issue_assigned_ctx,
+    ),
+    "issue_unassigned": (
+        "➖ Issue #{issue_number} Unassigned from {assignee}",
+        "Open issue: [{title}]({url})",
+        9807270,
+        _issue_assigned_ctx,
+    ),
+    "pr_created": (
+        "🔄 New Pull Request: #{pr_number}",
+        "{linked_title}",
+        5763719,
+        _pr_ctx,
+    ),
+    "pr_merged": (
+        "🎉 Pull Request Merged: #{pr_number}",
+        "{linked_title}",
+        10181046,
+        _pr_ctx,
+    ),
+    "pr_closed": (
+        "❌ Pull Request Closed: #{pr_number}",
+        "{linked_title}",
+        15548997,
+        _pr_ctx,
+    ),
+    "pr_assigned": (
+        "👤 Pull Request Assigned: #{pr_number}",
+        "**{assignee}** was assigned to PR {linked_title}",
+        3447003,
+        _pr_assigned_ctx,
+    ),
+    "pr_unassigned": (
+        "➖ Pull Request Unassigned: #{pr_number}",
+        "**{assignee}** was unassigned from PR {linked_title}",
+        9807270,
+        _pr_assigned_ctx,
+    ),
+}
+
+
+def _colored_block(status: str | None, color: str) -> str:
+    upper = color.upper() if color else ""
+    emoji = _COLOR_EMOJIS.get(upper, "") if color else ""
+    ansi = _COLOR_ANSI.get(upper, "0") if color else "0"
+    return f"```ansi\n\u001b[0;{ansi}m{emoji} {status}\u001b[0m\n```"
+
+
+def _project_item_embed(
+    data: dict[str, Any], author: DiscordEmbedAuthor, ts: str
+) -> DiscordEmbed | None:
+    from_status = data.get("from_status")
+    to_status = data.get("to_status")
+    if from_status is None and to_status is None:
+        return None
+
+    node_id = data.get("content_node_id")
+    token = os.getenv("GITHUB__ACCESS_TOKEN") or os.getenv("GITHUB_TOKEN") or ""
+    issue_title = fetch_github_node_title(node_id, token)
+
+    from_block = _colored_block(from_status, data.get("from_color", ""))
+    to_block = _colored_block(to_status, data.get("to_color", ""))
+    cursor = "         v"
+
+    return DiscordEmbed(
+        title=f"Issue: {issue_title}",
+        description="🔄 Status changed",
+        color=5814783,
+        author=author,
+        timestamp=ts,
+        fields=[
+            DiscordEmbedField(
+                name="Transition",
+                value=f"{from_block}{cursor}\n{to_block}",
+            ),
+        ],
+    )
 
 
 def build_discord_embed(data: dict[str, Any]) -> DiscordEmbed | None:
     """Build a Discord embed based on normalized GitHub webhook data."""
     event_name = data.get("event_name")
-
     if not event_name or event_name == "ignored":
         return None
 
     sender = data.get("sender", "User")
-    sender_avatar_url = data.get("sender_avatar_url", "")
-
+    avatar = data.get("sender_avatar_url", "")
     timestamp_iso = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     author = (
-        DiscordEmbedAuthor(name=sender, icon_url=sender_avatar_url)
-        if sender_avatar_url and _is_http_url_candidate(sender_avatar_url)
+        DiscordEmbedAuthor(name=sender, icon_url=avatar)
+        if avatar and avatar.startswith(("http://", "https://"))
         else DiscordEmbedAuthor(name=sender)
     )
 
-    if event_name.startswith("issue_"):
-        issue_number = data.get("issue_number")
-        title = data.get("title")
-        url = data.get("url")
-
-        if event_name == "issue_created":
-            return DiscordEmbed(
-                title=f"🆕 New Issue: #{issue_number}",
-                description=f"[{title}]({url})",
-                color=5763719,
-                author=author,
-                timestamp=timestamp_iso,
-            )
-        if event_name == "issue_updated":
-            return DiscordEmbed(
-                title=f"✏️ Issue #{issue_number} Updated",
-                description=f"[{title}]({url})",
-                color=16776960,
-                author=author,
-                timestamp=timestamp_iso,
-            )
-        if event_name == "issue_closed":
-            return DiscordEmbed(
-                title=f"✅ Issue #{issue_number} Closed",
-                description=f"[{title}]({url})",
-                color=15548997,
-                author=author,
-                timestamp=timestamp_iso,
-            )
-        if event_name == "issue_assigned":
-            assignee = data.get("assignee")
-            return DiscordEmbed(
-                title=f"👤 Issue #{issue_number} Assigned to {assignee}",
-                description=f"Open issue: [{title}]({url})",
-                color=3447003,
-                author=author,
-                timestamp=timestamp_iso,
-            )
-        if event_name == "issue_unassigned":
-            assignee = data.get("assignee")
-            return DiscordEmbed(
-                title=f"➖ Issue #{issue_number} Unassigned from {assignee}",
-                description=f"Open issue: [{title}]({url})",
-                color=9807270,
-                author=author,
-                timestamp=timestamp_iso,
-            )
-
-    if event_name.startswith("pr_"):
-        pull_request = data.get("pull_request", {})
-        pr_number = pull_request.get("number") or data.get("pr_number")
-        title = pull_request.get("title", "")
-        url = pull_request.get("url", "")
-        linked_title = f"[{title}]({url})" if url else title
-
-        if event_name == "pr_created":
-            return DiscordEmbed(
-                title=f"🔄 New Pull Request: #{pr_number}",
-                description=linked_title,
-                color=5763719,
-                author=author,
-                timestamp=timestamp_iso,
-            )
-        if event_name == "pr_merged":
-            return DiscordEmbed(
-                title=f"🎉 Pull Request Merged: #{pr_number}",
-                description=linked_title,
-                color=10181046,
-                author=author,
-                timestamp=timestamp_iso,
-            )
-        if event_name == "pr_closed":
-            return DiscordEmbed(
-                title=f"❌ Pull Request Closed: #{pr_number}",
-                description=linked_title,
-                color=15548997,
-                author=author,
-                timestamp=timestamp_iso,
-            )
-        if event_name == "pr_assigned":
-            assignee = data.get("assignee")
-            return DiscordEmbed(
-                title=f"👤 Pull Request Assigned: #{pr_number}",
-                description=f"**{assignee}** was assigned to PR {linked_title}",
-                color=3447003,
-                author=author,
-                timestamp=timestamp_iso,
-            )
-        if event_name == "pr_unassigned":
-            assignee = data.get("assignee")
-            return DiscordEmbed(
-                title=f"➖ Pull Request Unassigned: #{pr_number}",
-                description=f"**{assignee}** was unassigned from PR {linked_title}",
-                color=9807270,
-                author=author,
-                timestamp=timestamp_iso,
-            )
-
     if event_name == "project_item_edited":
-        node_id = data.get("content_node_id")
+        return _project_item_embed(data, author, timestamp_iso)
 
-        github_token = os.getenv("GITHUB__ACCESS_TOKEN") or os.getenv("GITHUB_TOKEN") or ""
-        issue_title = fetch_github_node_title(node_id, github_token)
-        from_status = data.get("from_status")
-        to_status = data.get("to_status")
-        from_color = data.get("from_color", "")
-        to_color = data.get("to_color", "")
-        centered_arrow = "         v"
-
-        if from_status is None and to_status is None:
-            return None
-
-        color_emojis = {
-            "RED": "🔴",
-            "BLUE": "🔵",
-            "GREEN": "🟢",
-            "YELLOW": "🟡",
-            "PURPLE": "🟣",
-            "ORANGE": "🟠",
-            "BROWN": "🟤",
-            "PINK": "🌸",
-            "GRAY": "⚪",
-            "BLACK": "⚫",
-            "WHITE": "⚪",
-            "MINT": "🍃",
-        }
-
-        color_ansi = {
-            "RED": "31",
-            "BLUE": "34",
-            "GREEN": "32",
-            "YELLOW": "33",
-            "PURPLE": "35",
-            "ORANGE": "33",
-            "BROWN": "30",
-            "PINK": "35",
-            "GRAY": "30",
-            "BLACK": "30",
-            "WHITE": "37",
-            "MINT": "32",
-        }
-
-        from_color_tag = color_emojis.get(from_color.upper(), "") if from_color else ""
-        to_color_tag = color_emojis.get(to_color.upper(), "") if to_color else ""
-
-        from_ansi = color_ansi.get(from_color.upper(), "0") if from_color else "0"
-        to_ansi = color_ansi.get(to_color.upper(), "0") if to_color else "0"
-
-        from_text = f"```ansi\n\u001b[0;{from_ansi}m{from_color_tag} {from_status}\u001b[0m\n```"
-        to_text = f"```ansi\n\u001b[0;{to_ansi}m{to_color_tag} {to_status}\u001b[0m\n```"
-
+    fmt = EVENT_FORMATTERS.get(event_name)
+    if fmt is not None:
+        title_tpl, desc_tpl, color, ctx_fn = fmt
+        ctx = ctx_fn(data)
         return DiscordEmbed(
-            title=f"Issue: {issue_title}",
-            description="🔄 Status changed",
-            color=5814783,
+            title=title_tpl.format(**ctx),
+            description=desc_tpl.format(**ctx),
+            color=color,
             author=author,
             timestamp=timestamp_iso,
-            fields=[
-                DiscordEmbedField(
-                    name="Transition",
-                    value=f"{from_text}{centered_arrow}\n{to_text}",
-                ),
-            ],
         )
 
     return DiscordEmbed(
@@ -202,23 +203,6 @@ def build_discord_embed(data: dict[str, Any]) -> DiscordEmbed | None:
         author=author,
         timestamp=timestamp_iso,
     )
-
-
-def post_to_discord(webhook_url: str, validated_data: dict[str, Any]) -> bool:
-    embed = build_discord_embed(validated_data)
-
-    if embed is None:
-        return False
-
-    try:
-        DiscordService.send_channel_embed(
-            webhook_url=webhook_url,
-            embeds=[embed],
-        )
-        return True
-    except Exception as exc:
-        print(f"Error sending message to Discord: {exc}")
-        return False
 
 
 def fetch_github_node_title(node_id: str | None, github_token: str) -> str:

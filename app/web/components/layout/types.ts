@@ -1,4 +1,4 @@
-// ponytail: using React.ComponentType to cover both lucide-react and react-icons icon families
+// ponytail: using React.ComponentType to cover lucide-react icon family
 import type { ComponentType } from 'react'
 
 export type IconComponent = ComponentType<{ className?: string }>
