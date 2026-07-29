@@ -51,6 +51,11 @@ class Event(AbstractSoftDeleteModel, BaseModel):
         related_name="created_events",
         verbose_name="Criador",
     )
+    hosts = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="hosted_events",
+        blank=True,
+    )
     title = models.CharField(max_length=255, verbose_name="Título")
     description = models.TextField(blank=True, verbose_name="Descrição")
     start_at = models.DateTimeField(verbose_name="Início do evento")
