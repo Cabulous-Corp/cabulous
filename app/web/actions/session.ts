@@ -54,6 +54,10 @@ export async function verifySessionWithoutRedirect(): Promise<SessionUser | null
   return user
 }
 
+export async function getSession(): Promise<SessionUser | null> {
+  return fetchSession()
+}
+
 export async function verifySessionForOnboarding(): Promise<SessionUser | null> {
   return fetchSession()
 }
