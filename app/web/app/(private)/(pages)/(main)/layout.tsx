@@ -1,32 +1,9 @@
-'use client'
+import { verifySessionWithoutRedirect } from '@/actions/session'
+import { MainLayoutClient } from './main-layout-client'
 
-import { useRouter, usePathname } from 'next/navigation'
-import { Layout } from '@/components/layout/Layout'
-import { SidebarSection } from '@/components/layout/types'
-import { MdHome } from 'react-icons/md'
+type SessionUser = { id: string; email: string; username: string }
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
-  const pathname = usePathname()
-
-  // TODO: Implementar links dinâmicos e sessões da sidebar conforme necessário
-  const sidebarSections: SidebarSection[] = [
-    {
-      items: [
-        {
-          label: 'Home',
-          href: '/',
-          icon: MdHome,
-          end: true,
-          active: pathname === '/',
-        },
-      ],
-    },
-  ]
-
-  return (
-    <Layout sidebarSections={sidebarSections} showBackButton={false}>
-      {children}
-    </Layout>
-  )
+export default async function MainLayout({ children }: { children: React.ReactNode }) {
+  const user = await verifySessionWithoutRedirect()
+  return <MainLayoutClient user={user}>{children}</MainLayoutClient>
 }

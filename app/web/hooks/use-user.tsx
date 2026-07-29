@@ -1,27 +1,17 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { createContext, useContext } from 'react'
 
-// TODO: Implementar Contexto de Usuário real no futuro
-/*
-interface UserContextType {
-  user: any | null
-}
-// ... (resto do contexto comentado)
-*/
+type SessionUser = { id: string; email: string; username: string } | null
 
-// Implementação provisória mínima ("mock") para não quebrar a aplicação
-export function UserProvider({ children }: { children: ReactNode }) {
-  return <>{children}</>
+type UserContextType = { user: SessionUser }
+
+const UserContext = createContext<UserContextType>({ user: null })
+
+export function UserProvider({ children, user }: { children: React.ReactNode; user: SessionUser }) {
+  return <UserContext.Provider value={{ user }}>{children}</UserContext.Provider>
 }
 
-export function useUser() {
-  // Retorna um usuário mockado para a interface funcionar sem workspaces
-  return {
-    user: {
-      name: 'Usuário',
-      email: 'usuario@cabulous.com',
-      avatar: null,
-    },
-  }
+export function useUser(): UserContextType {
+  return useContext(UserContext)
 }

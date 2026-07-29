@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
+import { loginAction } from '@/actions/session'
 import { BiSolidLockAlt } from 'react-icons/bi'
 import { MdEmail } from 'react-icons/md'
 
@@ -29,30 +31,21 @@ export default function LoginPage() {
     mode: 'onSubmit',
   })
 
+  const router = useRouter()
+
   const handleLogin = async (values: LoginFormValues) => {
     setSubmitError('')
     setIsSubmitting(true)
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: values.identifier, password: values.password }),
-      })
-      const data = await res.json()
-
-      if (!res.ok) {
-        setSubmitError('Nao foi possivel entrar. Confira suas credenciais e tente novamente.')
-        console.log('Erro:', data)
-        return
+      const result = await loginAction({ email: values.identifier, password: values.password })
+      if (!result.error) {
+        router.push('/')
+      } else {
+        setSubmitError(result.error ?? 'Erro desconhecido.')
       }
-
-      console.log('Login bem-sucedido:', data)
-    } catch (error) {
+    } catch {
       setSubmitError('Erro inesperado ao tentar entrar. Tente novamente em instantes.')
-      console.error('Erro', error)
     } finally {
       setIsSubmitting(false)
     }

@@ -43,12 +43,12 @@ export function UserMenu() {
             <div className="flex items-center gap-3">
               <Avatar className="flex items-center justify-center h-6 w-6 rounded-md border border-border/50 bg-primary/20 p-0.5 shrink-0">
                 <AvatarFallback className="rounded-md text-[10px] pb-[1px] font-bold font-mono">
-                  {user?.name?.[0]?.toUpperCase() || 'U'}
+                  {user?.username?.[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start text-left">
                 <span className="text-xs font-bold tracking-tight text-sidebar-foreground group-hover:text-primary transition-colors">
-                  {user?.name || 'Minha Conta'}
+                  {user?.username || 'Minha Conta'}
                 </span>
               </div>
             </div>

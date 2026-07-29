@@ -12,7 +12,6 @@ import { logger } from '@/lib/logger'
 
 const _beforeRequestHooks: BeforeRequestHook[] = [
   async (request: Request) => {
-    // Set a traceId for the request
     const traceId = crypto.randomUUID()
     request.headers.set('X-Trace-Id', traceId)
     request.headers.set('X-Timestamp', Date.now().toString())
@@ -26,7 +25,6 @@ const _beforeRequestHooks: BeforeRequestHook[] = [
       request.headers.set('Cookie', `${cookieName}=${sessionToken.value}`)
     }
 
-    // Forward User-Agent and IP to the backend
     const reqHeaders = await headers()
     const userAgent = reqHeaders.get('user-agent')
     const forwardedFor = reqHeaders.get('x-forwarded-for')
@@ -82,7 +80,7 @@ const _beforeErrorHooks: BeforeErrorHook[] = [
 export const api = ky.create({
   prefixUrl: serverUrl,
   timeout: 60000,
-  throwHttpErrors: true, // Don't change this, we handle errors in the actions directly
+  throwHttpErrors: true,
   hooks: {
     beforeRequest: _beforeRequestHooks,
     afterResponse: _afterResponseHooks,
@@ -93,7 +91,7 @@ export const api = ky.create({
 export const chat = ky.create({
   prefixUrl: chatUrl,
   timeout: 60000,
-  throwHttpErrors: true, // Don't change this, we handle errors in the actions directly
+  throwHttpErrors: true,
   hooks: {
     beforeRequest: _beforeRequestHooks,
     afterResponse: _afterResponseHooks,
