@@ -28,13 +28,13 @@ export function StepPreview({ onBack, onComplete, submitting, error }: Props) {
       <Card className="p-6 space-y-4">
         <div className="flex items-center gap-4">
           <Avatar className="size-16">
-            {values.avatar_key ? (
+            {values.avatar_preview ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={`${process.env.NEXT_PUBLIC_MEDIA_URL ?? ''}${values.avatar_key}`}
-                alt=""
-                className="size-full object-cover rounded-full"
-              />
+              <img src={values.avatar_preview} alt="" className="size-full object-cover rounded-full" />
+            ) : values.avatar_key ? (
+              <AvatarFallback className="text-lg bg-primary/10">
+                <span className="text-primary text-xs">OK</span>
+              </AvatarFallback>
             ) : (
               <AvatarFallback className="text-lg">{initials || '?'}</AvatarFallback>
             )}
@@ -44,14 +44,10 @@ export function StepPreview({ onBack, onComplete, submitting, error }: Props) {
             <p className="text-sm text-muted-foreground">@{values.username}</p>
           </div>
         </div>
-        {values.banner_key && (
-          <div className="h-24 rounded-lg overflow-hidden">
+        {values.banner_preview && (
+          <div className="h-24 rounded-lg overflow-hidden -mx-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`${process.env.NEXT_PUBLIC_MEDIA_URL ?? ''}${values.banner_key}`}
-              alt=""
-              className="w-full h-full object-cover"
-            />
+            <img src={values.banner_preview} alt="" className="w-full h-full object-cover" />
           </div>
         )}
         {values.bio && <p className="text-sm">{values.bio}</p>}

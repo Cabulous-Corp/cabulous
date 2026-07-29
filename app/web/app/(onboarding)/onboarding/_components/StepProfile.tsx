@@ -27,8 +27,9 @@ export function StepProfile({ onNext }: Props) {
 
   const uploadFile = useCallback(
     async (file: File, type: 'avatar' | 'banner', setPreview: (s: string) => void, setLoading: (b: boolean) => void) => {
-      // Show preview immediately before upload
-      setPreview(URL.createObjectURL(file))
+      const blobUrl = URL.createObjectURL(file)
+      setPreview(blobUrl)
+      setValue(type === 'avatar' ? 'avatar_preview' : 'banner_preview', blobUrl)
       setLoading(true)
       try {
         const signed = await getSignedUploadUrl(type, file.name, file.type)
