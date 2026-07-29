@@ -46,7 +46,12 @@ export async function verifySession(): Promise<SessionUser> {
 }
 
 export async function verifySessionWithoutRedirect(): Promise<SessionUser | null> {
-  return fetchSession()
+  const user = await fetchSession()
+  if (!user) return null
+  if (!user.onboarding_completed_at) {
+    redirect('/onboarding')
+  }
+  return user
 }
 
 export async function verifySessionForOnboarding(): Promise<SessionUser | null> {
