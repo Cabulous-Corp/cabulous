@@ -1,5 +1,4 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Bell } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface Notification {

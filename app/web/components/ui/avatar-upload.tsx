@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { User, Loader2, Pencil, Trash2, Upload } from 'lucide-react'
@@ -48,7 +48,7 @@ export function AvatarUpload({ initialAvatarUrl, userName }: AvatarUploadProps) 
       const objectUrl = URL.createObjectURL(file)
       setAvatarUrl(objectUrl)
       toast.success('Avatar atualizado com sucesso!')
-    } catch (error) {
+    } catch {
       toast.error('Erro ao fazer upload do avatar')
     } finally {
       setIsUploading(false)
@@ -61,7 +61,7 @@ export function AvatarUpload({ initialAvatarUrl, userName }: AvatarUploadProps) 
       // await removeAvatar()
       setAvatarUrl(null)
       toast.success('Avatar removido com sucesso!')
-    } catch (error) {
+    } catch {
       toast.error('Erro ao remover o avatar')
     } finally {
       setIsUploading(false)

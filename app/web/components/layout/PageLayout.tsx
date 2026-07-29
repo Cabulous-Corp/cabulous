@@ -8,10 +8,9 @@ type PageLayoutProps = React.PropsWithChildren<{
   description?: string
   actions?: ReactNode
   titleSlot?: ReactNode
-  preTitle?: ReactNode
 }>
 
-export function PageLayout({ title, preTitle, description, actions, titleSlot, children }: PageLayoutProps) {
+export function PageLayout({ title, description, actions, titleSlot, children }: PageLayoutProps) {
   const container = {
     hidden: { opacity: 0 },
     show: {

@@ -8,7 +8,7 @@ import { MdDarkMode, MdLightMode } from 'react-icons/md'
 const INPUTABLE_TAGS = ['INPUT', 'TEXTAREA', 'SELECT']
 
 export function useThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { setTheme, resolvedTheme } = useTheme()
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {

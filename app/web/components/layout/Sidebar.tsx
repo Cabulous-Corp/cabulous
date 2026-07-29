@@ -6,7 +6,6 @@ import { UserMenu } from './UserMenu'
 import Logo from '@/components/logo'
 import { SidebarSection } from './types'
 import { SidebarItemNode } from './SidebarItemNode'
-import { ArrowLeft } from 'lucide-react'
 import BackButton from '@/components/back-button'
 
 import React, { Suspense } from 'react'

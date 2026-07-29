@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useMemo, Suspense } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { addMonths, subMonths, addWeeks, subWeeks, startOfWeek, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { EventRead, EventOptions } from '@/lib/api/events'
@@ -20,7 +21,6 @@ interface Props {
 
 export function CalendarView({ initialEvents, options }: Props) {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [events] = useState(initialEvents)
   const [viewType, setViewType] = useState<CalendarViewType>('month')
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -44,15 +44,17 @@ export function CalendarView({ initialEvents, options }: Props) {
     <div className="flex flex-col h-full gap-4 p-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Eventos</h1>
-        <a
+        <Link
           href="/events/new"
           className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-4 text-sm font-medium"
         >
           Novo Evento
-        </a>
+        </Link>
       </div>
 
-      <CalendarFilters options={options} />
+      <Suspense fallback={<div>Carregando filtros...</div>}>
+        <CalendarFilters options={options} />
+      </Suspense>
 
       <CalendarNavigation
         title={title}

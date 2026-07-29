@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { EventRead } from '@/lib/api/events'
 import { EventHeader } from './EventHeader'
 import { EventTabs } from './EventTabs'
@@ -12,13 +11,12 @@ interface Props {
   userId: string | null
 }
 
-export function EventDetailClient({ event: initialEvent, isCreator, isStaff, userId }: Props) {
-  const [event, setEvent] = useState(initialEvent)
+export function EventDetailClient({ event, isCreator, isStaff, userId }: Props) {
   const canManage = isCreator || isStaff
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <EventHeader event={event} canManage={canManage} onEventUpdate={setEvent} />
+      <EventHeader event={event} canManage={canManage} />
       <div className="mt-6">
         <EventTabs event={event} canManage={canManage} userId={userId} />
       </div>

@@ -18,6 +18,7 @@ export function HighlightCard({ highlight, canManage, userId }: Props) {
       {highlight.photos.length > 0 && (
         <div className="flex gap-2 mt-3">
           {highlight.photos.map((photo) => (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               key={photo.id}
               src={`${mediaUrl}${photo.object_key}`}

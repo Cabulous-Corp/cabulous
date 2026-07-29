@@ -15,10 +15,9 @@ import { uploadAndSetThumbnail } from '@/actions/photos'
 interface Props {
   event: EventRead
   canManage: boolean
-  onEventUpdate: (event: EventRead) => void
 }
 
-export function EventHeader({ event, canManage, onEventUpdate }: Props) {
+export function EventHeader({ event, canManage }: Props) {
   const router = useRouter()
   const [uploading, setUploading] = useState(false)
 
@@ -67,6 +66,7 @@ export function EventHeader({ event, canManage, onEventUpdate }: Props) {
       <div className="w-48 shrink-0">
         {event.thumbnail_url ? (
           <div className="relative group rounded-lg overflow-hidden aspect-video">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`${process.env.NEXT_PUBLIC_MEDIA_URL ?? ''}${event.thumbnail_url}`}
               alt={event.title}

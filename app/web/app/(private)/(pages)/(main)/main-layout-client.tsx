@@ -7,7 +7,7 @@ import { MdHome, MdEvent } from 'react-icons/md'
 
 type SessionUser = { id: string; email: string; username: string } | null
 
-export function MainLayoutClient({ children, user }: { children: React.ReactNode; user: SessionUser }) {
+export function MainLayoutClient({ children }: { children: React.ReactNode; user: SessionUser }) {
   const pathname = usePathname()
 
   const sidebarSections: SidebarSection[] = [

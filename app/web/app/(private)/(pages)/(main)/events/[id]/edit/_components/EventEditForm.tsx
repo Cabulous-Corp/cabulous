@@ -15,7 +15,8 @@ import { updateEvent } from '@/actions/events'
 import type { EventRead, EventOptions } from '@/lib/api/events'
 import { LocationPicker } from '../../../new/_components/LocationPicker'
 
-const editSchema = z
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _editSchema = z
   .object({
     title: z.string().max(255),
     description: z.string(),
@@ -39,7 +40,7 @@ const editSchema = z
     { message: 'Fim deve ser posterior ao inicio.', path: ['end_at'] },
   )
 
-type EditFormValues = z.infer<typeof editSchema>
+type EditFormValues = z.infer<typeof _editSchema>
 
 interface Props {
   event: EventRead

@@ -16,7 +16,7 @@ interface NavLinkProps {
 }
 
 const NavLink = forwardRef<HTMLAnchorElement, NavLinkProps>(
-  ({ className, activeClassName, pendingClassName, href, target, end, children, ...props }, ref) => {
+  ({ className, activeClassName, href, target, end, children, ...props }, ref) => {
     const pathname = usePathname()
     const isActive = end ? pathname === href : pathname === href || pathname.startsWith(href + '/')
 

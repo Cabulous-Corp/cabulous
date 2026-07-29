@@ -76,6 +76,7 @@ export function PhotosGrid({ eventId, data, loading, canManage, onRefresh }: Pro
             key={photo.id}
             className="relative group aspect-square rounded-lg overflow-hidden"
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`${mediaUrl}${photo.object_key}`}
               alt=""
