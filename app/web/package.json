@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest --run",
     "test:coverage": "vitest --run --coverage",
+    "test:e2e": "playwright test",
     "quality": "bun run lint && bun run typecheck && bun run build && bun run test:coverage",
     "generate-api-types": "curl http://localhost:8000/openapi.json > openapi.json && bunx openapi-typescript openapi.json -o ./types/api.d.ts && rm openapi.json"
   },
