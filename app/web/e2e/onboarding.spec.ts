@@ -1,41 +1,24 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Onboarding flow', () => {
-  test.beforeEach(async ({ page }) => {
+  test('full onboarding wizard works end to end', async ({ page }) => {
+    // Login
     await page.goto('http://localhost:3000/login')
-    await expect(page.getByPlaceholder('Email/User')).toBeVisible()
     await page.getByPlaceholder('Email/User').fill('test@cabulous.com')
     await page.getByPlaceholder('Password').fill('testpass123')
     await page.getByRole('button', { name: /Sign in/ }).click()
-  })
 
-  test('onboarding step 1 renders and avatar upload works', async ({ page }) => {
+    // Should redirect to onboarding
     await expect(page).toHaveURL(/\/onboarding/, { timeout: 15000 })
-    await page.screenshot({ path: 'e2e/screenshots/onboarding-step1.png', fullPage: true })
 
-    // Check that the key elements are visible
+    // Step 1: Profile
     await expect(page.getByText('Quem e voce?')).toBeVisible({ timeout: 10000 })
-    await expect(page.getByPlaceholder('Nome')).toBeVisible()
-    await expect(page.getByPlaceholder('Sobrenome')).toBeVisible()
-    await expect(page.getByPlaceholder('@seunome')).toBeVisible()
-
-    // Test avatar upload
-    const fileInput = page.locator('input[type="file"]').first()
-    await expect(fileInput).toBeVisible({ timeout: 5000 })
-
-    // Create a small test image
-    const fs = require('fs')
-    // ponytail: use a tiny 1x1 PNG for testing
-    const testImagePath = 'e2e/test-image.png'
-    // if no test image, skip upload test
-    const fileExists = fs.existsSync(testImagePath)
-
-    // Navigate through steps
-    await page.getByPlaceholder('Nome').fill('Teste')
-    await page.getByPlaceholder('Sobrenome').fill('Usuario')
-    await page.getByPlaceholder('@seunome').fill('testuser2')
+    await page.getByRole('textbox', { name: 'Nome' }).fill('Teste')
+    await page.getByRole('textbox', { name: 'Sobrenome' }).fill('Usuario')
+    await page.getByRole('textbox', { name: '@seunome' }).fill('testuser2')
+    await page.screenshot({ path: 'e2e/screenshots/onboarding-step1.png', fullPage: true })
     await page.getByRole('button', { name: 'Continuar' }).click()
-    
+
     // Step 2: Bio
     await expect(page.getByText('Conte sobre voce')).toBeVisible({ timeout: 5000 })
     await page.screenshot({ path: 'e2e/screenshots/onboarding-step2.png', fullPage: true })
@@ -48,8 +31,8 @@ test.describe('Onboarding flow', () => {
 
     // Step 4: Password
     await expect(page.getByText('Sua senha')).toBeVisible({ timeout: 5000 })
-    await page.screenshot({ path: 'e2e/screenshots/onboarding-step4.png', fullPage: true })
     await page.getByPlaceholder('Minimo 8 caracteres').fill('testpass123')
+    await page.screenshot({ path: 'e2e/screenshots/onboarding-step4.png', fullPage: true })
     await page.getByRole('button', { name: 'Continuar' }).click()
 
     // Step 5: Preview

@@ -85,7 +85,7 @@ export function OnboardingWizard() {
 
   return (
     <FormProvider {...form}>
-      <div className="w-full max-w-md mx-auto space-y-6">
+      <div className="w-full max-w-md mx-auto space-y-6 bg-card border rounded-xl p-8 shadow-sm">
         <OnboardingProgress steps={STEPS} currentStep={step} />
 
         <AnimatePresence mode="wait">
