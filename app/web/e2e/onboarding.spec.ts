@@ -13,6 +13,19 @@ test.describe('Onboarding flow', () => {
 
     // Step 1: Profile
     await expect(page.getByText('Quem e voce?')).toBeVisible({ timeout: 10000 })
+    const layout = await page.evaluate(() => ({
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: document.documentElement.clientWidth,
+    }))
+    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth)
+
+    const primaryBackground = await page.getByRole('button', { name: 'Continuar' }).first().evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    )
+    expect(primaryBackground).not.toBe('rgba(0, 0, 0, 0)')
+
+    const stepSurface = page.locator('[data-onboarding-step]')
+    await expect(stepSurface).toHaveCSS('opacity', '1')
     await page.locator('input[name="first_name"]').fill('Teste')
     await page.locator('input[name="last_name"]').fill('Usuario')
     await page.locator('input[name="username"]').fill('testuser2')
@@ -21,23 +34,27 @@ test.describe('Onboarding flow', () => {
 
     // Step 2: Bio
     await expect(page.getByText('Conte sobre voce')).toBeVisible({ timeout: 5000 })
+    await expect(stepSurface).toHaveCSS('opacity', '1')
     await page.screenshot({ path: 'e2e/screenshots/onboarding-step2.png', fullPage: true })
     await page.getByRole('button', { name: 'Continuar' }).first().click()
 
     // Step 3: Contact
     await expect(page.getByText('Como te encontram?')).toBeVisible({ timeout: 5000 })
+    await expect(stepSurface).toHaveCSS('opacity', '1')
     await page.locator('input[name="email"]').fill('test2@cabulous.com')
     await page.screenshot({ path: 'e2e/screenshots/onboarding-step3.png', fullPage: true })
     await page.getByRole('button', { name: 'Continuar' }).first().click()
 
     // Step 4: Password
     await expect(page.getByText('Sua senha')).toBeVisible({ timeout: 5000 })
+    await expect(stepSurface).toHaveCSS('opacity', '1')
     await page.getByPlaceholder('Minimo 8 caracteres').fill('testpass123')
     await page.screenshot({ path: 'e2e/screenshots/onboarding-step4.png', fullPage: true })
     await page.getByRole('button', { name: 'Continuar' }).first().click()
 
     // Step 5: Preview
     await expect(page.getByText('Seu perfil')).toBeVisible({ timeout: 5000 })
+    await expect(stepSurface).toHaveCSS('opacity', '1')
     await page.screenshot({ path: 'e2e/screenshots/onboarding-step5.png', fullPage: true })
     await page.getByRole('button', { name: 'Concluir!' }).click()
 
