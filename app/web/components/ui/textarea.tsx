@@ -11,35 +11,30 @@ function Textarea({ className, error, ...props }: TextareaProps) {
   const isInvalid = error || props['aria-invalid'] === true || props['aria-invalid'] === 'true'
 
   return (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex w-full flex-col gap-1.5">
       <div className="relative w-full">
         <textarea
           data-slot="textarea"
           aria-invalid={isInvalid ? true : undefined}
           className={cn(
-            // Base styles
-            'flex w-full min-h-24 px-4 py-3 rounded-lg bg-input dark:bg-input/30',
-            'text-base transition-all outline-none border border-input hover:border-border/80',
-            // Typography & Selection
+            'flex min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-base shadow-xs transition-colors outline-none md:text-sm',
             'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
-            // Interaction states
             'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
-            'focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none',
-            // Validation states
-            'aria-invalid:border-destructive aria-invalid:ring-destructive',
-            isInvalid && 'pr-12',
+            'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+            'aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40',
+            isInvalid && 'pr-10',
             className,
           )}
           {...props}
         />
         {isInvalid && (
           <AlertCircle
-            className="absolute top-4 right-5 w-5 h-5 text-destructive pointer-events-none"
+            className="pointer-events-none absolute top-3 right-3 size-4 text-destructive"
             aria-hidden="true"
           />
         )}
       </div>
-      {error && <p className="text-xs text-destructive font-medium pl-4">{error}</p>}
+      {error && <p className="pl-1 text-xs font-medium text-destructive">{error}</p>}
     </div>
   )
 }

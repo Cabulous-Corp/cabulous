@@ -13,10 +13,10 @@ function Input({ className, type, error, startAdornment, ...props }: InputProps)
   const isInvalid = error || props['aria-invalid'] === true || props['aria-invalid'] === 'true'
 
   return (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex w-full flex-col gap-1.5">
       <div className="relative w-full">
         {startAdornment && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+          <div className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
             {startAdornment}
           </div>
         )}
@@ -25,35 +25,28 @@ function Input({ className, type, error, startAdornment, ...props }: InputProps)
           data-slot="input"
           aria-invalid={isInvalid ? true : undefined}
           minLength={type === 'password' ? 8 : undefined}
-          required={(type === 'password' || type === 'email' ? true : false)}
+          required={type === 'password' || type === 'email' ? true : undefined}
           className={cn(
-            // Base styles
-            "h-16 w-100 min-w-0 px-4 rounded-md bg-input",
-            'text-base transition-all outline-none border border-input hover:border-purple-500',
-            // Typography & Selection
-            'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
-            // File input specific
-            'file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium',
-            // Interaction states
+            'flex h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 py-1 text-base shadow-xs transition-colors outline-none md:text-sm',
+            'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
+            'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
             'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
-            'focus-within:ring-2 focus-within:ring-accent  focus-within:border-accent',
-            'hover:ring-2 hover:ring-accent user-invalid:ring-2 user-invalid:ring-red-500',
-            // Validation states
-            'aria-invalid:border-destructive aria-invalid:ring-destructive dark:aria-invalid:ring-destructive',
+            'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+            'aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40',
             startAdornment && 'pl-10',
-            isInvalid && 'pr-12',
+            isInvalid && 'pr-10',
             className,
           )}
           {...props}
         />
         {isInvalid && (
           <AlertCircle
-            className="absolute top-1/2 -translate-y-1/2 right-5 w-5 h-5 text-destructive pointer-events-none"
+            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-destructive"
             aria-hidden="true"
           />
         )}
       </div>
-      {error && <p className="text-xs text-destructive font-medium pl-4">{error}</p>}
+      {error && <p className="pl-1 text-xs font-medium text-destructive">{error}</p>}
     </div>
   )
 }
