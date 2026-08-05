@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { useDropzone } from 'react-dropzone'
 import { Camera, Loader2, ImageUp } from 'lucide-react'
@@ -15,7 +15,15 @@ interface Props {
 }
 
 export function StepProfile({ onNext }: Props) {
-  const { register, formState: { errors }, trigger, setValue, watch } = useFormContext<OnboardingFormValues>()
+  const {
+    register,
+    formState: { errors },
+    trigger,
+    setValue,
+    watch,
+    clearErrors,
+    setError,
+  } = useFormContext<OnboardingFormValues>()
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [bannerUploading, setBannerUploading] = useState(false)
   const [avatarSrc, setAvatarSrc] = useState<string | null>(null)
@@ -25,11 +33,34 @@ export function StepProfile({ onNext }: Props) {
   const lastName = watch('last_name') ?? ''
   const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase() || '?'
 
+  useEffect(() => {
+    return () => {
+      if (avatarSrc) URL.revokeObjectURL(avatarSrc)
+    }
+  }, [avatarSrc])
+
+  useEffect(() => {
+    return () => {
+      if (bannerSrc) URL.revokeObjectURL(bannerSrc)
+    }
+  }, [bannerSrc])
+
   const uploadFile = useCallback(
-    async (file: File, type: 'avatar' | 'banner', setPreview: (s: string) => void, setLoading: (b: boolean) => void) => {
+    async (
+      file: File,
+      type: 'avatar' | 'banner',
+      setPreview: Dispatch<SetStateAction<string | null>>,
+      setLoading: (loading: boolean) => void,
+    ) => {
       const blobUrl = URL.createObjectURL(file)
-      setPreview(blobUrl)
-      setValue(type === 'avatar' ? 'avatar_preview' : 'banner_preview', blobUrl)
+      const previewField = type === 'avatar' ? 'avatar_preview' : 'banner_preview'
+      const keyField = type === 'avatar' ? 'avatar_key' : 'banner_key'
+      setPreview((previous) => {
+        if (previous) URL.revokeObjectURL(previous)
+        return blobUrl
+      })
+      clearErrors(previewField)
+      setValue(previewField, blobUrl)
       setLoading(true)
       try {
         const signed = await getSignedUploadUrl(type, file.name, file.type)
@@ -38,14 +69,18 @@ export function StepProfile({ onNext }: Props) {
         fd.append('file', file)
         const res = await fetch(signed.url, { method: 'POST', body: fd })
         if (!res.ok) throw new Error('Upload failed')
-        setValue(type === 'avatar' ? 'avatar_key' : 'banner_key', signed.object_key)
+        setValue(keyField, signed.object_key)
       } catch {
-        // ponytail: add toast error
+        setValue(keyField, undefined)
+        setError(previewField, {
+          type: 'upload',
+          message: 'Nao foi possivel enviar a imagem. Tente novamente.',
+        })
       } finally {
         setLoading(false)
       }
     },
-    [setValue],
+    [clearErrors, setError, setValue],
   )
 
   const avatarDrop = useDropzone({
@@ -94,6 +129,9 @@ export function StepProfile({ onNext }: Props) {
               </div>
             )}
           </div>
+          {errors.banner_preview?.message && (
+            <p className="mt-2 text-xs font-medium text-destructive">{errors.banner_preview.message}</p>
+          )}
         </div>
 
         {/* Avatar */}
@@ -116,11 +154,14 @@ export function StepProfile({ onNext }: Props) {
               </div>
             )}
           </div>
+          {errors.avatar_preview?.message && (
+            <p className="mt-2 text-center text-xs font-medium text-destructive">{errors.avatar_preview.message}</p>
+          )}
         </div>
 
         <div>
           <label className="text-sm font-medium">Nome completo *</label>
-          <div className="flex gap-3 mt-1">
+          <div className="mt-1 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
             <Input {...register('first_name')} placeholder="Nome" error={errors.first_name?.message} />
             <Input {...register('last_name')} placeholder="Sobrenome" error={errors.last_name?.message} />
           </div>

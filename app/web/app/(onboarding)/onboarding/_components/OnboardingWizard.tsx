@@ -87,12 +87,13 @@ export function OnboardingWizard() {
 
   return (
     <FormProvider {...form}>
-      <div className="w-full max-w-md mx-auto space-y-6 bg-card border rounded-xl p-8 shadow-sm">
+      <div className="mx-auto w-full min-w-0 max-w-xl space-y-6 rounded-xl border border-border bg-card p-5 shadow-sm sm:p-8">
         <OnboardingProgress steps={STEPS} currentStep={step} />
 
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
+            data-onboarding-step
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
