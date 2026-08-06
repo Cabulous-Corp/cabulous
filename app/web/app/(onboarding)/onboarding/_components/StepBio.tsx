@@ -16,13 +16,13 @@ export function StepBio({ onNext, onBack }: Props) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold">Conte sobre voce</h2>
-        <p className="text-sm text-muted-foreground mt-1">Uma breve descricao para seu perfil.</p>
+        <h2 className="text-xl font-bold">Conte sobre você</h2>
+        <p className="text-sm text-muted-foreground mt-1">Uma breve descrição para seu perfil.</p>
       </div>
 
       <Textarea
         {...register('bio')}
-        placeholder="Escreva algo sobre voce..."
+        placeholder="Escreva algo sobre você..."
         rows={4}
         maxLength={500}
       />

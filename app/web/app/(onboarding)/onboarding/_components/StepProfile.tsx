@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from 'react'
+import { useState, useCallback, type Dispatch, type SetStateAction } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { useDropzone } from 'react-dropzone'
 import { Camera, Loader2, ImageUp } from 'lucide-react'
@@ -33,18 +33,6 @@ export function StepProfile({ onNext }: Props) {
   const lastName = watch('last_name') ?? ''
   const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase() || '?'
 
-  useEffect(() => {
-    return () => {
-      if (avatarSrc) URL.revokeObjectURL(avatarSrc)
-    }
-  }, [avatarSrc])
-
-  useEffect(() => {
-    return () => {
-      if (bannerSrc) URL.revokeObjectURL(bannerSrc)
-    }
-  }, [bannerSrc])
-
   const uploadFile = useCallback(
     async (
       file: File,
@@ -64,17 +52,18 @@ export function StepProfile({ onNext }: Props) {
       setLoading(true)
       try {
         const signed = await getSignedUploadUrl(type, file.name, file.type)
-        const fd = new FormData()
-        Object.entries(signed.fields).forEach(([k, v]) => fd.append(k, v))
-        fd.append('file', file)
-        const res = await fetch(signed.url, { method: 'POST', body: fd })
+        const res = await fetch(signed.upload_url, {
+          method: signed.method,
+          headers: signed.headers,
+          body: file,
+        })
         if (!res.ok) throw new Error('Upload failed')
         setValue(keyField, signed.object_key)
       } catch {
         setValue(keyField, undefined)
         setError(previewField, {
           type: 'upload',
-          message: 'Nao foi possivel enviar a imagem. Tente novamente.',
+          message: 'Não foi possível enviar a imagem. Tente novamente.',
         })
       } finally {
         setLoading(false)
@@ -105,8 +94,8 @@ export function StepProfile({ onNext }: Props) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold">Quem e voce?</h2>
-        <p className="text-sm text-muted-foreground mt-1">Conte um pouco sobre voce.</p>
+        <h2 className="text-xl font-bold">Quem é você?</h2>
+        <p className="text-sm text-muted-foreground mt-1">Conte um pouco sobre você.</p>
       </div>
 
       <div className="space-y-4">
@@ -168,7 +157,7 @@ export function StepProfile({ onNext }: Props) {
         </div>
 
         <div>
-          <label className="text-sm font-medium">Username *</label>
+          <label className="text-sm font-medium">Nome de usuário *</label>
           <Input {...register('username')} placeholder="@seunome" className="mt-1" error={errors.username?.message} />
         </div>
       </div>

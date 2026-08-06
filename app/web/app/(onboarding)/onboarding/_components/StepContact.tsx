@@ -27,12 +27,12 @@ export function StepContact({ onNext, onBack }: Props) {
 
       <div className="space-y-4">
         <div>
-          <label className="text-sm font-medium">Email *</label>
+          <label className="text-sm font-medium">E-mail *</label>
           <Input {...register('email')} placeholder="seu@email.com" className="mt-1" error={errors.email?.message} type="email" />
         </div>
         <div>
           <label className="text-sm font-medium">Discord</label>
-          <Input {...register('discord_username')} placeholder="usuario#0000" className="mt-1" />
+          <Input {...register('discord_username')} placeholder="usuário#0000" className="mt-1" />
         </div>
         <div>
           <label className="text-sm font-medium">Telefone</label>

@@ -4,9 +4,11 @@ import 'server-only'
 import { api } from '@/lib/api'
 
 interface SignedUrlResponse {
-  url: string
-  fields: Record<string, string>
+  upload_url: string
+  method: 'PUT'
+  headers: Record<string, string>
   object_key: string
+  expires_in: number
 }
 
 export async function getSignedUploadUrl(
@@ -19,27 +21,4 @@ export async function getSignedUploadUrl(
       json: { file_type: fileType, filename, content_type: contentType },
     })
     .json<SignedUrlResponse>()
-}
-
-export async function uploadToSignedUrl(
-  signedUrl: string,
-  fields: Record<string, string>,
-  file: File,
-): Promise<string> {
-  const formData = new FormData()
-  Object.entries(fields).forEach(([key, value]) => {
-    formData.append(key, value)
-  })
-  formData.append('file', file)
-
-  const response = await fetch(signedUrl, {
-    method: 'POST',
-    body: formData,
-  })
-
-  if (!response.ok) {
-    throw new Error('Upload failed')
-  }
-
-  return fields.key
 }

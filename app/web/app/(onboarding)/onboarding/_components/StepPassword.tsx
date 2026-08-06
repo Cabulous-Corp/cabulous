@@ -28,7 +28,7 @@ export function StepPassword({ onNext, onBack }: Props) {
       <Input
         {...register('new_password')}
         type="password"
-        placeholder="Minimo 8 caracteres"
+        placeholder="Mínimo de 8 caracteres"
         error={errors.new_password?.message}
       />
 

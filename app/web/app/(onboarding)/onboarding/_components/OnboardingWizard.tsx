@@ -15,15 +15,15 @@ import { StepPreview } from './StepPreview'
 import { completeOnboarding } from '@/actions/onboarding'
 
 const onboardingSchema = z.object({
-  first_name: z.string().min(1, 'Nome e obrigatorio.'),
-  last_name: z.string().min(1, 'Sobrenome e obrigatorio.'),
-  username: z.string().min(3, 'Username deve ter pelo menos 3 caracteres.'),
+  first_name: z.string().min(1, 'Nome é obrigatório.'),
+  last_name: z.string().min(1, 'Sobrenome é obrigatório.'),
+  username: z.string().min(3, 'Nome de usuário deve ter pelo menos 3 caracteres.'),
   avatar_key: z.string().optional(),
   avatar_preview: z.string().optional(),
   banner_key: z.string().optional(),
   banner_preview: z.string().optional(),
   bio: z.string().optional(),
-  email: z.string().email('Email invalido.').min(1, 'Email e obrigatorio.'),
+  email: z.string().email('E-mail inválido.').min(1, 'E-mail é obrigatório.'),
   discord_username: z.string().optional(),
   phone_number: z.string().optional(),
   new_password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres.'),
