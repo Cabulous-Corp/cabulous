@@ -145,26 +145,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v4
-
-      - run: uv python install 3.13
-
-      - uses: actions/cache@v4
+      - uses: actions/setup-node@v4
         with:
-          path: service/.venv
-          key: uv-${{ runner.os }}-${{ hashFiles('service/uv.lock') }}
-
-      - run: uv sync --all-groups
+          node-version: 20
 
       - name: Duplication check (jscpd)
-        run: npx jscpd --min-lines 5 --min-tokens 70 --reporters console --output report.json .
+        run: npx jscpd --config ../.jscpd.json .
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: backend-duplication-results
           path: |
-            service/report.json
+            service/jscpd-report
 
   backend-contract:
     runs-on: ubuntu-latest
@@ -216,16 +209,6 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     env:
       DATABASE__HOST: localhost
       DATABASE__PORT: 5432
@@ -234,7 +217,6 @@ jobs:
       DATABASE__PASSWORD: cabulous
       DATABASE__ENGINE: django.db.backends.postgresql
       SECRET_KEY: ci-test-key
-      REDIS__URL: redis://localhost:6379/1
 
     steps:
       - uses: actions/checkout@v4
@@ -408,16 +390,6 @@ jobs:
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
-
-      - name: Write dependency review summary
-        if: always()
-        run: echo "Dependency review completed at $(date -u +%Y-%m-%dT%H:%M:%SZ)" > dependency-review-results.txt
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: dependency-review-results
-          path: dependency-review-results.txt
 
   # ── Observational ────────────────────────────────────────────────────
 

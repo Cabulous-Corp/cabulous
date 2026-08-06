@@ -2,33 +2,31 @@
 
 ## Overview
 
-Baselines define the minimum quality thresholds for the Cabulous monorepo. Each baseline is a JSON file that records the current state and expected thresholds.
+Baselines pin the current state of quality metrics so they can only improve
+(ratchet). The Cabulous monorepo has a single baselined metric:
 
-## Files
+- `baselines/jscpd.json` -- duplicates/lines/percentage ratchet for `jscpd`.
 
-- `python-function-length.json` -- Max function length (50 lines), McCabe complexity (10)
-- `python-coverage.json` -- Minimum branch coverage (35%)
+Real thresholds for coverage and function length are configured directly in:
 
-## Updating Baselines
+- `service/pyproject.toml` -- `[tool.coverage.report]` (`fail_under`)
+  and `[tool.flake8]` (`max-function-length`, `max-complexity`).
+- `app/web` vitest config -- frontend coverage thresholds.
 
-To update a baseline, run the corresponding check and capture the current value:
+## Updating the jscpd baseline
+
+To accept new known duplicates:
 
 ```bash
-# Function length violations
-make service function-length | tee /dev/null  # count violations
-
-# Coverage report
-make service coverage  # note the percentage
+task service:duplication   # produce a fresh jscpd-report
 ```
 
-Then edit the relevant `baselines/*.json` file and update the value and date.
-
-## CI Integration
-
-Quality gates in CI compare current metrics against these baselines. If the current value falls below the threshold, the build fails.
+Then edit `baselines/jscpd.json` (update `total_duplicates`,
+`total_duplicated_lines`, `known_duplicates`, `updated`) and commit it
+alongside the code change.
 
 ## Process
 
-1. Run the quality check locally
-2. If intentional new violations or coverage drop, update the baseline
-3. Commit the baseline change alongside the code change
+1. Run the quality check locally.
+2. If intentional new violations or a coverage drop, update the baseline.
+3. Commit the baseline change alongside the code change.

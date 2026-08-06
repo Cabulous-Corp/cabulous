@@ -53,9 +53,8 @@ O monorepo possui quality gates que garantem qualidade minima em cada PR. Veja [
 Resumo rapido:
 
 ```bash
-make service quality   # Todos os checks do backend
-make app quality       # Todos os checks do frontend
-bash scripts/quality/tests/test_gate_fixtures.sh  # Testes dos gates
+task service:quality   # Todos os checks do backend
+task app:quality       # Todos os checks do frontend
 ```
 
 ## Fluxo esperado

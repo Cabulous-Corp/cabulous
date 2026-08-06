@@ -63,9 +63,7 @@ Run dev stacks via `task` (root `Taskfile.yml` includes both):
 - API types are generated from the backend OpenAPI schema:
   `task app:generate-api-types` (requires backend running on `localhost:8000`).
   Don't hand-edit `types/api.d.ts`.
-- See `app/web/AGENTS.md` for component conventions (server components by default,
-  `'use client'` only when needed, page-exclusive components in `_components/`,
-  Zod for all forms, no `any`). Don't duplicate that guidance here — read it.
+- See `app/web/AGENTS.md` for frontend conventions.
 
 ## CI suite (run before marking a task complete)
 

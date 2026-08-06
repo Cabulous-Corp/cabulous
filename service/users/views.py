@@ -25,6 +25,8 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all().order_by("username")
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticatedWithOnboardingGuard, UserModelPermissions]
+    # ponytail: keep /api/users/ as an unpaginated array to preserve the OpenAPI baseline.
+    pagination_class = None
 
     def perform_destroy(self, instance: User) -> None:
         instance.soft_delete()

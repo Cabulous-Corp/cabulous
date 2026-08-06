@@ -1,19 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
-class DiscordEmbedFooter(BaseModel):
-    text: str
-    icon_url: HttpUrl | None = None
-
-
-class DiscordEmbedImage(BaseModel):
-    url: HttpUrl
-
-
-class DiscordEmbedThumbnail(BaseModel):
-    url: HttpUrl
-
-
 class DiscordEmbedAuthor(BaseModel):
     name: str
     url: HttpUrl | None = None
@@ -32,9 +19,6 @@ class DiscordEmbed(BaseModel):
     color: int | None = None
     url: HttpUrl | None = None
     timestamp: str | None = None
-    footer: DiscordEmbedFooter | None = None
-    image: DiscordEmbedImage | None = None
-    thumbnail: DiscordEmbedThumbnail | None = None
     author: DiscordEmbedAuthor | None = None
     fields: list[DiscordEmbedField] | None = None
 

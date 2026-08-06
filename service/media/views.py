@@ -11,7 +11,6 @@ from rest_framework.viewsets import GenericViewSet
 
 from authentication.permissions import IsAuthenticatedWithOnboardingGuard
 from common.filter_backends import DjangoFilterBackend
-from common.pagination import StandardPageNumberPagination
 from media.filters import PhotoFilter
 from media.models import Photo
 from media.permissions import IsPhotoOwnerOrStaff
@@ -77,7 +76,6 @@ class PhotoViewSet(
 ):
     serializer_class = PhotoSerializer
     permission_classes = [IsAuthenticatedWithOnboardingGuard, IsPhotoOwnerOrStaff]
-    pagination_class = StandardPageNumberPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = PhotoFilter
     search_fields = ["caption"]

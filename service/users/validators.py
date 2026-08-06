@@ -3,6 +3,7 @@ from typing import Any
 
 import phonenumbers
 from django.core.exceptions import ValidationError
+from django.core.files.storage import default_storage
 from django.db.models import QuerySet
 from phonenumbers import NumberParseException
 from phonenumbers.phonenumberutil import PhoneNumberFormat
@@ -103,3 +104,17 @@ def clean_phone_number(value: str) -> str:
     normalized = normalize_phone_number(value)
     validate_phone_number_format(normalized)
     return normalized
+
+
+def validate_object_key(value: str, instance: Any, kind: str) -> str:
+    """Validate per-user avatar/banner object key prefix and storage presence."""
+    if not value:
+        return ""
+    if instance is None:
+        raise ValidationError(f"{kind.capitalize()} upload is not supported during user creation.")
+    expected_prefix = f"users/{instance.id}/{kind}"
+    if not value.startswith(expected_prefix):
+        raise ValidationError(f"Invalid {kind} object key for this user.")
+    if not default_storage.exists(value):
+        raise ValidationError(f"Uploaded {kind} object was not found.")
+    return value

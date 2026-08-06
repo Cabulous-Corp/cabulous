@@ -6,13 +6,11 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.files.storage import default_storage
 from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from cabulous.config import get_settings
@@ -26,6 +24,7 @@ from users.validators import (
     clean_phone_number,
     clean_username,
     normalize_username,
+    validate_object_key,
 )
 
 if TYPE_CHECKING:
@@ -95,8 +94,26 @@ class MeSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class RefreshTokenSerializer(TokenRefreshSerializer):
-    pass
+def _send_recovery(
+    user: "UserType",
+    *,
+    subject: str,
+    template_path: str,
+    context: dict[str, Any],
+    content: str,
+) -> None:
+    if user.email:
+        send_html_template_email_task.delay(
+            subject=subject,
+            recipients=[user.email],
+            template_path=template_path,
+            context=context,
+        )
+    if user.discord_username:
+        send_discord_channel_message_by_purpose_task.delay(
+            purpose="BOARD_UPDATES",
+            content=content,
+        )
 
 
 class ForgotAccessSerializer(serializers.Serializer):
@@ -117,39 +134,45 @@ class ForgotAccessSerializer(serializers.Serializer):
         display_name = user.first_name or user.username
 
         if user.onboarding_completed_at is None:
-            magic_token = secrets.token_urlsafe(48)
-            expires_at = timezone.now() + timedelta(hours=72)
-            UserMagicLinkToken.objects.create(
-                user=user,
-                token=magic_token,
-                expires_at=expires_at,
-                created_by=None,
-            )
-            onboarding_link = f"{frontend_url}/magic-login/{magic_token}"
-            onboarding_context = {
-                "display_name": display_name,
-                "magic_link": onboarding_link,
-                "magic_link_expires_at_display": timezone.localtime(expires_at).strftime(
-                    "%d/%m/%Y %H:%M"
-                ),
-            }
-            if user.email:
-                send_html_template_email_task.delay(
-                    subject="Recuperacao de acesso - Cabulous",
-                    recipients=[user.email],
-                    template_path="email/authentication/recover_pending_onboarding.html",
-                    context=onboarding_context,
-                )
-            if user.discord_username:
-                send_discord_channel_message_by_purpose_task.delay(
-                    purpose="BOARD_UPDATES",
-                    content=(
-                        f"{user.discord_username}, voce possui onboarding pendente no Cabulous. "
-                        f"Use este link para concluir o primeiro acesso: {onboarding_link}"
-                    ),
-                )
-            return {}
+            return self._send_pending_onboarding_recovery(user, frontend_url, display_name)
+        return self._send_password_reset_recovery(user, frontend_url, display_name)
 
+    @staticmethod
+    def _send_pending_onboarding_recovery(
+        user: "UserType", frontend_url: str, display_name: str
+    ) -> dict[str, Any]:
+        magic_token = secrets.token_urlsafe(48)
+        expires_at = timezone.now() + timedelta(hours=72)
+        UserMagicLinkToken.objects.create(
+            user=user,
+            token=magic_token,
+            expires_at=expires_at,
+            created_by=None,
+        )
+        onboarding_link = f"{frontend_url}/magic-login/{magic_token}"
+        onboarding_context = {
+            "display_name": display_name,
+            "magic_link": onboarding_link,
+            "magic_link_expires_at_display": timezone.localtime(expires_at).strftime(
+                "%d/%m/%Y %H:%M"
+            ),
+        }
+        _send_recovery(
+            user,
+            subject="Recuperacao de acesso - Cabulous",
+            template_path="email/authentication/recover_pending_onboarding.html",
+            context=onboarding_context,
+            content=(
+                f"{user.discord_username}, voce possui onboarding pendente no Cabulous. "
+                f"Use este link para concluir o primeiro acesso: {onboarding_link}"
+            ),
+        )
+        return {}
+
+    @staticmethod
+    def _send_password_reset_recovery(
+        user: "UserType", frontend_url: str, display_name: str
+    ) -> dict[str, Any]:
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
         reset_link = f"{frontend_url}/reset-password?uid={uid}&token={token}"
@@ -157,21 +180,16 @@ class ForgotAccessSerializer(serializers.Serializer):
             "display_name": display_name,
             "reset_link": reset_link,
         }
-        if user.email:
-            send_html_template_email_task.delay(
-                subject="Redefinicao de senha - Cabulous",
-                recipients=[user.email],
-                template_path="email/authentication/password_reset_request.html",
-                context=reset_context,
-            )
-        if user.discord_username:
-            send_discord_channel_message_by_purpose_task.delay(
-                purpose="BOARD_UPDATES",
-                content=(
-                    f"{user.discord_username}, recebemos uma solicitacao de redefinicao de senha "
-                    f"para sua conta Cabulous. Use este link: {reset_link}"
-                ),
-            )
+        _send_recovery(
+            user,
+            subject="Redefinicao de senha - Cabulous",
+            template_path="email/authentication/password_reset_request.html",
+            context=reset_context,
+            content=(
+                f"{user.discord_username}, recebemos uma solicitacao de redefinicao de senha "
+                f"para sua conta Cabulous. Use este link: {reset_link}"
+            ),
+        )
         return {}
 
 
@@ -274,34 +292,16 @@ class OnboardingFirstAccessSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(exc.messages) from exc
 
     def validate_avatar_key(self, value: str) -> str:
-        if not value:
-            return ""
-
-        instance = self.instance
-        if instance is None:
-            raise serializers.ValidationError("Invalid user for avatar upload.")
-
-        expected_prefix = f"users/{instance.id}/avatar"
-        if not value.startswith(expected_prefix):
-            raise serializers.ValidationError("Invalid avatar object key for this user.")
-        if not default_storage.exists(value):
-            raise serializers.ValidationError("Uploaded avatar object was not found.")
-        return value
+        try:
+            return validate_object_key(value, self.instance, "avatar")
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages) from exc
 
     def validate_banner_key(self, value: str) -> str:
-        if not value:
-            return ""
-
-        instance = self.instance
-        if instance is None:
-            raise serializers.ValidationError("Invalid user for banner upload.")
-
-        expected_prefix = f"users/{instance.id}/banner"
-        if not value.startswith(expected_prefix):
-            raise serializers.ValidationError("Invalid banner object key for this user.")
-        if not default_storage.exists(value):
-            raise serializers.ValidationError("Uploaded banner object was not found.")
-        return value
+        try:
+            return validate_object_key(value, self.instance, "banner")
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages) from exc
 
     def update(self, instance: "UserType", validated_data: dict[str, Any]) -> "UserType":
         password = validated_data.pop("new_password", None)
