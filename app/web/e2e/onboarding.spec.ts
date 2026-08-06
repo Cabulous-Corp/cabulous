@@ -13,9 +13,9 @@ test.describe('Onboarding flow', () => {
 
     // Login
     await page.goto('http://localhost:3000/login')
-    await page.getByPlaceholder('Email/User').fill('test@cabulous.com')
-    await page.getByPlaceholder('Password').fill('testpass123')
-    await page.getByRole('button', { name: /Sign in/ }).click()
+    await page.getByLabel('E-mail ou usuário').fill('test@cabulous.com')
+    await page.getByLabel('Senha').fill('testpass123')
+    await page.getByRole('button', { name: 'Entrar' }).click()
 
     // Should redirect to onboarding
     await expect(page).toHaveURL(/\/onboarding/, { timeout: 15000 })
