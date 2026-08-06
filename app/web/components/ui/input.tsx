@@ -24,7 +24,6 @@ function Input({ className, type, error, startAdornment, ...props }: InputProps)
           type={type}
           data-slot="input"
           aria-invalid={isInvalid ? true : undefined}
-          minLength={type === 'password' ? 8 : undefined}
           required={type === 'password' || type === 'email' ? true : undefined}
           className={cn(
             'flex h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 py-1 text-base shadow-xs transition-colors outline-none md:text-sm',

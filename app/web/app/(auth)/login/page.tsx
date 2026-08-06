@@ -85,7 +85,6 @@ export default function LoginPage() {
               name="password"
               rules={{
                 required: 'Senha e obrigatoria.',
-                minLength: { value: 8, message: 'A senha deve ter pelo menos 8 caracteres.' },
               }}
               render={({ field, fieldState }) => (
                 <FormItem className="w-full">
