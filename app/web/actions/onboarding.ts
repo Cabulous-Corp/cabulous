@@ -17,7 +17,13 @@ interface OnboardingData {
   banner_key?: string
 }
 
-export async function completeOnboarding(data: OnboardingData) {
-  await api.post('api/auth/onboarding/complete/', { json: data }).json()
-  revalidatePath('/')
+export async function completeOnboarding(data: OnboardingData): Promise<{ error?: string }> {
+  try {
+    await api.post('api/auth/onboarding/complete/', { json: data }).json()
+    revalidatePath('/')
+    return {}
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : ''
+    return { error: message || 'Erro ao completar onboarding. Tente novamente.' }
+  }
 }

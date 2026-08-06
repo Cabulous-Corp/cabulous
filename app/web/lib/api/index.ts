@@ -7,6 +7,7 @@ import { yellow } from 'colorette'
 import ky, { AfterResponseHook, BeforeRequestHook, BeforeErrorHook } from 'ky'
 import { cookies, headers } from 'next/headers'
 import { chatUrl, cookieName, serverUrl } from '@/lib/config'
+import { formatApiError } from '@/lib/api/errors'
 import { safeJsonParse } from '@/lib/json'
 import { logger } from '@/lib/logger'
 
@@ -60,14 +61,13 @@ const _afterResponseHooks: AfterResponseHook[] = [
 
 const _beforeErrorHooks: BeforeErrorHook[] = [
   async (error) => {
-    const responseText = await error.response.text()
+    const responseText = error.response ? await error.response.text() : ''
 
-    const { parsed, success } = safeJsonParse<{
-      detail?: string
-      message?: string
-    }>(responseText)
-
-    const msg = success ? (parsed?.detail ?? parsed?.message ?? responseText) : responseText
+    const { parsed, success } = safeJsonParse<unknown>(responseText)
+    const msg = error.response
+      ? formatApiError(success ? parsed : responseText)
+      : 'Não foi possível conectar ao servidor. Tente novamente.'
+    error.message = msg
 
     logger.error(
       `\ttid=${error.request.headers.get('X-Trace-Id')} [${error.request.method}] [${error.response?.status}] failed because server answered with: ${yellow(JSON.stringify(msg))}`,

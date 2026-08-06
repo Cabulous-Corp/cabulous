@@ -65,7 +65,7 @@ export function OnboardingWizard() {
     setError('')
     try {
       const values = form.getValues()
-      await completeOnboarding({
+      const result = await completeOnboarding({
         first_name: values.first_name,
         last_name: values.last_name,
         username: values.username,
@@ -77,6 +77,11 @@ export function OnboardingWizard() {
         avatar_key: values.avatar_key || undefined,
         banner_key: values.banner_key || undefined,
       })
+      if (result.error) {
+        setError(result.error)
+        setSubmitting(false)
+        return
+      }
       router.push('/')
     } catch (e: unknown) {
       const err = e as { message?: string }
