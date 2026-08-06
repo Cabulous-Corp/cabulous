@@ -35,7 +35,6 @@
         ".next/types/**/*.ts",
         ".next/dev/types/**/*.ts",
         "**/*.mts",
-        "app/(auth)/login/_components/AnimatedTrianglesBackground.tsx"
     ],
     "exclude": [
         "node_modules"

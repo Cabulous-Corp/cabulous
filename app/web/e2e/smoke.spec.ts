@@ -1,11 +1,23 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Auth smoke tests', () => {
-  test('login page renders', async ({ page }) => {
+  test('login page renders the split-panel form', async ({ page }) => {
     await page.goto('/login')
-    await expect(page.getByText('Faca seu Login')).toBeVisible()
-    await expect(page.getByPlaceholder('Email/User')).toBeVisible()
-    await expect(page.getByPlaceholder('Password')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Entrar', exact: true })).toBeVisible()
+    await expect(page.getByText('Conecte-se ao que importa.')).toBeVisible()
+    await expect(page.getByLabel('E-mail ou usuário')).toBeVisible()
+    await expect(page.getByLabel('Senha')).toBeVisible()
+    await expect(page.locator('[data-login-panel="brand"]')).toBeVisible()
+    await expect(page.locator('[data-login-panel="form"]')).toBeVisible()
+  })
+
+  test('login page stacks on mobile without horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/login')
+
+    await expect(page.locator('[data-login-panel="brand"]')).toBeVisible()
+    await expect(page.locator('[data-login-panel="form"]')).toBeVisible()
+    await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 390)
   })
 
   test('redirects to login when unauthenticated', async ({ page }) => {
@@ -16,9 +28,9 @@ test.describe('Auth smoke tests', () => {
   test('submit login form reaches backend', async ({ page }) => {
     // ponytail: without backend, login stays on /login or shows error
     await page.goto('/login')
-    await page.getByPlaceholder('Email/User').fill('test@cabulous.com')
-    await page.getByPlaceholder('Password').fill('testpass123')
-    await page.getByRole('button', { name: /Sign in/ }).click()
+    await page.getByLabel('E-mail ou usuário').fill('test@cabulous.com')
+    await page.getByLabel('Senha').fill('testpass123')
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click()
     // ponytail: backend offline → stays on login page; backend online → redirects to /.
     // Either outcome verifies the form submits without crashing.
     await page.waitForTimeout(2000)
